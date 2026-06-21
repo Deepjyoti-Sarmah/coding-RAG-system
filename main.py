@@ -1,5 +1,7 @@
 from chunking.splitter import chunk_documents
+from embeddings.encoder import EmbeddingEncoder
 from ingestion.loader import load_code_files
+from retrieval.search import search_chunks
 
 
 def main():
@@ -16,14 +18,42 @@ def main():
     chunks = chunk_documents(documents, chunk_size=1200, overlap=200)
     print(f"Created {len(chunks)} chunks. \n")
 
-    for chunk in chunks[:5]:
-        print("=" * 60)
-        print(f"Chunk ID: {chunk['chunk_id']}")
-        print(f"File: {chunk['relative_path']}")
-        print(f"Chunk Index: {chunk['chunk_index']}")
-        print("Preview:")
-        print(chunk["content"][:300])
-        print()
+    texts = [chunk["content"] for chunk in chunks]
+
+    print("\nLoading embedding model...")
+    encoder = EmbeddingEncoder()
+
+    print("Encoding chunks...")
+    chunk_embeddings = encoder.encode_texts(texts)
+    print(f"Encoded {len(chunk_embeddings)} chunks.")
+
+    while True:
+        query = input("\nAsk a question about the codeabse (or type 'exit'):").strip()
+
+        if query.lower() == "exit":
+            print("Goodbye!")
+            break
+
+        query_embedding = encoder.encode_query(query)
+        results = search_chunks(
+            query_embedding,
+            chunk_embeddings,
+            chunks,
+            top_k=5,
+        )
+
+        print("\nTop matching chunks:\n")
+
+        for result in results:
+            chunk = result["chunk"]
+
+            print("=" * 60)
+            print(f"Score: {result['score']:.4f}")
+            print(f"File: {chunk['relative_path']}")
+            print(f"Chunk ID: {chunk['chunk_id']}")
+            print("Preview:")
+            print(chunk["content"][:400])
+            print()
 
 
 if __name__ == "__main__":
