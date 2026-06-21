@@ -1,5 +1,7 @@
 def split_text_with_overlap(
-    text: str, chunk_size: int = 1200, overlap: int = 200
+    text: str,
+    chunk_size: int = 1200,
+    overlap: int = 200,
 ) -> list[str]:
     chunks = []
     start = 0
@@ -8,6 +10,7 @@ def split_text_with_overlap(
     while start < text_length:
         end = start + chunk_size
         chunk = text[start:end]
+        chunks.append(chunk)
 
         if end >= text_length:
             break
@@ -18,7 +21,9 @@ def split_text_with_overlap(
 
 
 def chunk_documents(
-    documents: list[dict], chunk_size: int = 1200, overlap: int = 200
+    documents: list[dict],
+    chunk_size: int = 1200,
+    overlap: int = 200,
 ) -> list[dict]:
     all_chunks = []
 
