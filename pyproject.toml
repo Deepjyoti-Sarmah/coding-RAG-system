@@ -4,4 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "tree-sitter>=0.25.2",
+    "tree-sitter-typescript>=0.23.2",
+]
