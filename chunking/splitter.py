@@ -1,3 +1,6 @@
+from typing import Any
+
+
 def split_text_with_overlap(
     text: str,
     chunk_size: int = 1200,
@@ -21,10 +24,10 @@ def split_text_with_overlap(
 
 
 def chunk_documents(
-    documents: list[dict],
+    documents: list[dict[str, Any]],
     chunk_size: int = 1200,
     overlap: int = 200,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     all_chunks = []
 
     for doc in documents:

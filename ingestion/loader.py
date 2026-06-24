@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from config import EXCLUDE_DIRS, INCLUDE_EXTENSIONS, MAX_FILE_SIZE_BYTES
 
@@ -17,7 +18,7 @@ def should_skip_file(file_path: Path) -> bool:
     return False
 
 
-def load_code_files(root_dir: str) -> list[dict]:
+def load_code_files(root_dir: str) -> list[dict[str, Any]]:
     root_path = Path(root_dir)
     documents = []
 

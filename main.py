@@ -47,6 +47,9 @@ def main():
         for result in results:
             chunk = result["chunk"]
 
+            print(result["score"])
+            print(result["chunk"]["relative_path"])
+
             print("=" * 60)
             print(f"Score: {result['score']:.4f}")
             print(f"File: {chunk['relative_path']}")

@@ -1,12 +1,13 @@
+from typing import Any
 from sklearn.metrics.pairwise import cosine_similarity
 
 
 def search_chunks(
     query_embedding: list[float],
     chunk_embedding: list[list[float]],
-    chunks: list[dict],
+    chunks: list[dict[str, Any]],
     top_k: int = 5,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     similarities = cosine_similarity([query_embedding], chunk_embedding)[0]
 
     scored_results = []
