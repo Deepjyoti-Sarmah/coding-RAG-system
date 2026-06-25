@@ -1,4 +1,5 @@
 from ingestion.loader import load_code_files
+from parsing.registy import PARSER
 
 
 def main():
@@ -7,18 +8,18 @@ def main():
     documents = load_code_files(root_dir)
     print(f"\nLoaded {len(documents)} files. \n")
 
-    if documents:
-        first = documents[0]
+    # if documents:
+    #     first = documents[0]
+    #
+    #     print(first)
 
-        print(first)
-
-        # print("\nFirst document:")
-        # print("Path:", first.relative_path)
-        # print("Language:", first.language)
-        # print("Extension:", first.extension)
-        # print("Lines:", first.line_count)
-        # print("Size:", first.size_bytes)
-        # print("Content length:", len(first.content))
+    # print("\nFirst document:")
+    # print("Path:", first.relative_path)
+    # print("Language:", first.language)
+    # print("Extension:", first.extension)
+    # print("Lines:", first.line_count)
+    # print("Size:", first.size_bytes)
+    # print("Content length:", len(first.content))
 
     # chunks = chunk_documents(documents, chunk_size=1200, overlap=200)
     # print(f"Created {len(chunks)} chunks. \n")
@@ -62,6 +63,17 @@ def main():
     #         print("Preview:")
     #         print(chunk["content"][:400])
     #         print()
+
+    for document in documents:
+        parser = PARSER.get(document.language)
+
+        if parser is None:
+            continue
+
+        tree = parser.parse(document)
+
+        print(document.relative_path)
+        print(tree.root_node.type)
 
 
 if __name__ == "__main__":

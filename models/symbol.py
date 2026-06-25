@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from models.symbol_kind import SymbolKind
+
 
 @dataclass(slots=True)
 class Symbol:
@@ -9,7 +11,7 @@ class Symbol:
 
     name: str
 
-    symbol_type: str
+    kind: SymbolKind
 
     relative_path: str
 
