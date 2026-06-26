@@ -25,11 +25,18 @@ def should_skip_file(file_path: Path) -> bool:
     return False
 
 
-def load_code_files(root_dir: str) -> list[Document]:
-    root_path = Path(root_dir)
+def load_code_files(path: str) -> list[Document]:
+    root_path = Path(path).resolve()
     documents: list[Document] = []
 
-    for file_path in root_path.rglob("*"):
+    is_single_file = root_path.is_file()
+
+    if is_single_file:
+        files = [root_path]
+    else:
+        files = root_path.rglob("*")
+
+    for file_path in files:
         if not file_path.is_file():
             continue
 
@@ -44,6 +51,10 @@ def load_code_files(root_dir: str) -> list[Document]:
         except Exception as e:
             print(f"Skipping {file_path}: {e}")
             continue
+
+        relative_path = (
+            file_path.name if is_single_file else str(file_path.relative_to(root_path))
+        )
 
         documents.append(
             Document(
