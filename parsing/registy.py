@@ -1,5 +1,4 @@
-from parsing.typescript import TypescriptParser
-
+from parsing.typescript_parser import TypescriptParser
 
 PARSER = {
     "typescript": TypescriptParser(),
