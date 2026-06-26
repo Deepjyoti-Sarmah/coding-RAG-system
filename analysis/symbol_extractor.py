@@ -1,27 +1,59 @@
-from tree_sitter import Tree
-from analysis.base_analyzer import BaseAnalyzer
+from tree_sitter import Node, Tree
+
+from analysis.handlers.function import handle_function
+from analysis.registry import NODE_HANDLERS
 from models.document import Document
 from models.symbol import Symbol
 
 
-class SymbolExtractor(BaseAnalyzer):
-    def analyze(
-        self,
-        tree: Tree,
-        document: Document,
-    ) -> list[Symbol]:
+def extract_symbols(
+    tree: Tree,
+    document: Document,
+) -> list[Symbol]:
+    symbols: list[Symbol] = []
 
-        self.document = document
+    walk(
+        node=tree.root_node,
+        document=document,
+        symbols=symbols,
+    )
 
-        self.walk(tree.root_node)
+    return symbols
 
-        return self.symbols
 
-    def walk(self, node):
-        self.visit(node)
+def walk(
+    node: Node,
+    document: Document,
+    symbols: list[Symbol],
+):
+    visit(
+        node=node,
+        document=document,
+        symbols=symbols,
+    )
 
-        for child in node.children:
-            self.walk(child)
+    for child in node.children:
+        walk(
+            node=child,
+            document=document,
+            symbols=symbols,
+        )
 
-    def visit(self, node):
-        pass
+
+def visit(
+    node: Node,
+    document: Document,
+    symbols: list[Symbol],
+):
+    handler = NODE_HANDLERS.get(node.type)
+
+    if handler is None:
+        return
+
+    symbol = handle_function(
+        node=node,
+        document=document,
+    )
+
+    if symbol is not None:
+        symbols.append(symbol)
