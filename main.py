@@ -1,4 +1,6 @@
+from analysis.symbol_extractor import extract_symbols
 from ingestion.loader import load_code_files
+from models import symbol
 from parsing.registy import PARSER
 
 
@@ -15,6 +17,14 @@ def main():
             continue
 
         tree = parser.parse(document)
+
+        symbols = extract_symbols(
+            tree=tree,
+            document=document,
+        )
+
+        for symbol in symbols:
+            print(symbol.kind, symbol.name, symbol.relative_path)
 
         # print(document.relative_path)
         # print(tree.root_node.type)

@@ -7,6 +7,7 @@ from models.symbol_kind import SymbolKind
 
 
 def handle_function(
+    *,
     node: Node,
     document: Document,
 ) -> Symbol | None:
