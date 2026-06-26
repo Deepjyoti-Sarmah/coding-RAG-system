@@ -60,7 +60,7 @@ def load_code_files(path: str) -> list[Document]:
             Document(
                 document_id=str(uuid4()),
                 absolute_path=str(file_path.resolve()),
-                relative_path=str(file_path.relative_to(root_path)),
+                relative_path=relative_path,
                 file_name=file_path.name,
                 extension=file_path.suffix.lower(),
                 language=detect_language(file_path.suffix.lower()),

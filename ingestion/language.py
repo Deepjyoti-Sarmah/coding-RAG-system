@@ -1,9 +1,9 @@
 EXTENSION_TO_LANGUAGE = {
     ".py": "python",
     ".ts": "typescript",
-    ".tsx": "typescript",
+    ".tsx": "tsx",
     ".js": "javascript",
-    ".jsx": "javascript",
+    ".jsx": "jsx",
     ".md": "markdown",
 }
 

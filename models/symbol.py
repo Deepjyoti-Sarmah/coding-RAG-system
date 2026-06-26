@@ -19,3 +19,6 @@ class Symbol:
     end_line: int
 
     content: str
+
+    parent_symbol_id: str | None = None
+    language: str = ""
