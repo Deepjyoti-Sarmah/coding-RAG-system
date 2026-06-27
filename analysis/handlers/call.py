@@ -22,6 +22,9 @@ def handle_call(
     targets = symbol_index.lookup(function_name)
 
     for target in targets:
+        if target.symbol_id == current_symbol.symbol_id:
+            continue
+
         relationships.append(
             Relationship(
                 source_symbol_id=current_symbol.symbol_id,

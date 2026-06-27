@@ -1,4 +1,4 @@
-from tree_sitter import Node, Tree
+from tree_sitter import Node
 
 from analysis.handlers.call import handle_call
 from indexing.symbol_index import SymbolIndex
@@ -7,15 +7,15 @@ from models.symbol import Symbol
 
 
 def extract_relationship(
-    tree: Tree,
     symbol: Symbol,
+    symbol_node: Node,
     symbol_index: SymbolIndex,
 ) -> list[Relationship]:
 
     relationships: list[Relationship] = []
 
     walk(
-        node=tree.root_node,
+        node=symbol_node,
         current_symbol=symbol,
         symbol_index=symbol_index,
         relationships=relationships,

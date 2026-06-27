@@ -1,6 +1,5 @@
 from tree_sitter import Node, Tree
 
-from analysis.handlers.function import handle_function
 from analysis.registry import NODE_HANDLERS
 from models.document import Document
 from models.symbol import Symbol
