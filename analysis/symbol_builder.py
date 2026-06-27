@@ -22,5 +22,7 @@ def build_symbol(
         relative_path=document.relative_path,
         start_line=node.start_point.row + 1,
         end_line=node.end_point.row + 1,
+        start_byte=node.start_byte,
+        end_byte=node.end_byte,
         content=node.text.decode("utf-8"),
     )
