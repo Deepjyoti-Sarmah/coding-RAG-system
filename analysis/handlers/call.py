@@ -12,7 +12,7 @@ def handle_call(
     symbol_index: SymbolIndex,
     relationships: list[Relationship],
 ):
-    function_node = node.child_by_field_name("functiion")
+    function_node = node.child_by_field_name("function")
 
     if function_node is None:
         return

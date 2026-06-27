@@ -5,7 +5,6 @@ from tree_sitter_typescript import (
 )
 
 from parsing.tree_sitter_parser import TreeSitterParser
-from parsing.typescript_parser import TypescriptParser
 
 
 PARSER = {
