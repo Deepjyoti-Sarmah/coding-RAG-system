@@ -1,5 +1,8 @@
 from sentence_transformers import SentenceTransformer
 
+# (e.g. "BAAI/bge-base-en-v1.5" or
+#     "jinaai/jina-embeddings-v2-base-code")
+
 
 class EmbeddingEncoder:
     def __init__(
