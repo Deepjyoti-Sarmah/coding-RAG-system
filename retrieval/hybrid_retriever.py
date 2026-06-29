@@ -55,7 +55,7 @@ class HybridRetriever:
 
         all_callers: list[Symbol] = []
         for symbol in matching_symbols:
-            callers_of_this_symbol = self.graph.callees_of(symbol.symbol_id)
+            callers_of_this_symbol = self.graph.callers_of(symbol.symbol_id)
             all_callers.extend(callers_of_this_symbol)
 
         return RetrievalResult(

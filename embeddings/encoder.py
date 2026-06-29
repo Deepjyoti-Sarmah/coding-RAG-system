@@ -1,8 +1,5 @@
 from sentence_transformers import SentenceTransformer
 
-# (e.g. "BAAI/bge-base-en-v1.5" or
-#     "jinaai/jina-embeddings-v2-base-code")
-
 
 class EmbeddingEncoder:
     def __init__(
@@ -11,7 +8,7 @@ class EmbeddingEncoder:
         device: str | None = None,
     ) -> None:
         self.model = SentenceTransformer(model_name, device=device)
-        # self.embedding_dim = self.model_get_sentence_embedding_dimension()
+        self.embedding_dim = self.model.get_sentence_embedding_dimension()
 
     def encode_texts(
         self,
@@ -31,7 +28,10 @@ class EmbeddingEncoder:
 
         return embeddings.tolist()
 
-    def encode_query(self, query: str) -> list[float]:
+    def encode_query(
+        self,
+        query: str,
+    ) -> list[float]:
         embedding = self.model.encode(
             query,
             convert_to_numpy=True,
