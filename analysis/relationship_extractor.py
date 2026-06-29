@@ -32,10 +32,10 @@ def walk(
 ):
     if node.type == "call_expression":
         handle_call(
-            node,
-            current_symbol,
-            symbol_index,
-            relationships,
+            node=node,
+            current_symbol=current_symbol,
+            symbol_index=symbol_index,
+            relationships=relationships,
         )
 
     for child in node.children:

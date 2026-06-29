@@ -7,6 +7,7 @@ from models.symbol import Symbol
 
 
 def handle_call(
+    *,
     node: Node,
     current_symbol: Symbol,
     symbol_index: SymbolIndex,
