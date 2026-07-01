@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from chunking.symbol_chunker import SemanticChunk
 from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
 from indexing.vector_index import VectorIndex
@@ -19,7 +20,7 @@ RetrievalStrategy = Literal["graph_callers", "symbol_lookup", "vector_search"]
 @dataclass(slots=True)
 class RetrievalResult:
     strategy: RetrievalStrategy
-    results: list
+    results: list[Symbol] | list[tuple[SemanticChunk, float]]
 
 
 class HybridRetriever:
