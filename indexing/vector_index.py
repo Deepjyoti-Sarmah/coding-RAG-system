@@ -4,7 +4,7 @@ from embeddings.encoder import EmbeddingEncoder
 import numpy as np
 
 
-class VectorInex:
+class VectorIndex:
     def __init__(self, encoder: EmbeddingEncoder) -> None:
         self.encoder = encoder
         self.chunks: list[SemanticChunk] = []

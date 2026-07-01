@@ -4,7 +4,7 @@ from typing import Literal
 
 from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
-from indexing.vector_index import VectorInex
+from indexing.vector_index import VectorIndex
 from models.symbol import Symbol
 
 
@@ -27,7 +27,7 @@ class HybridRetriever:
         self,
         symbol_index: SymbolIndex,
         graph: CodeGraph,
-        vector_index: VectorInex,
+        vector_index: VectorIndex,
     ):
         self.symbol_index = symbol_index
         self.graph = graph
