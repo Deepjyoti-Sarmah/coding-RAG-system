@@ -6,7 +6,7 @@ from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
 from ingestion.loader import load_code_files
 from models.symbol import Symbol
-from parsing.registy import PARSER
+from parsing.registry import PARSER
 
 
 def main():
@@ -78,7 +78,7 @@ def handle_query(query: str, symbol_index: SymbolIndex, graph: CodeGraph):
             return
 
         for symbol in matching_symbols:
-            callers = graph.callees_of(symbol.symbol_id)
+            callers = graph.callers_of(symbol.symbol_id)
             if not callers:
                 print(f"Nothing calls {symbol.name}.\n")
                 continue
