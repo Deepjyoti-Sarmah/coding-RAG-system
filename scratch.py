@@ -25,19 +25,19 @@ export type UserId = string
 tree = parser.parse(source)
 
 
-def print_tree(node, indent=0):
-    print(" " * indent + node.type)
-
-    for child in node.children:
-        print_tree(child, indent + 2)
-
-
+# def print_tree(node, indent=0):
+#     print(" " * indent + node.type)
+#
+#     for child in node.children:
+#         print_tree(child, indent + 2)
+#
+#
 root = tree.root_node
-
+#
 print("Root children:")
 for child in root.children:
     print(child.type)
-
+#
 # for node in tree.root_node.children:
 #     declaration = node.child_by_field_name("declaration")
 #
@@ -51,36 +51,101 @@ for child in root.children:
 #     if name:
 #         print(name.text.decode())
 #
-for node in tree.root_node.children:
+# for node in tree.root_node.children:
+#     declaration = node.child_by_field_name("declaration")
+#
+#     if declaration.type != "lexical_declaration":
+#         continue
+#
+#     print(declaration)
+#
+#     for child in declaration.children:
+#         print(
+#             child.type,
+#             child.text.decode(),
+#         )
+#
+#     variable = declaration.children[1]
+#
+#     print("\nVariable Declarator")
+#     print(variable)
+#
+#     print("\nChildren")
+#
+#     for child in variable.children:
+#         print(
+#             child.type,
+#             child.text.decode(),
+#         )
+#
+#     print("\nField name:")
+#     print(variable.child_by_field_name("name"))
+#
+
+print("\n=== CLASSS ===")
+
+for node in root.children:
     declaration = node.child_by_field_name("declaration")
 
-    if declaration.type != "lexical_declaration":
+    if declaration is None:
         continue
 
-    print(declaration)
+    if declaration.type != "class_declaration":
+        continue
 
-    for child in declaration.children:
+    print("\nCLASS:")
+    print(declaration.type)
+
+    name = declaration.child_by_field_name("name")
+
+    print("NAME:")
+    print(name)
+    print(name.text.decode())
+
+    body = declaration.child_by_field_name("body")
+
+    print("\nBODY:")
+    print(body)
+
+    print("\nBODY CHILDREN:")
+
+    for child in body.children:
         print(
             child.type,
-            child.text.decode(),
+            repr(child.text.decode()),
         )
 
-    variable = declaration.children[1]
+        print("\nMETHODS:")
 
-    print("\nVariable Declarator")
-    print(variable)
+        for child in body.children:
+            if child.type != "method_definition":
+                continue
 
-    print("\nChildren")
+            print("\nMETHOD:")
+            print(child)
 
-    for child in variable.children:
-        print(
-            child.type,
-            child.text.decode(),
-        )
+            print("\nMETHOD CHILDREN:")
 
-    print("\nField name:")
-    print(variable.child_by_field_name("name"))
+            for c in child.children:
+                print(
+                    c.type,
+                    repr(c.text.decode()),
+                )
+
+            print("\nFIELD NAME:")
+            print(child.child_by_field_name("name"))
+
+    for child in body.children:
+        print("\nNODE")
+        print(child.type)
+
+        for c in child.children:
+            print(
+                "   ",
+                c.type,
+                repr(c.text.decode()),
+            )
 
 
-print("\nAST:")
-print_tree(root)
+# print("\nAST:")
+# print_tree(root)
