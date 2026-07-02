@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from graph.code_graph import CodeGraph
-from models import symbol
+from models.symbol import Symbol
 
 
 @dataclass(slots=True)
@@ -13,7 +13,7 @@ class SemanticChunk:
     display_text: str
 
 
-def build_semantic_chunk(symbol: symbol.Symbol, graph: CodeGraph) -> SemanticChunk:
+def build_semantic_chunk(symbol: Symbol, graph: CodeGraph) -> SemanticChunk:
     callee_names = get_related_names(symbols=graph.callees_of(symbol.symbol_id))
     caller_names = get_related_names(symbols=graph.callers_of(symbol.symbol_id))
 
@@ -34,7 +34,7 @@ def build_semantic_chunk(symbol: symbol.Symbol, graph: CodeGraph) -> SemanticChu
     )
 
 
-def get_related_names(symbols: list[symbol.Symbol]) -> str:
+def get_related_names(symbols: list[Symbol]) -> str:
 
     if not symbols:
         return "none"
@@ -44,7 +44,9 @@ def get_related_names(symbols: list[symbol.Symbol]) -> str:
 
 
 def build_embedding_text(
-    symbol: symbol.Symbol, callee_names: str, caller_names: str
+    symbol: Symbol,
+    callee_names: str,
+    caller_names: str,
 ) -> str:
     lines = [
         f"{symbol.kind.value} {symbol.name}",
@@ -57,6 +59,6 @@ def build_embedding_text(
     return "\n".join(lines)
 
 
-def build_chunk_id(symbol: symbol.Symbol) -> str:
+def build_chunk_id(symbol: Symbol) -> str:
     short_symbol_id = symbol.symbol_id[:8]
     return f"{symbol.relative_path}::{symbol.name}::{short_symbol_id}"
