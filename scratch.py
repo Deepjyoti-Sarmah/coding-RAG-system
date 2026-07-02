@@ -2,13 +2,20 @@ from tree_sitter import Language, Parser
 from tree_sitter_typescript import language_typescript
 
 parser = Parser(Language(language_typescript()))
-
 source = b"""
 export function createUser() {}
 
 export const Route = createFileRoute("/login")({})
 
-export class UserService {}
+export class UserService {
+    login() {
+        return true;
+    }
+
+    logout() {
+        return false;
+    }
+}
 
 export interface User {}
 
@@ -76,4 +83,4 @@ for node in tree.root_node.children:
 
 
 print("\nAST:")
-# print_tree(root)
+print_tree(root)

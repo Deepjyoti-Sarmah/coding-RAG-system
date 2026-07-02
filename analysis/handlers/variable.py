@@ -1,7 +1,7 @@
-from symtable import Symbol
-
 from tree_sitter import Node
+from analysis.symbol_builder import build_symbol
 from models.document import Document
+from models.symbol import Symbol
 from models.symbol_kind import SymbolKind
 
 
@@ -25,11 +25,16 @@ def handle_varibale_declarator(*, node: Node, document: Document) -> Symbol | No
         return None
 
     if value_node.type in ("arrow_function", "function_expression"):
-        return SymbolKind.FUNCTION
+        kind = SymbolKind.FUNCTION
     else:
-        return SymbolKind.VARIABLE
+        kind = SymbolKind.VARIABLE
 
-    return None
+    return build_symbol(
+        node=node,
+        name=name_node.text.decode(),
+        kind=kind,
+        document=document,
+    )
 
 
 def _is_module_scoped(node: Node) -> bool:
