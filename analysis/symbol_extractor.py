@@ -3,7 +3,6 @@ from tree_sitter import Node, Tree
 from analysis.registry import NODE_HANDLERS
 from models.document import Document
 from models.symbol import Symbol
-from models.symbol_kind import SymbolKind
 
 
 def extract_symbols(
@@ -31,18 +30,13 @@ def walk(
     symbol = visit(
         node=node,
         document=document,
+        owner=current_owner,
     )
 
     if symbol is not None:
-        if current_owner is not None:
-            symbol.parent_symbol_id = current_owner.symbol_id
-
         results.append((symbol, node))
 
-    if symbol and symbol.kind in (SymbolKind.CLASS, SymbolKind.FUNCTION):
-        next_owner = symbol
-    else:
-        next_owner = current_owner
+    next_owner = symbol or current_owner
 
     for child in node.children:
         walk(
@@ -53,10 +47,7 @@ def walk(
         )
 
 
-def visit(
-    node: Node,
-    document: Document,
-) -> Symbol | None:
+def visit(node: Node, document: Document, owner: Symbol | None) -> Symbol | None:
     handler = NODE_HANDLERS.get(node.type)
 
     if handler is None:
@@ -65,6 +56,7 @@ def visit(
     symbol = handler(
         node=node,
         document=document,
+        owner=owner,
     )
 
     return symbol

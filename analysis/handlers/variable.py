@@ -5,7 +5,12 @@ from models.symbol import Symbol
 from models.symbol_kind import SymbolKind
 
 
-def handle_varibale_declarator(*, node: Node, document: Document) -> Symbol | None:
+def handle_varibale_declarator(
+    *,
+    node: Node,
+    document: Document,
+    owner: Symbol | None,
+) -> Symbol | None:
 
     if not _is_module_scoped(node):
         return None
@@ -34,6 +39,7 @@ def handle_varibale_declarator(*, node: Node, document: Document) -> Symbol | No
         name=name_node.text.decode(),
         kind=kind,
         document=document,
+        owner=owner,
     )
 
 

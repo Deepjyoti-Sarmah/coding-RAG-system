@@ -9,6 +9,7 @@ def handle_class(
     *,
     node: Node,
     document: Document,
+    owner: Symbol | None,
 ) -> Symbol | None:
 
     name = node.child_by_field_name("name")
@@ -21,4 +22,5 @@ def handle_class(
         name=name.text.decode(),
         kind=SymbolKind.CLASS,
         document=document,
+        owner=owner,
     )

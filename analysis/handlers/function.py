@@ -10,6 +10,7 @@ def handle_function(
     *,
     node: Node,
     document: Document,
+    owner: Symbol | None,
 ) -> Symbol | None:
 
     name_node = node.child_by_field_name("name")
@@ -24,4 +25,5 @@ def handle_function(
         name=name,
         kind=SymbolKind.FUNCTION,
         document=document,
+        owner=owner,
     )
