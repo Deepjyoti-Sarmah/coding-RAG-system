@@ -18,7 +18,7 @@ def handle_call(
     if function_node is None:
         return
 
-    function_name = function_node.text.decode()
+    function_name = function_node.text.decode("utf-8")
 
     targets = symbol_index.lookup(function_name)
 

@@ -12,6 +12,7 @@ def build_symbol(
     name: str,
     kind: SymbolKind,
     document: Document,
+    owner: Symbol | None = None,
 ) -> Symbol:
 
     return Symbol(
@@ -25,4 +26,5 @@ def build_symbol(
         start_byte=node.start_byte,
         end_byte=node.end_byte,
         content=node.text.decode("utf-8"),
+        parent_symbol_id=(owner.symbol_id if owner else None),
     )
