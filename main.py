@@ -9,6 +9,19 @@ from models.symbol import Symbol
 from parsing.registry import PARSER
 
 
+# def print_symbol_tree(symbols: list[Symbol]):
+#     by_id = {s.symbol_id: s for s in symbols}
+#
+#     print("\n=== SYMBOL TREE ===\n")
+#
+#     for symbol in symbols:
+#         parent = (
+#             by_id[symbol.parent_symbol_id].name if symbol.parent_symbol_id else None
+#         )
+#
+#         print(f"{symbol.kind.value:10}{symbol.name:20}parent={parent}")
+#
+
 def main():
     root_dir = input("Enter the path to your code folder: ").strip()
 
@@ -32,6 +45,9 @@ def main():
         print(f"{document.relative_path} -> {len(symbols)} symbols")
 
     print(f"\nIndexed {len(all_symbols)} symbols total.\n")
+
+    # TODO: test
+    # print_symbol_tree([s for s, _ in all_symbols])
 
     all_relationships = []
 

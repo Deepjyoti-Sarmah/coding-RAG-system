@@ -9,6 +9,6 @@ NODE_HANDLERS = {
     "class_declaration": handle_class,
     "method_definition": handle_method,
     "variable_declaration": handle_varibale_declarator,
-    "interface_declaration": handle_interface,
-    "type_alias_declaration": handle_type_alias,
+    # "interface_declaration": handle_interface,
+    # "type_alias_declaration": handle_type_alias,
 }

@@ -20,6 +20,14 @@ export class UserService {
 export interface User {}
 
 export type UserId = string
+
+function login() {
+    createAuth();
+
+    auth.createAuth();
+
+    auth.client.createAuth();
+}
 """
 
 tree = parser.parse(source)
@@ -33,10 +41,19 @@ tree = parser.parse(source)
 #
 #
 root = tree.root_node
-#
+
+
+def print_tree(node, indent=0):
+    print(" " * indent + node.type)
+
+    for child in node.children:
+        print_tree(child, indent + 2)
+
+
 print("Root children:")
 for child in root.children:
     print(child.type)
+
 #
 # for node in tree.root_node.children:
 #     declaration = node.child_by_field_name("declaration")
@@ -93,6 +110,14 @@ for node in root.children:
     if declaration.type != "class_declaration":
         continue
 
+    if declaration.type != "function_declaration":
+        continue
+
+    body = declaration.child_by_field_name("body")
+
+    for child in body.children:
+        print_tree(child)
+
     print("\nCLASS:")
     print(declaration.type)
 
@@ -147,5 +172,43 @@ for node in root.children:
             )
 
 
-# print("\nAST:")
-# print_tree(root)
+print("\nAST:")
+print_tree(root)
+
+
+def print_symbol_tree(symbols: list[Symbol]):
+    by_id = {s.symbol_id: s for s in symbols}
+
+    for symbol in symbols:
+        parent = (
+            by_id[symbol.parent_symbol_id].name if symbol.parent_symbol_id else None
+        )
+
+        print(f"{symbol.kind.value:10} {symbol.name:20} parent={parent}")
+
+
+print("\n=== CALL EXPRESSIONS ===")
+
+
+def walk(node):
+    if node.type == "call_expression":
+        print("\nCALL:")
+        print(node.text.decode())
+
+        function_node = node.child_by_field_name("function")
+
+        print("FUNCTION NODE:")
+        print(function_node.type)
+
+        for i, child in enumerate(function_node.children):
+            print(
+                i,
+                child.type,
+                function_node.field_name_for_child(i),
+            )
+
+    for child in node.children:
+        walk(child)
+
+
+walk(tree.root_node)

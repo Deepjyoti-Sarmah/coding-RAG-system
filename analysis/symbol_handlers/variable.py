@@ -34,9 +34,11 @@ def handle_varibale_declarator(
     else:
         kind = SymbolKind.VARIABLE
 
+    name: str = name_node.text.decode("utf-8")
+
     return build_symbol(
         node=node,
-        name=name_node.text.decode(),
+        name=name,
         kind=kind,
         document=document,
         owner=owner,

@@ -1,8 +1,8 @@
 from tree_sitter import Node
 
 from indexing.symbol_index import SymbolIndex
-from models.relation_kind import RelationshipKind
 from models.relationship import Relationship
+from models.relationship_kind import RelationshipKind
 from models.symbol import Symbol
 
 

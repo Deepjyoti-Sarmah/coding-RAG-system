@@ -1,12 +1,14 @@
 from tree_sitter import Node
 
-from analysis.handlers.call import handle_call
+from analysis.registry import NODE_HANDLERS
+from analysis.relationship_handlers.call import handle_call
 from indexing.symbol_index import SymbolIndex
 from models.relationship import Relationship
 from models.symbol import Symbol
 
 
 def extract_relationship(
+    *,
     symbol: Symbol,
     symbol_node: Node,
     symbol_index: SymbolIndex,
@@ -16,6 +18,7 @@ def extract_relationship(
 
     walk(
         node=symbol_node,
+        root_node=symbol_node,
         current_symbol=symbol,
         symbol_index=symbol_index,
         relationships=relationships,
@@ -24,12 +27,22 @@ def extract_relationship(
     return relationships
 
 
+def creates_symbol(node: Node) -> bool:
+    return node.type in NODE_HANDLERS
+
+
 def walk(
+    *,
     node: Node,
+    root_node: Node,
     current_symbol: Symbol,
     symbol_index: SymbolIndex,
     relationships: list[Relationship],
 ):
+    # Entered another symbol's ownership boundary
+    if node != root_node and creates_symbol(node):
+        return
+
     if node.type == "call_expression":
         handle_call(
             node=node,
@@ -40,8 +53,9 @@ def walk(
 
     for child in node.children:
         walk(
-            child,
-            current_symbol,
-            symbol_index,
-            relationships,
+            node=child,
+            root_node=root_node,
+            current_symbol=current_symbol,
+            symbol_index=symbol_index,
+            relationships=relationships,
         )
