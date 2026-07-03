@@ -1,5 +1,6 @@
 from tree_sitter import Node
 
+from analysis.semantic import resolve_call_target
 from indexing.symbol_index import SymbolIndex
 from models.relationship import Relationship
 from models.relationship_kind import RelationshipKind
@@ -18,7 +19,11 @@ def handle_call(
     if function_node is None:
         return
 
-    function_name = function_node.text.decode("utf-8")
+    # function_name = function_node.text.decode("utf-8")
+    function_name = resolve_call_target(function_node)
+
+    if function_name is None:
+        return
 
     targets = symbol_index.lookup(function_name)
 
