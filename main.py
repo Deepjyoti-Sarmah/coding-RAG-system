@@ -22,6 +22,7 @@ from parsing.registry import PARSER
 #         print(f"{symbol.kind.value:10}{symbol.name:20}parent={parent}")
 #
 
+
 def main():
     root_dir = input("Enter the path to your code folder: ").strip()
 
