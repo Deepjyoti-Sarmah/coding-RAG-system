@@ -26,7 +26,12 @@ class CodeGraph:
 
         for relationship in incomming_relationships:
             caller_id = relationship.source_symbol_id
-            caller_symbol = self.symbols_by_id[caller_id]
+
+            caller_symbol = self.symbols_by_id.get(caller_id)
+
+            if caller_symbol is None:
+                continue
+
             callers.append(caller_symbol)
 
         return callers

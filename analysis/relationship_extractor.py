@@ -1,7 +1,7 @@
 from tree_sitter import Node
 
 from analysis.registry import NODE_HANDLERS
-from analysis.relationship_handlers.call import handle_call
+from analysis.relationship_registry import RELATIONSHIP_HANDLER
 from indexing.symbol_index import SymbolIndex
 from models.relationship import Relationship
 from models.symbol import Symbol
@@ -43,8 +43,10 @@ def walk(
     if node != root_node and creates_symbol(node):
         return
 
-    if node.type == "call_expression":
-        handle_call(
+    hander = RELATIONSHIP_HANDLER.get(node.type)
+
+    if hander is not None:
+        hander(
             node=node,
             current_symbol=current_symbol,
             symbol_index=symbol_index,
