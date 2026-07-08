@@ -28,3 +28,7 @@ export class AuthService {
     logout();
   }
 }
+
+function factorial() {
+  factorial();
+}

@@ -1,7 +1,7 @@
-from analysis.handlers.classes import handle_class
-from analysis.handlers.function import handle_function
-from analysis.handlers.method import handle_method
-from analysis.handlers.variable import handle_varibale_declarator
+from analysis.symbol_handlers.classes import handle_class
+from analysis.symbol_handlers.function import handle_function
+from analysis.symbol_handlers.method import handle_method
+from analysis.symbol_handlers.variable import handle_varibale_declarator
 
 
 NODE_HANDLERS = {

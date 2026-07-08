@@ -62,6 +62,22 @@ def main():
 
     print(f"Extracted {len(all_relationships)} relationships.\n")
 
+    # TODO: temp test
+    print("=== Relationships ===")
+
+    for relationship in all_relationships:
+        print(
+            f"{relationship.source_name} "
+            f"--{relationship.kind.value}--> "
+            f"{relationship.target_name}"
+        )
+
+        print(
+            relationship.source_symbol_id,
+            relationship.source_name,
+        )
+    print()
+
     for symbol, _ in all_symbols:
         print(symbol.kind.value, symbol.name, symbol.relative_path)
 
