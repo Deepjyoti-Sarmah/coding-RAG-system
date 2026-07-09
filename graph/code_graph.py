@@ -6,28 +6,34 @@ from models.symbol import Symbol
 
 class CodeGraph:
     def __init__(self) -> None:
-        self.symbols_by_id: dict[str, Symbol] = {}
-        self.outgoing: dict[str, list[Relationship]] = defaultdict(list)
-        self.incoming: dict[str, list[Relationship]] = defaultdict(list)
+        self._symbols_by_id: dict[str, Symbol] = {}
+        self._relationships: list[Relationship] = []
+        self._outgoing: dict[str, list[Relationship]] = defaultdict(list)
+        self._incoming: dict[str, list[Relationship]] = defaultdict(list)
+
+    # TODO: refactor may call .clear() and delete all off it
+    def relationships(self) -> list[Relationship]:
+        return self._relationships
 
     def add_symbols(self, symbols: list[Symbol]):
         for symbol in symbols:
-            self.symbols_by_id[symbol.symbol_id] = symbol
+            self._symbols_by_id[symbol.symbol_id] = symbol
 
     def add_relationships(self, relationships: list[Relationship]):
         for relationship in relationships:
-            self.outgoing[relationship.source_symbol_id].append(relationship)
-            self.incoming[relationship.target_symbol_id].append(relationship)
+            self._relationships.append(relationship)
+            self._outgoing[relationship.source_symbol_id].append(relationship)
+            self._incoming[relationship.target_symbol_id].append(relationship)
 
     def callers_of(self, symbol_id: str) -> list[Symbol]:
-        incomming_relationships = self.incoming.get(symbol_id, [])
+        incoming_relationships = self._incoming.get(symbol_id, [])
 
         callers: list[Symbol] = []
 
-        for relationship in incomming_relationships:
+        for relationship in incoming_relationships:
             caller_id = relationship.source_symbol_id
 
-            caller_symbol = self.symbols_by_id.get(caller_id)
+            caller_symbol = self._symbols_by_id.get(caller_id)
 
             if caller_symbol is None:
                 continue
@@ -37,13 +43,17 @@ class CodeGraph:
         return callers
 
     def callees_of(self, symbol_id: str) -> list[Symbol]:
-        outgoing_relationships = self.outgoing.get(symbol_id, [])
+        outgoing_relationships = self._outgoing.get(symbol_id, [])
 
         callees: list[Symbol] = []
 
         for relationship in outgoing_relationships:
             callees_id = relationship.target_symbol_id
-            callees_symbol = self.symbols_by_id[callees_id]
+            callees_symbol = self._symbols_by_id.get(callees_id)
+
+            if callees_symbol is None:
+                continue
+
             callees.append(callees_symbol)
 
         return callees
