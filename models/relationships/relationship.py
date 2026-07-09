@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from models.relationship_kind import RelationshipKind
+from models.relationships.relationship_kind import RelationshipKind
 
 
 @dataclass(slots=True)

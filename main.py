@@ -5,9 +5,8 @@ from analysis.symbol_extractor import extract_symbols
 from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
 from ingestion.loader import load_code_files
-from models.symbol import Symbol
+from models.entities.symbol import Symbol
 from parsing.registry import PARSER
-
 
 # def print_symbol_tree(symbols: list[Symbol]):
 #     by_id = {s.symbol_id: s for s in symbols}

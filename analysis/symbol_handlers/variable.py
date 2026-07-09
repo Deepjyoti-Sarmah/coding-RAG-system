@@ -1,8 +1,9 @@
 from tree_sitter import Node
+
 from analysis.symbol_builder import build_symbol
-from models.document import Document
-from models.symbol import Symbol
-from models.symbol_kind import SymbolKind
+from models.entities.document import Document
+from models.entities.symbol import Symbol
+from models.entities.symbol_kind import SymbolKind
 
 
 def handle_varibale_declarator(

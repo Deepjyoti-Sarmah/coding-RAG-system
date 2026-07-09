@@ -6,8 +6,7 @@ from chunking.symbol_chunker import SemanticChunk
 from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
 from indexing.vector_index import VectorIndex
-from models.symbol import Symbol
-
+from models.entities.symbol import Symbol
 
 WHO_CALLS_PATTERN = re.compile(r"who calls\s+(\w+)", re.IGNORECASE)
 WHERE_IS_DEFINED_PATTERN = re.compile(

@@ -6,9 +6,8 @@ from config import (
     INCLUDE_EXTENSIONS,
     MAX_FILE_SIZE_BYTES,
 )
-
 from ingestion.language import detect_language
-from models.document import Document
+from models.entities.document import Document
 
 
 def is_inside_excluded_dir(file_path: Path) -> bool:

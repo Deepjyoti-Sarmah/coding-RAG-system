@@ -3,8 +3,8 @@ from tree_sitter import Node
 from analysis.registry import NODE_HANDLERS
 from analysis.relationship_registry import RELATIONSHIP_HANDLER
 from indexing.symbol_index import SymbolIndex
-from models.relationship import Relationship
-from models.symbol import Symbol
+from models.entities.symbol import Symbol
+from models.relationships.relationship import Relationship
 
 
 def extract_relationship(

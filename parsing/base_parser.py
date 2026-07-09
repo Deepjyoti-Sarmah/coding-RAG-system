@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
-from models.document import Document
-
 from tree_sitter import Tree
+
+from models.entities.document import Document
 
 
 class BaseParser(ABC):

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from models.symbol_kind import SymbolKind
+from models.entities.symbol_kind import SymbolKind
 
 
 @dataclass(slots=True)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from graph.code_graph import CodeGraph
-from models.symbol import Symbol
+from models.entities.symbol import Symbol
 
 
 @dataclass(slots=True)

@@ -4,9 +4,9 @@ from analysis.semantic.resolve_call_target import (
     resolve_call_target,
 )
 from indexing.symbol_index import SymbolIndex
-from models.relationship import Relationship
-from models.relationship_kind import RelationshipKind
-from models.symbol import Symbol
+from models.entities.symbol import Symbol
+from models.relationships.relationship import Relationship
+from models.relationships.relationship_kind import RelationshipKind
 
 
 def handle_call(
