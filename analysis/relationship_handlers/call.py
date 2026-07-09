@@ -37,8 +37,6 @@ def handle_call(
             Relationship(
                 source_symbol_id=current_symbol.symbol_id,
                 target_symbol_id=target.symbol_id,
-                source_name=current_symbol.name,
-                target_name=target.name,
                 kind=RelationshipKind.CALLS,
             )
         )

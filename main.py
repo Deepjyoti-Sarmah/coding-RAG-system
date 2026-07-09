@@ -67,16 +67,10 @@ def main():
 
     for relationship in all_relationships:
         print(
-            f"{relationship.source_name} "
+            f"{relationship.source_symbol_id} "
             f"--{relationship.kind.value}--> "
-            f"{relationship.target_name}"
+            f"{relationship.target_symbol_id}"
         )
-
-        print(
-            relationship.source_symbol_id,
-            relationship.source_name,
-        )
-    print()
 
     for symbol, _ in all_symbols:
         print(symbol.kind.value, symbol.name, symbol.relative_path)
