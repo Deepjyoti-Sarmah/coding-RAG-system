@@ -1,7 +1,7 @@
 from tree_sitter import Node
 
-from analysis.registry import NODE_HANDLERS
 from analysis.relationship_registry import RELATIONSHIP_HANDLER
+from analysis.semantic.create_symbol import creates_symbol
 from indexing.symbol_index import SymbolIndex
 from models.entities.symbol import Symbol
 from models.relationships.relationship import Relationship
@@ -25,10 +25,6 @@ def extract_relationship(
     )
 
     return relationships
-
-
-def creates_symbol(node: Node) -> bool:
-    return node.type in NODE_HANDLERS
 
 
 def walk(

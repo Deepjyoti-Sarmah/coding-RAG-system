@@ -210,9 +210,10 @@
 #     for child in node.children:
 #         walk(child)
 
-
 # walk(tree.root_node)
+
 from analysis.reference_extractor import extract_references
+from analysis.symbol_extractor import extract_symbols
 from ingestion.loader import load_code_files
 from parsing.registry import PARSER
 
@@ -224,21 +225,24 @@ parser = PARSER[document.language]
 
 tree = parser.parse(document)
 
-references = extract_references(
+symbols = extract_symbols(
     tree=tree,
     document=document,
 )
 
 print("=== REFERENCES ===\n")
 
-for reference in references:
-    print(
-        reference.name,
-        reference.location.start_line,
+for extracted in symbols:
+    print(f"\nOwner: {extracted.symbol.name}")
+
+    references = extract_references(
+        owner_symbol=extracted.symbol,
+        owner_node=extracted.node,
     )
 
-    print(
-        f"{reference.name:15}"
-        f"{reference.location.start_line:5}"
-        f"{reference.location.start_byte:8}"
-    )
+    for reference in references:
+        print(
+            f"  {reference.name:15}"
+            f"{reference.location.start_line:5}"
+            f"{reference.location.start_byte:8}"
+        )

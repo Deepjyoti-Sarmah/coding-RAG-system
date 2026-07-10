@@ -1,6 +1,7 @@
 from tree_sitter import Node
 
 from analysis.reference_builder import build_reference
+from analysis.semantic.create_symbol import creates_symbol
 from analysis.semantic.is_declaration_name import is_declaration_name
 from models.entities.reference import Reference
 from models.entities.symbol import Symbol
@@ -15,6 +16,7 @@ def extract_references(
 
     walk(
         node=owner_node,
+        root_node=owner_node,
         owner_symbol=owner_symbol,
         results=results,
     )
@@ -25,9 +27,13 @@ def extract_references(
 def walk(
     *,
     node: Node,
+    root_node: Node,
     owner_symbol: Symbol,
     results: list[Reference],
 ):
+    # Entered another symbol's ownership boundary
+    if node != root_node and creates_symbol(node):
+        return
 
     reference = visit(
         node=node,
@@ -40,8 +46,9 @@ def walk(
     for child in node.children:
         walk(
             node=child,
-            results=results,
+            root_node=root_node,
             owner_symbol=owner_symbol,
+            results=results,
         )
 
 
