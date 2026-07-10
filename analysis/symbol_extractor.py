@@ -7,6 +7,7 @@ from models.entities.symbol import Symbol
 
 
 def extract_symbols(
+    *,
     tree: Tree,
     document: Document,
 ) -> list[ExtractedSymbol]:

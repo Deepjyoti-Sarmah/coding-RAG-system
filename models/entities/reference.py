@@ -9,6 +9,8 @@ class Reference:
 
     document_id: str
 
-    text: str
+    name: str
 
     location: SourceLocation
+
+    owner_symbol_id: str | None = None
