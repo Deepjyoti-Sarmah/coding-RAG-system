@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from models.common.source_location import SourceLocation
 from models.entities.symbol_kind import SymbolKind
 
 
@@ -7,15 +8,15 @@ from models.entities.symbol_kind import SymbolKind
 class Symbol:
     symbol_id: str
     document_id: str
+
     name: str
     kind: SymbolKind
+
     relative_path: str
 
-    start_line: int
-    end_line: int
-    start_byte: int
-    end_byte: int
+    location: SourceLocation
 
     content: str
+
     parent_symbol_id: str | None = None
     language: str = ""

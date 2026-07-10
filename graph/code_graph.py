@@ -1,7 +1,7 @@
 from collections import defaultdict
 
-from models.relationship import Relationship
-from models.symbol import Symbol
+from models.entities.symbol import Symbol
+from models.relationships.relationship import Relationship
 
 
 class CodeGraph:

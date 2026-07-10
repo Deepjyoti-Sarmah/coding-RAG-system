@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from tree_sitter import Node
 
+from models.common.source_location import SourceLocation
 from models.entities.document import Document
 from models.entities.symbol import Symbol
 from models.entities.symbol_kind import SymbolKind
@@ -22,10 +23,12 @@ def build_symbol(
         name=name,
         kind=kind,
         relative_path=document.relative_path,
-        start_line=node.start_point.row + 1,
-        end_line=node.end_point.row + 1,
-        start_byte=node.start_byte,
-        end_byte=node.end_byte,
+        location=SourceLocation(
+            start_line=node.start_point.row + 1,
+            end_line=node.end_point.row + 1,
+            start_byte=node.start_byte,
+            end_byte=node.end_byte,
+        ),
         content=node.text.decode("utf-8"),
         parent_symbol_id=(owner.symbol_id if owner else None),
     )

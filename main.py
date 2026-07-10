@@ -1,12 +1,6 @@
-from tree_sitter import Node
-
-from analysis.relationship_extractor import extract_relationship
-from analysis.symbol_extractor import extract_symbols
+from analysis.build_graph import build_graph
 from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
-from ingestion.loader import load_code_files
-from models.entities.symbol import Symbol
-from parsing.registry import PARSER
 
 # def print_symbol_tree(symbols: list[Symbol]):
 #     by_id = {s.symbol_id: s for s in symbols}
@@ -25,63 +19,19 @@ from parsing.registry import PARSER
 def main():
     root_dir = input("Enter the path to your code folder: ").strip()
 
-    documents = load_code_files(root_dir)
-    print(f"\nLoaded {len(documents)} files.\n")
+    result = build_graph(root_dir=root_dir)
 
-    symbol_index = SymbolIndex()
-    all_symbols: list[tuple[Symbol, Node]] = []
-
-    for document in documents:
-        parser = PARSER.get(document.language)
-        if parser is None:
-            continue
-
-        tree = parser.parse(document)
-
-        symbols = extract_symbols(tree=tree, document=document)
-        all_symbols.extend(symbols)
-        symbol_index.add_many([s for s, _ in symbols])
-
-        print(f"{document.relative_path} -> {len(symbols)} symbols")
-
-    print(f"\nIndexed {len(all_symbols)} symbols total.\n")
-
-    # TODO: test
-    # print_symbol_tree([s for s, _ in all_symbols])
-
-    all_relationships = []
-
-    for symbol, node in all_symbols:
-        relationships = extract_relationship(
-            symbol=symbol,
-            symbol_node=node,
-            symbol_index=symbol_index,
-        )
-        all_relationships.extend(relationships)
-
-    print(f"Extracted {len(all_relationships)} relationships.\n")
-
-    # TODO: temp test
-    print("=== Relationships ===")
-
-    for relationship in all_relationships:
-        print(
-            f"{relationship.source_symbol_id} "
-            f"--{relationship.kind.value}--> "
-            f"{relationship.target_symbol_id}"
-        )
-
-    for symbol, _ in all_symbols:
-        print(symbol.kind.value, symbol.name, symbol.relative_path)
-
-    graph = CodeGraph()
-    graph.add_symbols([symbol for symbol, _ in all_symbols])
-    graph.add_relationships(all_relationships)
-
-    ask_questions(symbol_index, graph)
+    ask_questions(
+        symbol_index=result.symbol_index,
+        graph=result.graph,
+    )
 
 
-def ask_questions(symbol_index: SymbolIndex, graph: CodeGraph):
+def ask_questions(
+    *,
+    symbol_index: SymbolIndex,
+    graph: CodeGraph,
+):
     print("Ask a question (or press enter to quit).")
     print("Try: Where is createAuth defined \n")
 
