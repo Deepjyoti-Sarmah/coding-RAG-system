@@ -212,6 +212,7 @@
 
 # walk(tree.root_node)
 
+from analysis.build_graph import build_graph
 from analysis.reference_extractor import extract_references
 from analysis.symbol_extractor import extract_symbols
 from ingestion.loader import load_code_files
@@ -246,3 +247,15 @@ for extracted in symbols:
             f"{reference.location.start_line:5}"
             f"{reference.location.start_byte:8}"
         )
+
+build_result = build_graph("test_repo")
+
+print("=== RESOLVED REFERENCES ===\n")
+
+for resolved in build_result.resolved_references:
+    print(
+        f"{resolved.reference.name:15}"
+        f" -> "
+        f"{resolved.target_symbol.name:15}"
+        f" ({resolved.target_symbol.kind.value})"
+    )
