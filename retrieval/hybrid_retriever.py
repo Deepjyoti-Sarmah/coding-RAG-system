@@ -51,7 +51,7 @@ class HybridRetriever:
         return self._search_by_meaning(query, top_k)
 
     def _find_callers_of(self, target_name: str) -> RetrievalResult:
-        matching_symbols = self.symbol_index.lookup(target_name)
+        matching_symbols = self.symbol_index.lookup_by_name(target_name)
 
         all_callers: list[Symbol] = []
         for symbol in matching_symbols:
@@ -64,7 +64,7 @@ class HybridRetriever:
         )
 
     def _find_symbol_definition(self, symbol_name: str) -> RetrievalResult:
-        matching_symbols = self.symbol_index.lookup(symbol_name)
+        matching_symbols = self.symbol_index.lookup_by_name(symbol_name)
 
         return RetrievalResult(
             strategy="symbol_lookup",

@@ -27,7 +27,7 @@ def handle_call(
     if function_name is None:
         return
 
-    targets = symbol_index.lookup(function_name)
+    targets = symbol_index.lookup_by_name(function_name)
 
     for target in targets:
         # if target.symbol_id == current_symbol.symbol_id:

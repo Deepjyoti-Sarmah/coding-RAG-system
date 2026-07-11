@@ -48,7 +48,7 @@ def handle_query(query: str, symbol_index: SymbolIndex, graph: CodeGraph):
     symbol_name = words[-1]
 
     if query.lower().startswith("who calls"):
-        matching_symbols = symbol_index.lookup(symbol_name)
+        matching_symbols = symbol_index.lookup_by_name(symbol_name)
         if not matching_symbols:
             print(f"No symbol named '{symbol_name}' found.\n")
             return
@@ -65,7 +65,7 @@ def handle_query(query: str, symbol_index: SymbolIndex, graph: CodeGraph):
             print()
 
     elif query.lower().startswith("where is"):
-        matching_symbols = symbol_index.lookup(symbol_name)
+        matching_symbols = symbol_index.lookup_by_name(symbol_name)
 
         if not matching_symbols:
             print(f"No symbol named '{symbol_name}' found.\n")
