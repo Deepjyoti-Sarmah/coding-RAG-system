@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from models.symbol import Symbol
+from models.entities.symbol import Symbol
 
 
 class SymbolIndex:
