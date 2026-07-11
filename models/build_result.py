@@ -22,5 +22,3 @@ class BuildResult:
     relationships: list[relationship.Relationship] = field(default_factory=list)
 
     graph: CodeGraph = field(default_factory=CodeGraph)
-
-    symbol_index: SymbolIndex | None = None
