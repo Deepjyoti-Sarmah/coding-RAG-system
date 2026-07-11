@@ -13,4 +13,4 @@ class Reference:
 
     location: SourceLocation
 
-    owner_symbol_id: str | None = None
+    owner_symbol_id: str
