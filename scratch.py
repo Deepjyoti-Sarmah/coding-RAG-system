@@ -271,6 +271,7 @@
 
 #     print(f"{source.name:15}--{relationship.kind.value}--> {target.name}")
 
+from analysis.import_extractor import extract_imports
 from ingestion.loader import load_code_files
 from parsing.registry import PARSER
 
@@ -292,4 +293,19 @@ for document in documents:
 
     tree = parser.parse(document)
 
-    print_tree(tree.root_node)
+    imports = extract_imports(
+        tree=tree,
+        document=document,
+    )
+
+    print("=== IMPORT REFERENCES ===\n")
+
+    for import_reference in imports:
+        print(
+            f"{import_reference.imported_name:12}"
+            f" -> "
+            f"{import_reference.local_name:12}"
+            f" from {import_reference.module_path}"
+        )
+
+    # print_tree(tree.root_node)
