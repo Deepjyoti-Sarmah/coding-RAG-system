@@ -3,8 +3,8 @@ from uuid import uuid4
 from tree_sitter import Node
 
 from models.common.source_location import SourceLocation
-from models.entities.document import Document
-from models.entities.symbol import Symbol
+from models.entities.documents import Document
+from models.entities.symbols import Symbol
 from models.entities.symbol_kind import SymbolKind
 
 

@@ -1,6 +1,6 @@
 from indexing.symbol_index import SymbolIndex
-from models.entities.reference import Reference
-from models.entities.symbol import Symbol
+from models.entities.references import Reference
+from models.entities.symbols import Symbol
 
 
 def resolve_symbol(

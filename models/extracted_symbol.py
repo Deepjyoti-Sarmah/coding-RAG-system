@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from tree_sitter import Node
 
-from models.entities.symbol import Symbol
+from models.entities.symbols import Symbol
 
 
 @dataclass(slots=True)

@@ -1,6 +1,6 @@
 from tree_sitter import Language, Parser, Tree
 
-from models.entities.document import Document
+from models.entities.documents import Document
 from parsing.base_parser import BaseParser
 
 

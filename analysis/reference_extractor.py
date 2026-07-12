@@ -4,8 +4,8 @@ from analysis.reference_builder import build_reference
 from analysis.semantic.create_symbol import creates_symbol
 from analysis.semantic.is_declaration_name import is_declaration_name
 from analysis.semantic.reference_kind import determine_reference_kind
-from models.entities.reference import Reference
-from models.entities.symbol import Symbol
+from models.entities.references import Reference
+from models.entities.symbols import Symbol
 
 
 def extract_references(

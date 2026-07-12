@@ -15,6 +15,10 @@ def build_graph(root_dir: str) -> BuildResult:
 
     build_result.documents = load_code_files(root_dir)
 
+    context.document_index.add_many(build_result.documents)
+
+    build_result.documents = load_code_files(root_dir)
+
     #
     # Symbol Pass
     #

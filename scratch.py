@@ -212,61 +212,84 @@
 
 # walk(tree.root_node)
 
-from analysis.build_graph import build_graph
-from analysis.reference_extractor import extract_references
-from analysis.symbol_extractor import extract_symbols
+# from analysis.build_graph import build_graph
+# from analysis.reference_extractor import extract_references
+# from analysis.symbol_extractor import extract_symbols
+# from ingestion.loader import load_code_files
+# from parsing.registry import PARSER
+
+# documents = load_code_files("test_repo")
+
+# document = documents[0]
+
+# parser = PARSER[document.language]
+
+# tree = parser.parse(document)
+
+# symbols = extract_symbols(
+#     tree=tree,
+#     document=document,
+# )
+
+# print("=== REFERENCES ===\n")
+
+# for extracted in symbols:
+#     print(f"\nOwner: {extracted.symbol.name}")
+
+#     references = extract_references(
+#         owner_symbol=extracted.symbol,
+#         owner_node=extracted.node,
+#     )
+
+#     for reference in references:
+#         print(
+#             f"{reference.name:15}"
+#             f"{reference.kind.value:15}"
+#             f"{reference.location.start_line:5}"
+#             f"{reference.location.start_byte:8}"
+#         )
+
+# build_result = build_graph("test_repo")
+
+# print("=== RESOLVED REFERENCES ===\n")
+
+# for resolved in build_result.resolved_references:
+#     print(
+#         f"{resolved.reference.name:15}"
+#         f" -> "
+#         f"{resolved.target_symbol.name:15}"
+#         f" ({resolved.target_symbol.kind.value})"
+#     )
+
+# print("\n=== RELATIONSHIPS ===\n")
+
+# symbols = {symbol.symbol_id: symbol for symbol in build_result.symbols}
+
+# for relationship in build_result.relationships:
+#     source = symbols[relationship.source_symbol_id]
+#     target = symbols[relationship.target_symbol_id]
+
+#     print(f"{source.name:15}--{relationship.kind.value}--> {target.name}")
+
 from ingestion.loader import load_code_files
 from parsing.registry import PARSER
 
+
+def print_tree(node, indent=0):
+    print(" " * indent + f"{node.type}: {node.text.decode('utf-8')}")
+
+    for child in node.children:
+        print_tree(child, indent + 2)
+
+
 documents = load_code_files("test_repo")
 
-document = documents[0]
+for document in documents:
+    if document.file_name != "imports.ts":
+        continue
 
-parser = PARSER[document.language]
+    parser = PARSER[document.language]
 
-tree = parser.parse(document)
+    tree = parser.parse(document)
 
-symbols = extract_symbols(
-    tree=tree,
-    document=document,
-)
-
-print("=== REFERENCES ===\n")
-
-for extracted in symbols:
-    print(f"\nOwner: {extracted.symbol.name}")
-
-    references = extract_references(
-        owner_symbol=extracted.symbol,
-        owner_node=extracted.node,
-    )
-
-    for reference in references:
-        print(
-            f"{reference.name:15}"
-            f"{reference.kind.value:15}"
-            f"{reference.location.start_line:5}"
-            f"{reference.location.start_byte:8}"
-        )
-
-build_result = build_graph("test_repo")
-
-print("=== RESOLVED REFERENCES ===\n")
-
-for resolved in build_result.resolved_references:
-    print(
-        f"{resolved.reference.name:15}"
-        f" -> "
-        f"{resolved.target_symbol.name:15}"
-        f" ({resolved.target_symbol.kind.value})"
-    )
-
-print("\n=== RELATIONSHIPS ===\n")
-
-symbols = {symbol.symbol_id: symbol for symbol in build_result.symbols}
-
-for relationship in build_result.relationships:
-    source = symbols[relationship.source_symbol_id]
-    target = symbols[relationship.target_symbol_id]
-
-    print(f"{source.name:15}--{relationship.kind.value}--> {target.name}")
+    print_tree(tree.root_node)

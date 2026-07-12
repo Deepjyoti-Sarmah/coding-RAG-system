@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from models.entities.reference import Reference
-from models.entities.symbol import Symbol
+from models.entities.references import Reference
+from models.entities.symbols import Symbol
 
 
 @dataclass(slots=True)

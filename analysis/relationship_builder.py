@@ -1,6 +1,6 @@
 from models.entities.reference_kind import ReferenceKind
 from models.entities.resolved_reference import ResolvedReference
-from models.relationships.relationship import Relationship
+from models.relationships.relationships import Relationship
 from models.relationships.relationship_kind import RelationshipKind
 
 

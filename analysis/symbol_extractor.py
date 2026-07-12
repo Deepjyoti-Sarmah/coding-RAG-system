@@ -1,8 +1,8 @@
 from tree_sitter import Node, Tree
 
 from analysis.registry import NODE_HANDLERS
-from models.entities.document import Document
-from models.entities.symbol import Symbol
+from models.entities.documents import Document
+from models.entities.symbols import Symbol
 from models.extracted_symbol import ExtractedSymbol
 
 

@@ -2,7 +2,7 @@ from tree_sitter import Tree
 
 from analysis.symbol_extractor import extract_symbols
 from models.build_result import BuildResult
-from models.entities.document import Document
+from models.entities.documents import Document
 from models.indexing_context import IndexingContext
 
 

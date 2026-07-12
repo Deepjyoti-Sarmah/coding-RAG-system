@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
 
 from graph.code_graph import CodeGraph
-from indexing.symbol_index import SymbolIndex
-from models.entities.document import Document
-from models.entities.reference import Reference
+from models.entities.documents import Document
+from models.entities.import_references import ImportReference
+from models.entities.references import Reference
 from models.entities.resolved_reference import ResolvedReference
-from models.entities.symbol import Symbol
-from models.relationships import relationship
+from models.entities.symbols import Symbol
+from models.relationships.relationships import Relationship
 
 
 @dataclass(slots=True)
@@ -15,10 +15,12 @@ class BuildResult:
 
     symbols: list[Symbol] = field(default_factory=list)
 
+    import_reference: list[ImportReference] = field(default_factory=list)
+
     references: list[Reference] = field(default_factory=list)
 
     resolved_references: list[ResolvedReference] = field(default_factory=list)
 
-    relationships: list[relationship.Relationship] = field(default_factory=list)
+    relationships: list[Relationship] = field(default_factory=list)
 
     graph: CodeGraph = field(default_factory=CodeGraph)

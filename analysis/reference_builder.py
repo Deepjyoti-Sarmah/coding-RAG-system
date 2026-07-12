@@ -3,9 +3,9 @@ from uuid import uuid4
 from tree_sitter import Node
 
 from models.common.source_location import SourceLocation
-from models.entities.reference import Reference
+from models.entities.references import Reference
 from models.entities.reference_kind import ReferenceKind
-from models.entities.symbol import Symbol
+from models.entities.symbols import Symbol
 
 
 def build_reference(
