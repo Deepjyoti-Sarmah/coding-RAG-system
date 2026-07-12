@@ -3,9 +3,6 @@ from analysis.passes.reference_pass import run_reference_pass
 from analysis.passes.relationship_pass import run_relationship_pass
 from analysis.passes.resolver_pass import run_resolver_pass
 from analysis.passes.symbol_pass import run_symbol_pass
-from analysis.reference_extractor import extract_references
-from analysis.relationship_extractor import extract_relationship
-from analysis.symbol_extractor import extract_symbols
 from ingestion.loader import load_code_files
 from models.build_result import BuildResult
 from models.indexing_context import IndexingContext

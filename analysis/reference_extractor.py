@@ -3,6 +3,7 @@ from tree_sitter import Node
 from analysis.reference_builder import build_reference
 from analysis.semantic.create_symbol import creates_symbol
 from analysis.semantic.is_declaration_name import is_declaration_name
+from analysis.semantic.reference_kind import determine_reference_kind
 from models.entities.reference import Reference
 from models.entities.symbol import Symbol
 
@@ -64,7 +65,10 @@ def visit(
     if is_declaration_name(node):
         return None
 
+    kind = determine_reference_kind(node)
+
     return build_reference(
         node=node,
+        kind=kind,
         owner_symbol=owner_symbol,
     )

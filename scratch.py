@@ -243,7 +243,8 @@ for extracted in symbols:
 
     for reference in references:
         print(
-            f"  {reference.name:15}"
+            f"{reference.name:15}"
+            f"{reference.kind.value:15}"
             f"{reference.location.start_line:5}"
             f"{reference.location.start_byte:8}"
         )
@@ -259,3 +260,13 @@ for resolved in build_result.resolved_references:
         f"{resolved.target_symbol.name:15}"
         f" ({resolved.target_symbol.kind.value})"
     )
+
+print("\n=== RELATIONSHIPS ===\n")
+
+symbols = {symbol.symbol_id: symbol for symbol in build_result.symbols}
+
+for relationship in build_result.relationships:
+    source = symbols[relationship.source_symbol_id]
+    target = symbols[relationship.target_symbol_id]
+
+    print(f"{source.name:15}--{relationship.kind.value}--> {target.name}")
