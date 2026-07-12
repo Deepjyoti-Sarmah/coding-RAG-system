@@ -16,15 +16,6 @@ def handle_default_import(
     if node.type != "import_clause":
         return None
 
-    # Mixed import:
-    #
-    # import Auth, { login } from "./auth"
-    #
-    # Skip for now. We'll support it later.
-    for child in node.children:
-        if child.type == "named_imports":
-            return None
-
     identifier = None
 
     for child in node.children:
@@ -46,9 +37,9 @@ def handle_default_import(
         imported_name="default",
         local_name=identifier.text.decode("utf-8"),
         location=SourceLocation(
-            start_line=node.start_point.row + 1,
-            end_line=node.end_point.row + 1,
-            start_byte=node.start_byte,
-            end_byte=node.end_byte,
+            start_line=identifier.start_point.row + 1,
+            end_line=identifier.end_point.row + 1,
+            start_byte=identifier.start_byte,
+            end_byte=identifier.end_byte,
         ),
     )

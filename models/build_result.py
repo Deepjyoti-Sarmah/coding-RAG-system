@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from graph.code_graph import CodeGraph
+from models.entities import resolved_import_reference
 from models.entities.documents import Document
 from models.entities.import_references import ImportReference
 from models.entities.references import Reference
@@ -16,6 +17,10 @@ class BuildResult:
     symbols: list[Symbol] = field(default_factory=list)
 
     import_reference: list[ImportReference] = field(default_factory=list)
+
+    resolved_import_reference: list[
+        resolved_import_reference.ResolvedImportReference
+    ] = field(default_factory=list)
 
     references: list[Reference] = field(default_factory=list)
 
