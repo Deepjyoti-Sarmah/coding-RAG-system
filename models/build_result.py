@@ -4,7 +4,7 @@ from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
 from models.entities.document import Document
 from models.entities.reference import Reference
-from models.entities.resolve_reference import ResolvedReference
+from models.entities.resolved_reference import ResolvedReference
 from models.entities.symbol import Symbol
 from models.relationships import relationship
 

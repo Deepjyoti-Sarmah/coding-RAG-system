@@ -1,5 +1,5 @@
 from models.entities.reference_kind import ReferenceKind
-from models.entities.resolve_reference import ResolvedReference
+from models.entities.resolved_reference import ResolvedReference
 from models.relationships.relationship import Relationship
 from models.relationships.relationship_kind import RelationshipKind
 
@@ -12,7 +12,7 @@ def build_relationships(
     relationships: list[Relationship] = []
 
     for resolved in resolved_references:
-        relationship = build_relationship(
+        relationship = build_call_relationship(
             resolved_reference=resolved,
         )
 
@@ -24,7 +24,7 @@ def build_relationships(
     return relationships
 
 
-def build_relationship(
+def build_call_relationship(
     *,
     resolved_reference: ResolvedReference,
 ) -> Relationship | None:

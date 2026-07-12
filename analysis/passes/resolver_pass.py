@@ -1,5 +1,5 @@
 from models.build_result import BuildResult
-from models.entities.resolve_reference import ResolvedReference
+from models.entities.resolved_reference import ResolvedReference
 from models.indexing_context import IndexingContext
 
 

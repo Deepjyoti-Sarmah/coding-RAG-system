@@ -19,4 +19,3 @@ class Symbol:
     content: str
 
     parent_symbol_id: str | None = None
-    language: str = ""
