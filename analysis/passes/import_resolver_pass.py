@@ -11,8 +11,16 @@ def run_import_resolver_pass(
 ):
 
     for import_reference in result.import_references:
+        importing_document = context.document_index.lookup_by_id(
+            import_reference.document_id
+        )
+
+        if importing_document is None:
+            continue
+
         document = resolve_import(
             import_reference=import_reference,
+            importing_document=importing_document,
             document_index=context.document_index,
         )
 
