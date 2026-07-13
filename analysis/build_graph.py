@@ -46,7 +46,7 @@ def build_graph(root_dir: str) -> BuildResult:
     )
 
     #
-    # Reference Pass
+    # Resolver Pass
     #
     run_resolver_pass(
         context=context,

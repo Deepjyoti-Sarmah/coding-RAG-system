@@ -43,7 +43,7 @@ def ask_questions(
         handle_query(query, symbol_index, graph)
 
 
-def handle_query(query: str, symbol_index: SymbolIndex, graph: CodeGraph):
+def handle_query(query: str, symbol_index: SymbolIndex, graph: CodeGraph,):
     words = query.split()
     symbol_name = words[-1]
 
