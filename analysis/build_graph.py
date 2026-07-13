@@ -1,7 +1,7 @@
 from analysis.passes.graph_pass import run_graph_pass
 from analysis.passes.reference_pass import run_reference_pass
 from analysis.passes.relationship_pass import run_relationship_pass
-from analysis.passes.resolver_pass import run_resolver_pass
+from analysis.passes.resolver_pass import run_reference_resolver_pass
 from analysis.passes.symbol_pass import run_symbol_pass
 from ingestion.loader import load_code_files
 from models.build_result import BuildResult
@@ -48,7 +48,7 @@ def build_graph(root_dir: str) -> BuildResult:
     #
     # Resolver Pass
     #
-    run_resolver_pass(
+    run_reference_resolver_pass(
         context=context,
         result=build_result,
     )

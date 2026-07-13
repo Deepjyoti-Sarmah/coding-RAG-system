@@ -271,19 +271,57 @@
 
 #     print(f"{source.name:15}--{relationship.kind.value}--> {target.name}")
 
+# from analysis.import_extractor import extract_imports
+# from ingestion.loader import load_code_files
+# from parsing.registry import PARSER
+
+
+# def print_tree(node, indent=0):
+#     print(" " * indent + f"{node.type}: {node.text.decode('utf-8')}")
+
+#     for child in node.children:
+#         print_tree(child, indent + 2)
+
+
+# documents = load_code_files("test_repo")
+
+# for document in documents:
+#     if document.file_name != "imports.ts":
+#         continue
+
+#     parser = PARSER[document.language]
+
+#     tree = parser.parse(document)
+
+#     imports = extract_imports(
+#         tree=tree,
+#         document=document,
+#     )
+
+#     print("=== IMPORT REFERENCES ===\n")
+
+#     for import_reference in imports:
+#         print(
+#             f"{import_reference.imported_name:12}"
+#             f" -> "
+#             f"{import_reference.local_name:12}"
+#             f" from {import_reference.module_path}"
+#         )
+
+#     # print_tree(tree.root_node)
+
 from analysis.import_extractor import extract_imports
+from analysis.semantic.import_resolver import resolve_import
+from indexing.document_index import DocumentIndex
 from ingestion.loader import load_code_files
 from parsing.registry import PARSER
 
-
-def print_tree(node, indent=0):
-    print(" " * indent + f"{node.type}: {node.text.decode('utf-8')}")
-
-    for child in node.children:
-        print_tree(child, indent + 2)
-
-
 documents = load_code_files("test_repo")
+
+document_index = DocumentIndex()
+document_index.add_many(documents)
+
+print("=== IMPORT RESOLUTION ===\n")
 
 for document in documents:
     if document.file_name != "imports.ts":
@@ -298,14 +336,15 @@ for document in documents:
         document=document,
     )
 
-    print("=== IMPORT REFERENCES ===\n")
-
     for import_reference in imports:
-        print(
-            f"{import_reference.imported_name:12}"
-            f" -> "
-            f"{import_reference.local_name:12}"
-            f" from {import_reference.module_path}"
+        target = resolve_import(
+            import_reference=import_reference,
+            importing_document=document,
+            document_index=document_index,
         )
 
-    # print_tree(tree.root_node)
+        if target is None:
+            print(f"{import_reference.module_path:20} -> NOT FOUND")
+            continue
+
+        print(f"{import_reference.module_path:20} -> {target.relative_path}")

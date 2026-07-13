@@ -3,7 +3,7 @@ from models.entities.resolved_reference import ResolvedReference
 from models.indexing_context import IndexingContext
 
 
-def run_resolver_pass(*, context: IndexingContext, result: BuildResult):
+def run_reference_resolver_pass(*, context: IndexingContext, result: BuildResult):
     for reference in result.references:
         targets = context.symbol_index.lookup_by_name(reference.name)
 
