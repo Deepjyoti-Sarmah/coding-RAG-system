@@ -16,9 +16,9 @@ class BuildResult:
 
     symbols: list[Symbol] = field(default_factory=list)
 
-    import_reference: list[ImportReference] = field(default_factory=list)
+    import_references: list[ImportReference] = field(default_factory=list)
 
-    resolved_import_reference: list[
+    resolved_import_references: list[
         resolved_import_reference.ResolvedImportReference
     ] = field(default_factory=list)
 
