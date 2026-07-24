@@ -6,7 +6,7 @@ from models.entities.symbols import Symbol
 from models.entities.symbol_kind import SymbolKind
 
 
-def handle_varibale_declarator(
+def handle_variable_declarator(
     *,
     node: Node,
     document: Document,
@@ -47,7 +47,8 @@ def handle_varibale_declarator(
 
 
 def _is_module_scoped(node: Node) -> bool:
-    # always lexical_declaration
+    # Verified by tests for top-level, exported, and nested declarations.
+    # parent is typically lexical_declaration / variable_declaration.
     parent = node.parent
     if parent is None:
         return False

@@ -4,6 +4,9 @@ from models.indexing_context import IndexingContext
 
 
 def run_reference_resolver_pass(*, context: IndexingContext, result: BuildResult):
+    # TODO: Replace this first-match global name lookup with real scope-aware
+    # resolution. Resolution order should be local scope -> parent scope -> module
+    # scope -> imported symbols. Avoid guessing when unresolved.
     for reference in result.references:
         targets = context.symbol_index.lookup_by_name(reference.name)
 

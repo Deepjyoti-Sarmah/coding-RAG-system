@@ -17,7 +17,8 @@ def build_graph(root_dir: str) -> BuildResult:
 
     context.document_index.add_many(build_result.documents)
 
-    build_result.documents = load_code_files(root_dir)
+    # TODO: Replace the current parse-inside-symbol-pass flow with a ParsedDocument
+    # IR so all semantic passes can reuse one parse result per file.
 
     #
     # Symbol Pass
@@ -36,6 +37,9 @@ def build_graph(root_dir: str) -> BuildResult:
             context=context,
             result=build_result,
         )
+
+    # TODO: Run import extraction + import resolution before reference resolution so
+    # imported names and aliases can participate in cross-file symbol resolution.
 
     #
     # Reference Pass
@@ -60,6 +64,8 @@ def build_graph(root_dir: str) -> BuildResult:
         context=context,
         result=build_result,
     )
+
+    build_result.symbol_index = context.symbol_index
 
     #
     # Build Graph
