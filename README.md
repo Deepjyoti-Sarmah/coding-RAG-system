@@ -1,568 +1,427 @@
+
+````markdown
 # Code Knowledge Graph (CKG)
 
-> _"The best way to reduce tokens is to stop sending irrelevant code."_
+> **A compiler-inspired semantic engine for source code.**
+>
+> The goal is to understand a repository before an LLM sees it, allowing AI coding assistants to retrieve only the code that actually matters instead of entire files.
 
 ---
 
-# Why this project exists
+# Vision
 
-Most AI coding assistants work by retrieving pieces of text from a repository and sending them to a Large Language Model.
+Traditional Code RAG:
 
-The problem is that **source code is not text**.
-
-Source code is a structured system made of declarations, scopes, references, imports, types, ownership, and relationships.
-
-If we treat code as plain text, we lose almost all of that structure.
-
-As a result, current systems usually:
-
-- embed entire files
-- retrieve large chunks
-- send unnecessary context
-- waste tokens
-- confuse the model with unrelated code
-
-This project takes a different approach.
-
-Instead of asking:
-
-> "Which text looks similar to the user's question?"
-
-we ask:
-
-> **"Which semantic entities are actually required to answer the question?"**
-
-That difference is the foundation of this project.
-
----
-
-# The Long-Term Goal
-
-The goal is to build a **Code Knowledge Graph** that understands a repository before any request reaches an LLM.
-
-Instead of sending:
-
-```text
-20 files
-
-↓
-
-35,000 tokens
-
-↓
-
-LLM
 ```
-
-the system should send something closer to:
-
-```text
-3 Symbols
-
-2 Imports
-
-5 References
-
-1 Call Chain
-
-↓
-
-1,500 tokens
-
-↓
-
-LLM
-```
-
-The exact reduction depends on the repository and query, but the architecture is designed to make large reductions possible by retrieving semantic information instead of entire files.
-
-The LLM should become the final consumer of the graph—not the system responsible for understanding the repository.
-
----
-
-# Think Like a Compiler
-
-When people first build Code RAG systems, they usually think:
-
-```text
 Repository
-
-↓
-
+    ↓
 Chunk Files
-
-↓
-
+    ↓
 Embeddings
-
-↓
-
+    ↓
 Vector Search
-
-↓
-
+    ↓
 LLM
 ```
 
-That architecture treats code like documentation.
+CKG:
 
-A compiler thinks differently.
-
-```text
+```
 Repository
-
-↓
-
+    ↓
 Parser
-
-↓
-
-AST
-
-↓
-
+    ↓
 Semantic Analysis
+    ↓
+Knowledge Graph
+    ↓
+Context Builder
+    ↓
+LLM
+```
+
+The LLM should answer questions.
+
+The Code Knowledge Graph should understand the repository.
+
+---
+
+# Philosophy
+
+- Think like a **compiler**, not a chatbot.
+- Think in **entities and relationships**, not text chunks.
+- Every compiler pass answers **one question**.
+- Parse once, reuse forever.
+- Keep semantic analysis independent from retrieval.
+
+---
+
+# Current Architecture
+
+```
+Repository
+      │
+      ▼
+Document Loader
+      │
+      ▼
+Tree-sitter Parser
+      │
+      ▼
+Semantic Compiler Pipeline
+      │
+      ▼
+Knowledge Graph
+      │
+      ▼
+Context Builder
+      │
+      ▼
+LLM
+```
+
+---
+
+# Current Compiler Pipeline
+
+```
+Load Documents                     ✅
 
 ↓
 
-Program Understanding
+Parse Documents                    ✅
+
+↓
+
+Extract Symbols                    ✅
+
+↓
+
+Extract Imports                    ✅
+
+↓
+
+Resolve Imports (Module)           ✅
+
+↓
+
+Extract References                 ✅
+
+↓
+
+Resolve References                 ✅
+
+↓
+
+Build Relationships                ✅
+
+↓
+
+Knowledge Graph                    ✅
 ```
-
-We are borrowing that mindset.
-
-The output of this project is **not embeddings**.
-
-The output is a semantic understanding of the repository.
-
-Embeddings become one consumer of that understanding.
 
 ---
 
-# Think Like a Graph Database
+# Implemented Entities
 
-Another useful mental model is a graph database.
+### Document
 
-A graph consists of only two things:
+Represents a source file.
 
-```text
-Nodes
+### Symbol
 
-Edges
-```
-
-For source code:
-
-```text
-Entities
-
-Relationships
-```
-
-Everything we build should belong to one of those two categories.
-
-If something exists independently, it is an **Entity**.
-
-If something connects two entities, it is a **Relationship**.
-
-Keeping this distinction clear makes the architecture easy to extend.
-
----
-
-# Project Architecture
-
-```text
-  Repository
-        │
-        ▼
-  Document Loader
-        │
-        ▼
-  Tree-sitter Parser
-        │
-        ▼
-  Semantic Analysis Pipeline
-        │
-  ┌────┴────────────────────┐
-  ▼                         ▼
-  Entities              Relationships
-  │                         │
-  └──────────┬──────────────┘
-             ▼
-    Code Knowledge Graph
-             │
-    ┌────────┼─────────┐
-    ▼        ▼         ▼
-  Search   Navigation   AI Context Builder
-              │
-              ▼
-             LLM
-```
-
-Notice that the LLM is at the very end of the pipeline.
-
-The graph—not the LLM—is responsible for understanding the repository.
-
----
-
-# First Principle
-
-Every compiler pass should answer exactly one question.
-
-Not two.
-
-Not five.
-
-Exactly one.
-
-This keeps the system easy to reason about and easy to extend.
-
----
-
-# Semantic Analysis Pipeline
-
-## Pass 1 — Document Pass ✅
-
-Question answered:
-
-> **What files exist in this repository?**
-
-Produces:
-
-```text
-Document
-```
-
-A document contains metadata about a source file.
-
-Examples:
-
-- language
-- path
-- size
-- content
-- line count
-
----
-
-## Pass 2 — Symbol Pass ✅
-
-Question answered:
-
-> **What declarations exist?**
-
-Produces:
-
-```text
-Symbol
-```
-
-Current support:
+Represents declarations such as:
 
 - Function
-- Method
 - Class
+- Method
 - Variable
 
-Planned:
+### ImportReference
 
-- Interface
-- Type Alias
-- Enum
-- Namespace
+Represents an import statement.
 
-A Symbol represents something that can be referenced elsewhere.
+Example:
 
----
-
-## Pass 3 — Declares Pass
-
-Question answered:
-
-> **Which document owns which symbols?**
-
-Produces:
-
-```text
-Document
-
-DECLARES
-
-Symbol
+```ts
+import { login } from "./auth";
 ```
 
-Notice that ownership is represented as a graph edge rather than hidden inside objects.
+### ResolvedImportReference
 
----
+Represents the resolved module.
 
-## Pass 4 — Import Pass
+```
+"./auth"
 
-Question answered:
+↓
 
-> **Which names become visible inside this document?**
-
-Produces:
-
-```text
-Import
+auth.ts
 ```
 
-This pass does not resolve symbols.
+### Reference
 
-It only extracts import declarations.
-
----
-
-## Pass 5 — Export Pass
-
-Question answered:
-
-> **Which symbols are exposed outside this document?**
-
-Produces:
-
-```text
-Export
-```
-
----
-
-## Pass 6 — Reference Pass
-
-Question answered:
-
-> **Where are symbols used?**
+Represents every symbol usage.
 
 Example:
 
 ```ts
 login();
 login();
-login();
 ```
 
-These are three different references.
+These are two different references.
 
-Not one.
+### ResolvedReference
 
-This distinction becomes important for:
-
-- Find References
-- Rename Symbol
-- Context Retrieval
+Maps a reference to the declaration it points to.
 
 ---
 
-## Pass 7 — Name Resolution Pass
+# Current Relationships
 
-Question answered:
+Implemented
 
-> **Which declaration does this reference actually point to?**
-
-Today we resolve calls using symbol names.
-
-Eventually we will resolve references using:
-
-- imports
-- exports
-- lexical scope
-- namespaces
-
-Exactly like a compiler.
-
----
-
-## Pass 8 — Call Graph Pass ✅ (Initial Version)
-
-Question answered:
-
-> **Who calls whom?**
-
-Current support:
-
-```ts
-foo();
-
-auth.login();
-
-client.auth.login();
+```
+CALLS
 ```
 
-Future versions will resolve calls through imports instead of relying only on symbol names.
+Planned
+
+```
+IMPORTS
+DECLARES
+EXPORTS
+REFERS_TO
+EXTENDS
+IMPLEMENTS
+HAS_TYPE
+```
 
 ---
 
-## Pass 9 — Type Analysis Pass
+# Current Project Status
 
-Question answered:
+## Completed ✅
 
-> **What type does this symbol represent?**
-
-Future features:
-
-- Return types
-- Parameter types
-- Generic types
-- Interface implementations
-
----
-
-## Pass 10 — Chunk Pass ✅
-
-This is where semantic information becomes retrieval-friendly.
-
-Instead of chunking raw text, we chunk semantic entities.
-
-Each chunk can include:
-
-- symbol
-- callers
-- callees
-- ownership
-- file
-- surrounding context
-
-The chunk is already enriched before embeddings are created.
+- Document loading
+- Tree-sitter parsing
+- Symbol extraction
+- Symbol ownership
+- Symbol index
+- Import extraction
+- Import resolution (module level)
+- Reference extraction
+- Reference resolution
+- Relationship builder
+- Call graph
+- Knowledge graph
 
 ---
 
-## Pass 11 — Embedding Pass
+## In Progress 🚧
 
-Embeddings belong to retrieval.
-
-Not parsing.
-
-Not semantic analysis.
-
-This separation allows us to swap embedding models without rebuilding the graph.
-
----
-
-# Current Graph Model
-
-## Entities
+### Imported Symbol Resolution
 
 Current:
 
-```text
+```
+ImportReference
+
+↓
+
+ResolvedImportReference
+
+↓
+
 Document
+```
+
+Target:
+
+```
+ImportReference
+
+↓
+
+ResolvedImportReference
+
+↓
 
 Symbol
 ```
 
-Planned:
-
-```text
-Import
-
-Export
-
-Reference
-
-Type
-
-Chunk
-
-Embedding
-```
-
-Every entity has its own identity because it may be referenced by future analysis passes.
+This will enable true cross-file symbol resolution.
 
 ---
 
-## Relationships
+# Immediate Refactor
+
+## Parse Once
+
+Currently every compiler pass reparses the same source file.
 
 Current:
 
-```text
-CALLS
 ```
-
-Planned:
-
-```text
-DECLARES
-
-IMPORTS
-
-EXPORTS
-
-REFERS_TO
-
-RESOLVES_TO
-
-EXTENDS
-
-IMPLEMENTS
-
-USES
-
-RETURNS
-
-HAS_PARAMETER
-
-HAS_TYPE
-```
-
-Relationships never duplicate information.
-
-They only connect existing entities.
-
----
-
-# Software Engineering Principles
-
-## 1. One Source of Truth
-
-Relationships are stored once.
-
-Indexes are derived from them.
-
-```text
-Relationships
+Symbol Pass
 
 ↓
 
-Outgoing Index
-
-Incoming Index
+Parse
 ```
 
-Indexes should never own data.
+```
+Import Pass
+
+↓
+
+Parse
+```
+
+```
+Reference Pass
+
+↓
+
+Parse
+```
+
+Target:
+
+```
+Load Documents
+
+↓
+
+Parse Once
+
+↓
+
+ParsedDocument[]
+
+↓
+
+Symbol Pass
+
+↓
+
+Import Pass
+
+↓
+
+Reference Pass
+```
+
+This matches how production compilers and language servers work.
 
 ---
 
-## 2. One Responsibility Per Pass
+# Next Milestones
 
-Every pass answers one question.
-
-If a pass starts answering multiple unrelated questions, split it.
-
----
-
-## 3. Separate Semantics from Retrieval
-
-Semantic analysis should understand code.
-
-Retrieval should understand search.
-
-Embedding models should understand vectors.
-
-Do not mix these concerns.
+1. Resolve imported symbols
+2. Parse documents once (`ParsedDocument`)
+3. Export extraction
+4. Export resolution
+5. Cross-file symbol resolution
+6. Member expression resolution
+7. Type analysis
+8. Semantic chunk generation
+9. Embedding pipeline
+10. Incremental indexing
 
 ---
 
-## 4. Build Intermediate Representations
+# Long-Term Roadmap
 
-Every stage should produce an intermediate representation that another stage can consume.
+```
+Repository
 
-For example:
+↓
 
-```text
+Semantic Compiler
+
+↓
+
+Knowledge Graph
+
+↓
+
+Semantic Retrieval
+
+↓
+
+Context Compression
+
+↓
+
+LLM
+```
+
+Eventually the graph should power:
+
+- Semantic Search
+- Find References
+- Go To Definition
+- Rename Symbol
+- Dependency Analysis
+- AI Context Building
+- CLI Coding Agents
+- IDE Extensions
+
+---
+
+# Technical Debt
+
+Current improvements planned:
+
+- Parse every file only once
+- Better lexical scope resolution
+- Export analysis
+- Namespace resolution
+- Alias import resolution
+- Type analysis
+- Incremental indexing
+- Multi-language support
+
+---
+
+# Design Principles
+
+## One Responsibility Per Pass
+
+Every compiler pass answers exactly one question.
+
+---
+
+## Semantic Before Retrieval
+
+Understand the code first.
+
+Search later.
+
+---
+
+## Build Intermediate Representations
+
+```
+Source Code
+
+↓
+
 AST
 
 ↓
 
 Symbols
+
+↓
+
+References
+
+↓
+
+Relationships
 
 ↓
 
@@ -577,84 +436,30 @@ Semantic Chunks
 Embeddings
 ```
 
-Each layer builds on the previous one.
-
 ---
 
-## 5. Design for Extension
-
-Adding support for another language should require implementing new analysis passes—not rewriting the architecture.
+## Language Agnostic
 
 The graph should remain language-independent.
 
----
-
-# Why This Matters
-
-Imagine a user asks:
-
-> "Where is authentication implemented?"
-
-A traditional RAG system retrieves text that happens to mention "authentication."
-
-This system should instead traverse the graph.
-
-For example:
-
-```text
-Reference
-
-↓
-
-Symbol
-
-↓
-
-Call Graph
-
-↓
-
-Imports
-
-↓
-
-Related Symbols
-
-↓
-
-Semantic Chunk
-
-↓
-
-LLM
-```
-
-Only the information required to answer the question is sent to the model.
-
-The repository itself never leaves the machine.
+Adding a new language should require implementing new analysis passes—not rewriting the architecture.
 
 ---
 
-# Future Vision
+# End Goal
 
-Eventually this project should become the semantic engine underneath coding assistants.
+A production-grade semantic engine that can be shared by coding assistants like:
 
-Instead of every assistant reparsing the repository independently, they should query the same Code Knowledge Graph.
+- Claude Code
+- Codex CLI
+- Gemini CLI
+- Cursor
+- Continue
+- Custom AI Agents
 
-That graph should power:
+Instead of sending entire files to an LLM, the system should send only the semantic entities required to answer the user's question.
 
-- Semantic Search
-- Context Compression
-- Find References
-- Go to Definition
-- Rename Symbol
-- Dependency Analysis
-- Repository Navigation
-- AI Context Building
-- IDE Extensions
-- CLI Agents
-- Automated Refactoring
+The graph understands the repository.
 
-The LLM should answer questions.
-
-The Code Knowledge Graph should understand the repository.
+The LLM reasons over that understanding.
+````

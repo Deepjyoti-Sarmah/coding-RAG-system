@@ -43,7 +43,11 @@ def ask_questions(
         handle_query(query, symbol_index, graph)
 
 
-def handle_query(query: str, symbol_index: SymbolIndex, graph: CodeGraph,):
+def handle_query(
+    query: str,
+    symbol_index: SymbolIndex,
+    graph: CodeGraph,
+):
     words = query.split()
     symbol_name = words[-1]
 
@@ -73,7 +77,7 @@ def handle_query(query: str, symbol_index: SymbolIndex, graph: CodeGraph,):
 
         for symbol in matching_symbols:
             print(f"{symbol.name} ({symbol.kind.value}) is defined at:")
-            print(f"{symbol.relative_path}:{symbol.start_line}\n")
+            print(f"{symbol.relative_path}:{symbol.location.start_line}\n")
 
     else:
         print(
