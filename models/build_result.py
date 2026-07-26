@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from graph.code_graph import CodeGraph
+from indexing.symbol_index import SymbolIndex
 from models.entities import resolved_import_reference
 from models.entities.documents import Document
 from models.entities.import_references import ImportReference
@@ -15,6 +16,8 @@ class BuildResult:
     documents: list[Document] = field(default_factory=list)
 
     symbols: list[Symbol] = field(default_factory=list)
+
+    symbol_index: SymbolIndex = field(default_factory=SymbolIndex)
 
     import_references: list[ImportReference] = field(default_factory=list)
 

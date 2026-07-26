@@ -1,10 +1,8 @@
 INCLUDE_EXTENSIONS = {
-    ".py",
     ".js",
     ".ts",
     ".tsx",
     ".jsx",
-    ".md",
 }
 
 EXCLUDE_DIRS = {
