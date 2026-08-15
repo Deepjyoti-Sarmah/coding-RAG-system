@@ -13,12 +13,13 @@ def build_reference(
     node: Node,
     owner_symbol: Symbol,
     kind: ReferenceKind,
+    path: tuple[str, ...],
 ) -> Reference:
     return Reference(
         reference_id=str(uuid4()),
         document_id=owner_symbol.document_id,
         owner_symbol_id=owner_symbol.symbol_id,
-        name=node.text.decode("utf-8"),
+        name=path[-1],
         kind=kind,
         location=SourceLocation(
             start_line=node.start_point.row + 1,
@@ -26,4 +27,5 @@ def build_reference(
             start_byte=node.start_byte,
             end_byte=node.end_byte,
         ),
+        path=path,
     )

@@ -17,3 +17,5 @@ class Reference:
     kind: ReferenceKind
 
     owner_symbol_id: str
+
+    path: tuple[str, ...]
