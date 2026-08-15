@@ -1,5 +1,5 @@
 from models.entities.reference_kind import ReferenceKind
-from models.entities.resolved_reference import ResolvedReference
+from models.entities.resolved_reference import ResolutionStatus, ResolvedReference
 from models.relationships.relationships import Relationship
 from models.relationships.relationship_kind import RelationshipKind
 
@@ -32,6 +32,9 @@ def build_call_relationship(
     reference = resolved_reference.reference
 
     if reference.kind != ReferenceKind.CALL:
+        return None
+
+    if resolved_reference.status != ResolutionStatus.RESOLVED:
         return None
 
     return Relationship(

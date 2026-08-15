@@ -1,21 +1,27 @@
+from analysis.semantic.member_resolver import resolve_member_reference
+from analysis.semantic.name_resolver import resolve_symbol
 from models.build_result import BuildResult
-from models.entities.resolved_reference import ResolvedReference
 from models.indexing_context import IndexingContext
 
 
-def run_reference_resolver_pass(*, context: IndexingContext, result: BuildResult):
-    # TODO: Replace this first-match global name lookup with real scope-aware
-    # resolution. Resolution order should be local scope -> parent scope -> module
-    # scope -> imported symbols. Avoid guessing when unresolved.
+def run_reference_resolver_pass(
+    *,
+    context: IndexingContext,
+    result: BuildResult,
+):
     for reference in result.references:
-        targets = context.symbol_index.lookup_by_name(reference.name)
-
-        if not targets:
-            continue
-
-        result.resolved_references.append(
-            ResolvedReference(
+        if len(reference.path) > 1:
+            resolved = resolve_member_reference(
                 reference=reference,
-                target_symbol=targets[0],
+                symbol_index=context.symbol_index,
+                export_index=context.export_index,
+                resolved_import_references=result.resolved_import_references,
             )
-        )
+        else:
+            resolved = resolve_symbol(
+                reference=reference,
+                symbol_index=context.symbol_index,
+                resolved_import_references=result.resolved_import_references,
+            )
+
+        result.resolved_references.append(resolved)
