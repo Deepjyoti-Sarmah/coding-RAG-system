@@ -1,5 +1,6 @@
 from analysis.import_resolution_builder import build_resolved_import
 from analysis.semantic.import_resolver import resolve_import
+from analysis.semantic.import_symbol_resolver import resolve_imported_symbol
 from models.build_result import BuildResult
 from models.indexing_context import IndexingContext
 
@@ -27,9 +28,15 @@ def run_import_resolver_pass(
         if document is None:
             continue
 
-        result.resolved_import_references.append(
-            build_resolved_import(
-                import_reference=import_reference,
-                target_document=document,
-            )
+        resolved_import = build_resolved_import(
+            import_reference=import_reference,
+            target_document=document,
         )
+
+        resolved_import.target_symbol = resolve_imported_symbol(
+            resolved_import=resolved_import,
+            export_index=context.export_index,
+            symbol_index=context.symbol_index,
+        )
+
+        result.resolved_import_references.append(resolved_import)
