@@ -13,9 +13,6 @@ def handle_variable_declarator(
     owner: Symbol | None,
 ) -> Symbol | None:
 
-    if not _is_module_scoped(node):
-        return None
-
     name_node = node.child_by_field_name("name")
 
     if name_node is None:
@@ -44,21 +41,3 @@ def handle_variable_declarator(
         document=document,
         owner=owner,
     )
-
-
-def _is_module_scoped(node: Node) -> bool:
-    # Verified by tests for top-level, exported, and nested declarations.
-    # parent is typically lexical_declaration / variable_declaration.
-    parent = node.parent
-    if parent is None:
-        return False
-
-    # this actully differs
-    grandparent = parent.parent
-    if grandparent is None:
-        return False
-
-    if grandparent.type in ("program", "export_statement"):
-        return True
-
-    return False

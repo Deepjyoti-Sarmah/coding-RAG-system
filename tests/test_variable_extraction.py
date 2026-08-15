@@ -55,11 +55,16 @@ class TestVariableDeclarator(unittest.TestCase):
         extracted = _extract("const { a } = obj;")
         self.assertEqual(_names_and_kinds(extracted), [])
 
-    def test_nested_inside_function_not_extracted(self):
+    def test_nested_inside_function_extracted_with_owner(self):
         extracted = _extract("function foo() {\n  const x = 1;\n}")
         self.assertEqual(
-            _names_and_kinds(extracted), [("foo", SymbolKind.FUNCTION)]
+            _names_and_kinds(extracted),
+            [("foo", SymbolKind.FUNCTION), ("x", SymbolKind.VARIABLE)],
         )
+
+        foo = next(e for e in extracted if e.symbol.name == "foo")
+        x = next(e for e in extracted if e.symbol.name == "x")
+        self.assertEqual(x.symbol.parent_symbol_id, foo.symbol.symbol_id)
 
     def test_multiple_declarators(self):
         extracted = _extract("const a = 1, b = 2;")
