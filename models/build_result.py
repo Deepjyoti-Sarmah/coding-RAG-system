@@ -4,6 +4,7 @@ from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
 from models.entities import resolved_import_reference
 from models.entities.documents import Document
+from models.entities.exports import Export
 from models.entities.import_references import ImportReference
 from models.entities.references import Reference
 from models.entities.resolved_reference import ResolvedReference
@@ -20,6 +21,8 @@ class BuildResult:
     symbol_index: SymbolIndex = field(default_factory=SymbolIndex)
 
     import_references: list[ImportReference] = field(default_factory=list)
+
+    exports: list[Export] = field(default_factory=list)
 
     resolved_import_references: list[
         resolved_import_reference.ResolvedImportReference
