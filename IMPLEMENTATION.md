@@ -879,7 +879,7 @@ Member calls can be represented without returning to raw AST in later semantic p
 
 # 11. Phase 5 — Knowledge Graph Stabilization
 
-Status: AFTER SEMANTIC RESOLUTION
+Status: COMPLETE
 
 Goal:
 
@@ -907,7 +907,11 @@ parents_of()
 
 Avoid leaking internal dictionaries to callers.
 
----
+### Implemented
+
+- `CodeGraph` now exposes `symbols()` and `relationships()`, both returning immutable `tuple`s so callers cannot mutate internal state.
+- Added `children_of()` (via a `_children_by_parent` map populated in `add_symbols`) and `parents_of()` (immediate parent lookup via `_symbols_by_id`).
+- `callers_of()` / `callees_of()` unchanged; they stay duplicate-free as a side effect of relationship deduplication.
 
 ## Task 5.2 — Relationship Deduplication
 
@@ -941,11 +945,16 @@ if the graph models a relationship rather than individual occurrences.
 
 If occurrence counts become useful later, model occurrences separately instead of duplicating edges.
 
+### Implemented
+
+- `Relationship` gained a `key` property returning `(source_symbol_id, target_symbol_id, kind)`.
+- `CodeGraph.add_relationships` skips any relationship whose key is already present (internal `_relationship_keys` set). `BuildResult.relationships` stays the raw per-occurrence list; the graph is the deduplicated semantic view.
+
 ---
 
 # 12. Phase 6 — Stable Identity
 
-Status: REQUIRED BEFORE INCREMENTAL INDEXING
+Status: COMPLETE
 
 Current UUIDs are acceptable for in-memory entities.
 
@@ -976,6 +985,13 @@ signature
 
 Do not assume one key will survive every rename/move.
 
+### Implemented
+
+- `Symbol` keeps `symbol_id` (UUID) as the internal entity identity and gains `qualified_name` and `stable_key` as the source identity.
+- `qualified_name` is derived from the extraction-time owner chain (e.g. `login`, `AuthService.validateUser`, `outer.inner`).
+- `stable_key = "{relative_path}|{language}|{qualified_name}|{kind.value}"` via `analysis/fingerprints.py:build_stable_key`, deterministic across index runs.
+- `document_id` remains a UUID; `relative_path` on `Document` serves as the stable document identity (no loader change).
+
 ---
 
 ## Task 6.2 — Symbol Fingerprints
@@ -990,6 +1006,15 @@ signature_hash
 Use these for matching and change detection.
 
 Do not use body hash as the permanent identity because a function can change while remaining the same symbol.
+
+### Implemented
+
+- `Symbol.content_hash` = SHA-256 of the symbol's source text (change detection).
+- `Symbol.signature_hash` = SHA-256 of a **name-independent, body-excluding** signature via `analysis/signature.py:extract_signature`:
+  - FUNCTION/METHOD: `function({param types})[:{return type}]` — parameter names and bodies are excluded so renames/body edits preserve the signature; untyped parameters contribute nothing.
+  - CLASS: `class[:{extends text}]`.
+  - VARIABLE: `variable:{type annotation}` else `variable:<{value node type}>`.
+- Hash helpers live in `analysis/fingerprints.py`; both are computed once inside `analysis/symbol_builder.py:build_symbol`.
 
 ---
 
@@ -1013,11 +1038,21 @@ create new identity
 
 This is critical for production correctness.
 
+### Implemented
+
+- `analysis/symbol_matching.py` exposes `match_symbols(old_symbols, new_symbols) -> list[SymbolMatch]` with `SymbolMatch(old_symbol, new_symbol, confidence)` and `MatchConfidence {HIGH, MEDIUM}`.
+- Matching ladder:
+  1. exact `stable_key` → HIGH.
+  2. same scope (relative_path + parent qualified name) + `signature_hash` → MEDIUM (handles rename).
+  3. same `content_hash` at a different path → MEDIUM (handles move with unchanged content).
+  4. "same signature + similar source" is recognized as LOW confidence and intentionally never matched → new identity (no guessing, Gate E).
+- Every match requires a unique unclaimed old candidate; duplicate/ambiguous candidates produce no match.
+
 ---
 
 # 13. Phase 7 — SQLite Persistence
 
-Status: NOT STARTED
+Status: COMPLETE
 
 Goal:
 
@@ -1034,6 +1069,8 @@ Do not introduce Neo4j/Postgres unless profiling proves SQLite is insufficient.
 ---
 
 ## Task 7.1 — Storage Schema
+
+Status: COMPLETE
 
 Suggested tables:
 
@@ -1056,9 +1093,19 @@ Add indexes for actual query patterns.
 
 Do not create ten indexes "just in case".
 
+### Implemented
+
+- `storage/schema.py` — `SCHEMA_VERSION = 1`, `TABLES`, `INDEXES`, `create_schema`, `schema_version`, `set_schema_version`. All 10 suggested tables plus a `resolved_references` and `resolved_imports` table (BuildResult carries resolution data that `load_index` must reconstruct).
+- Tables have primary keys and `ON DELETE CASCADE` foreign keys. `references` is a SQLite keyword, so it is always written as `"references"`.
+- `SourceLocation` is flattened into four `INTEGER` columns (`start_line/end_line/start_byte/end_byte`) on every located entity; `Reference.path` is stored as JSON text; enums are stored as their `.value` string.
+- Indexes only for real query patterns: `documents(relative_path)` UNIQUE, `symbols(document_id)`, `symbols(stable_key)`, `relationships(source, target, kind)` UNIQUE.
+- `chunks`, `embeddings`, and `file_state` tables are created now but have no writers until Phases 8/10/11 (rule 1.5).
+
 ---
 
 ## Task 7.2 — Database Layer
+
+Status: COMPLETE
 
 Create:
 
@@ -1084,9 +1131,18 @@ repositories/
 
 Do not put SQL directly into retrieval or compiler passes.
 
+### Implemented
+
+- `storage/db.py` — `connect(db_path)` (autocommit, `sqlite3.Row`, WAL, `foreign_keys=ON`, `busy_timeout=5000`) and a `transaction(conn)` context manager (commit on success, rollback on any exception).
+- `storage/repositories/` — one module per entity, mirroring the `import_handlers/`/`export_handlers/` pattern: `document_repository.py`, `symbol_repository.py`, `import_repository.py`, `export_repository.py`, `reference_repository.py`, `resolved_reference_repository.py`, `resolved_import_repository.py`, `relationship_repository.py`. Each exposes `insert_many(conn, entities)` and `fetch_all(conn)`.
+- `import_repository.insert_many` returns a `{id(import_reference): import_id}` map so `resolved_import_repository` can link resolution rows (import rows use `INTEGER PRIMARY KEY AUTOINCREMENT`; raw import/export/reference-occurrence rows carry no in-memory id).
+- `storage/_rows.py` — shared `location_columns` / `source_location_from_row` helpers (functions, no base class; rule 1.5).
+
 ---
 
 ## Task 7.3 — Transactions
+
+Status: COMPLETE
 
 A repository update should be atomic:
 
@@ -1120,6 +1176,15 @@ busy_timeout
 ```
 
 Use only after testing behavior.
+
+### Implemented
+
+- `storage/index_store.py` — `persist_index(db_path, result)` opens one connection, creates the schema, then performs a full snapshot replace inside a single `db.transaction`: clear all tables (FK-safe dependency order) and re-insert documents → symbols → imports → exports → references → resolved references → resolved imports → relationships.
+- Relationships are persisted from `result.graph.relationships()` (the deduplicated semantic view); the `relationships` unique index makes re-persists idempotent (`ON CONFLICT DO NOTHING`).
+- On any failure the whole transaction rolls back; a partially indexed repository is never visible (verified by forcing a foreign-key violation mid-insert and asserting every data table is empty).
+- `documents.file_hash` is derived at persist time via `analysis/fingerprints.py:compute_content_hash`; the `Document` model is unchanged.
+- `load_index(db_path)` reconstructs a `BuildResult`: documents, symbols, imports, exports, references, resolved references, resolved imports, relationships; rebuilds `SymbolIndex`, and rebuilds `CodeGraph` via `add_symbols`/`add_relationships` (the graph stays derived state — no graph table).
+- WAL, `foreign_keys`, and `busy_timeout` are all enabled and covered by tests.
 
 ---
 
@@ -1958,6 +2023,11 @@ Update this section as work progresses.
 - [x] Resolve imports to actual exported symbols (via export table)
 - [x] Cross-file name resolution (references resolve through imports)
 - [x] Member-expression resolution (access paths + namespace/this/class member calls)
+- [x] Relationship deduplication (stable `(source, target, kind)` key, set internally in the graph)
+- [x] Stable identities (qualified names, content/signature hashes, deterministic stable keys)
+- [x] Symbol fingerprints (name-independent signatures, body-excluding)
+- [x] Confidence-based rename / move matching across index runs
+- [x] SQLite persistence (schema, db layer, repositories, atomic transactions, `persist_index`/`load_index` round-trip)
 
 ## In Progress
 
@@ -1965,9 +2035,7 @@ Update this section as work progresses.
 
 ## Next
 
-- [ ] Relationship deduplication
-- [ ] Stable identities
-- [ ] SQLite persistence
+- [ ] File hashing / change detection (Phase 8 incremental indexing)
 
 ---
 
@@ -2088,6 +2156,52 @@ Next:
 ```
 
 If a task changes architecture, record why.
+
+## 2026-08-15 — Phase 7 SQLite Persistence
+
+Status: COMPLETE
+
+Files changed:
+- storage/__init__.py (new)
+- storage/db.py (new)
+- storage/schema.py (new)
+- storage/_rows.py (new)
+- storage/index_store.py (new)
+- storage/repositories/__init__.py (new)
+- storage/repositories/document_repository.py (new)
+- storage/repositories/symbol_repository.py (new)
+- storage/repositories/import_repository.py (new)
+- storage/repositories/export_repository.py (new)
+- storage/repositories/reference_repository.py (new)
+- storage/repositories/resolved_reference_repository.py (new)
+- storage/repositories/resolved_import_repository.py (new)
+- storage/repositories/relationship_repository.py (new)
+- tests/test_db.py (new)
+- tests/test_storage_schema.py (new)
+- tests/test_index_store.py (new)
+
+Implementation:
+- Task 7.1: `storage/schema.py` creates all 10 suggested tables plus `resolved_references` and `resolved_imports` (BuildResult carries resolution data `load_index` must reconstruct), with PK/FK (`ON DELETE CASCADE`) and a `schema_version` in `index_metadata`.
+- Task 7.2: `storage/db.py` (connection + pragmas + `transaction`) and one repository module per entity under `storage/repositories/`; shared row helpers in `storage/_rows.py`.
+- Task 7.3: `storage/index_store.py:persist_index` does a full snapshot replace in a single transaction (clear + insert, FK-safe order); any failure rolls back so a partial index is never visible. `load_index` reconstructs `BuildResult` + rebuilds `SymbolIndex` and `CodeGraph`.
+
+Tests:
+- `test_db.py`: WAL / foreign_keys / busy_timeout pragmas; transaction commit and rollback; foreign-key enforcement.
+- `test_storage_schema.py`: all tables created; idempotent re-create; schema version; relationships unique index.
+- `test_index_store.py`: round-trip preserves documents, symbols (stable keys / qualified names / hashes), imports, exports, resolutions, references, resolved statuses/targets, relationships; rebuilt graph (`callees_of(login)`); re-persist does not duplicate; forced FK failure rolls back the entire index.
+
+Result:
+- 136 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 121).
+
+Decision / deviation:
+- `references` is a SQLite keyword and must be quoted as `"references"` in every statement.
+- Persist relationships from the deduplicated graph view (`result.graph.relationships()`); the raw per-occurrence list stays only in memory.
+- Resolved-import rows are linked to import rows by object identity within a single `persist_index` call (imports are occurrence rows with no in-memory id).
+- `chunks`, `embeddings`, and `file_state` tables exist but have no writers yet (Phases 8/10/11); no speculative repositories (rule 1.5).
+- Full snapshot replace per `persist_index`; change detection/merging is Phase 8.
+
+Next:
+- Phase 8 file hashing / change detection / incremental indexing.
 
 ## 2026-08-15 — Phase 0 Regression Tests
 
@@ -2364,6 +2478,67 @@ Decision / deviation:
 
 Next:
 - Phase 5 knowledge-graph stabilization / relationship deduplication.
+
+## 2026-08-15 — Phase 5 Knowledge Graph Stabilization
+
+Status: COMPLETE
+
+Files changed:
+- models/relationships/relationships.py
+- graph/code_graph.py
+- tests/test_code_graph.py (new)
+
+Implementation:
+- Added `Relationship.key` returning the stable `(source_symbol_id, target_symbol_id, kind)` tuple.
+- `CodeGraph.add_relationships` deduplicates via an internal `_relationship_keys` set; `BuildResult.relationships` remains the raw per-occurrence list.
+- `CodeGraph` now exposes `symbols()` and `relationships()` as immutable tuples (no internal state leaking), plus `children_of()` (parent → children map) and `parents_of()` (immediate parent).
+- `callers_of()` / `callees_of()` are unchanged and become duplicate-free as a side effect of dedup.
+
+Tests:
+- Graph API: symbols/children/parents accessors, empty lookups, immutable copy behavior.
+- Dedup: `login(); login();` in one owner → 2 references, 1 unique CALLS edge, `callers_of(login)` returns the owner once; direct `add_relationships` dedup.
+
+Result:
+- 100 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 89).
+
+Decision / deviation:
+- Chose deduplication inside the graph (internal set) per the doc's option, keeping occurrence info recoverable in `BuildResult.relationships`.
+
+Next:
+- Phase 6 stable identities / fingerprints.
+
+## 2026-08-15 — Phase 6 Stable Identity
+
+Status: COMPLETE
+
+Files changed:
+- models/entities/symbols.py
+- analysis/signature.py (new)
+- analysis/fingerprints.py (new)
+- analysis/symbol_builder.py
+- analysis/symbol_matching.py (new)
+- tests/test_fingerprints.py (new)
+- tests/test_symbol_matching.py (new)
+
+Implementation:
+- Task 6.1: `Symbol` keeps `symbol_id` (UUID, internal entity identity) and gains `qualified_name` and `stable_key` (source identity). `qualified_name` is derived from the extraction-time owner chain; `stable_key = "{relative_path}|{language}|{qualified_name}|{kind.value}"` is deterministic across runs. `document_id` stays a UUID; `relative_path` is the stable document identity.
+- Task 6.2: `content_hash` (SHA-256 of symbol source) and `signature_hash` (SHA-256 of a name-independent, body-excluding signature) are computed once in `build_symbol`. `analysis/signature.py:extract_signature` produces `function({param types})[:{return type}]` / `class[:{extends}]` / `variable:{annotation}` / `variable:<{value type}>`. Signature inspection followed rule 1.3.
+- Task 6.3: `analysis/symbol_matching.py:match_symbols` matches old vs new symbol sets: exact stable key → HIGH; same scope + signature → MEDIUM (rename); same content hash at a new path → MEDIUM (move). LOW-confidence "similar source" matches are never accepted (Gate E: no guessing). Unique unclaimed candidates only.
+
+Tests:
+- `test_fingerprints.py`: determinism across two builds; qualified names for module/class-method/nested symbols; stable-key sensitivity to kind and path; signature excludes name and body but includes parameter types / return type / extends; content hash changes on any edit.
+- `test_symbol_matching.py`: unchanged repo → all HIGH; rename in place → MEDIUM; file move with unchanged content → MEDIUM; signature change keeps identity (HIGH); rename + signature change → new identity; ambiguous scope+signature → new identity; moved + edited → new identity.
+
+Result:
+- 121 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 100).
+
+Decision / deviation:
+- Signature is shape-based and name-independent so that rename matching (step 2) can work; bodies are excluded per the task spec.
+- Step 3 of the matching ladder ("same signature + similar source") is recognized as LOW confidence and never produces a match, per the doc's "do not guess" rule.
+- Discovered `class_heritage` is a named child, not a registered field, in the current tree-sitter-typescript grammar; `_class_signature` finds it by child type (rule 1.3 AST inspection).
+
+Next:
+- Phase 7 SQLite persistence.
 
 ---
 

@@ -514,7 +514,13 @@ relative_path
 location
 content
 parent_symbol_id
+qualified_name
+content_hash
+signature_hash
+stable_key
 ```
+
+`symbol_id` is an internal entity identity (UUID). `stable_key` (`relative_path|language|qualified_name|kind`) is the deterministic source identity used to match symbols across index runs. `signature_hash` is a name-independent, body-excluding shape fingerprint used for rename matching.
 
 ---
 
@@ -1141,6 +1147,8 @@ Do not claim a specific token reduction until it is measured.
 - Local compiler pass structure
 - Document index
 - Local semantic models
+- Stable symbol identities (qualified names, content/signature hashes, stable keys)
+- Confidence-based rename / move matching across index runs
 
 ## In Progress
 
