@@ -19,3 +19,11 @@ class Symbol:
     content: str
 
     parent_symbol_id: str | None = None
+
+    qualified_name: str = ""
+
+    content_hash: str = ""
+
+    signature_hash: str = ""
+
+    stable_key: str = ""
