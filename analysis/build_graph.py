@@ -83,7 +83,6 @@ def build_graph(root_dir: str) -> BuildResult:
     # Relationship Pass
     #
     run_relationship_pass(
-        context=context,
         result=build_result,
     )
 
