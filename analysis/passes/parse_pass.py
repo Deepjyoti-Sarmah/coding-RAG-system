@@ -1,6 +1,7 @@
 import hashlib
 
 from models.build_result import BuildResult
+from models.entities.documents import Document
 from models.indexing_context import IndexingContext
 from models.parsed_document import ParsedDocument
 from parsing.registry import PARSER
@@ -14,8 +15,15 @@ def run_parse_pass(
     *,
     context: IndexingContext,
     result: BuildResult,
+    documents: list[Document] | None = None,
 ):
-    for document in context.document_index.documents():
+    to_parse = (
+        documents
+        if documents is not None
+        else context.document_index.documents()
+    )
+
+    for document in to_parse:
         parser = PARSER.get(document.language)
 
         if parser is None:
