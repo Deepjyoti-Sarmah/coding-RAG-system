@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+import numpy as np
+
 from analysis.build_graph import build_graph
 from analysis.fingerprints import compute_content_hash
 from analysis.passes.export_pass import run_export_pass
@@ -16,6 +18,8 @@ from analysis.passes.relationship_pass import run_relationship_pass
 from analysis.passes.resolver_pass import run_reference_resolver_pass
 from analysis.passes.symbol_pass import run_symbol_pass
 from analysis.symbol_matching import match_symbols
+from chunking.symbol_chunker import build_semantic_chunks
+from embeddings.provider import EmbeddingProvider
 from indexing.diff import (
     FileChange,
     ScanResult,
@@ -23,6 +27,7 @@ from indexing.diff import (
     importers_of,
     scan_files,
 )
+from indexing.embedding_store import embed_chunks
 from indexing.export_index import ExportIndex
 from indexing.symbol_index import SymbolIndex
 from ingestion.loader import build_document
@@ -30,7 +35,12 @@ from models.build_result import BuildResult
 from models.entities.documents import Document
 from models.file_state import FileState
 from models.indexing_context import IndexingContext
-from storage.index_store import load_file_states, load_index, persist_index
+from storage.index_store import (
+    load_embedding_cache,
+    load_file_states,
+    load_index,
+    persist_index,
+)
 
 
 @dataclass(slots=True)
@@ -47,6 +57,8 @@ class IndexRunReport:
 def reindex_index(
     db_path: str,
     root_dir: str,
+    *,
+    embedding_provider: EmbeddingProvider | None = None,
 ) -> IndexRunReport:
     previous_states = _load_previous_states(db_path)
 
@@ -54,22 +66,30 @@ def reindex_index(
 
     if not previous_states:
         result = build_graph(root_dir)
+        embeddings, new_embeddings = _embed_for_persist(
+            db_path,
+            result.chunks,
+            embedding_provider,
+        )
         persist_index(
             db_path,
             result,
             _file_states_from_documents(result.documents),
+            embeddings=embeddings,
         )
 
         return IndexRunReport(
             changes=scan.changes,
             parsed_files=len(result.documents),
             resolved_references=len(result.references),
+            new_embeddings=new_embeddings,
         )
 
     return _incremental_rebuild(
         db_path=db_path,
         previous_states=previous_states,
         scan=scan,
+        embedding_provider=embedding_provider,
     )
 
 
@@ -78,6 +98,7 @@ def _incremental_rebuild(
     db_path: str,
     previous_states: dict[str, FileState],
     scan: ScanResult,
+    embedding_provider: EmbeddingProvider | None = None,
 ) -> IndexRunReport:
     changes = scan.changes
     current_paths = set(scan.current)
@@ -238,6 +259,14 @@ def _incremental_rebuild(
     run_relationship_pass(result=result)
     run_graph_pass(result=result)
 
+    result.chunks = build_semantic_chunks(result)
+
+    embeddings, new_embeddings = _embed_for_persist(
+        db_path,
+        result.chunks,
+        embedding_provider,
+    )
+
     persist_index(
         db_path,
         result,
@@ -246,6 +275,7 @@ def _incremental_rebuild(
             changes=changes,
             previous_states=previous_states,
         ),
+        embeddings=embeddings,
     )
 
     return IndexRunReport(
@@ -253,6 +283,7 @@ def _incremental_rebuild(
         parsed_files=len(rebuild_paths),
         resolved_references=fresh_reference_count
         + len(reused_references_for_reresolve),
+        new_embeddings=new_embeddings,
     )
 
 
@@ -263,6 +294,18 @@ def _load_previous_states(db_path: str) -> dict[str, FileState]:
     return {
         state.relative_path: state for state in load_file_states(db_path)
     }
+
+
+def _embed_for_persist(
+    db_path: str,
+    chunks: list,
+    provider: EmbeddingProvider | None,
+) -> tuple[dict[str, np.ndarray] | None, int]:
+    if provider is None:
+        return None, 0
+
+    cache = load_embedding_cache(db_path)
+    return embed_chunks(chunks, provider, cache)
 
 
 def _build_documents(

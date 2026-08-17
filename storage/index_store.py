@@ -1,9 +1,13 @@
+import numpy as np
+
 import storage.db as db
 import storage.schema as schema
 from models.build_result import BuildResult
 from models.file_state import FileState
 from storage.repositories import (
+    chunk_repository,
     document_repository,
+    embedding_repository,
     export_repository,
     file_state_repository,
     import_repository,
@@ -33,6 +37,7 @@ def persist_index(
     db_path: str,
     result: BuildResult,
     file_states: list[FileState] | None = None,
+    embeddings: dict[str, np.ndarray] | None = None,
 ) -> None:
     conn = db.connect(db_path)
 
@@ -62,9 +67,23 @@ def persist_index(
                 conn,
                 result.graph.relationships(),
             )
+            chunk_repository.insert_many(conn, result.chunks)
+
+            if embeddings:
+                embedding_repository.insert_many(conn, embeddings)
 
             if file_states is not None:
                 file_state_repository.insert_many(conn, file_states)
+    finally:
+        conn.close()
+
+
+def load_embedding_cache(db_path: str) -> dict[str, np.ndarray]:
+    conn = db.connect(db_path)
+
+    try:
+        schema.create_schema(conn)
+        return embedding_repository.load_embedding_cache(conn)
     finally:
         conn.close()
 
@@ -89,6 +108,7 @@ def load_index(db_path: str) -> BuildResult:
         exports = export_repository.fetch_all(conn)
         references = reference_repository.fetch_all(conn)
         relationships = relationship_repository.fetch_all(conn)
+        chunks = chunk_repository.fetch_all(conn)
 
         symbols_by_id = {symbol.symbol_id: symbol for symbol in symbols}
         documents_by_id = {document.document_id: document for document in documents}
@@ -120,6 +140,7 @@ def load_index(db_path: str) -> BuildResult:
             references=references,
             resolved_references=resolved_references,
             relationships=relationships,
+            chunks=chunks,
         )
 
         result.symbol_index.add_many(symbols)

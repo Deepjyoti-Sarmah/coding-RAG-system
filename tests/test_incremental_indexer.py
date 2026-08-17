@@ -147,6 +147,27 @@ class TestIncrementalIndexer(unittest.TestCase):
             ResolutionStatus.UNRESOLVED,
         )
 
+    def test_second_run_keeps_identical_chunks(self):
+        _write(self.root, AUTH)
+
+        reindex_index(self.db_path, str(self.root))
+        first = load_index(self.db_path)
+        reindex_index(self.db_path, str(self.root))
+        second = load_index(self.db_path)
+
+        self.assertEqual(
+            {c.chunk_key for c in second.chunks},
+            {c.chunk_key for c in first.chunks},
+        )
+        self.assertEqual(
+            {c.content_hash for c in second.chunks},
+            {c.content_hash for c in first.chunks},
+        )
+        self.assertEqual(
+            {c.embedding_text for c in second.chunks},
+            {c.embedding_text for c in first.chunks},
+        )
+
     def test_touch_without_content_change_does_not_reparse(self):
         _write(self.root, AUTH)
         reindex_index(self.db_path, str(self.root))

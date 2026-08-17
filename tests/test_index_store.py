@@ -4,10 +4,12 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
+import numpy as np
+
 from analysis.build_graph import build_graph
 from models.build_result import BuildResult
 from storage import db
-from storage.index_store import load_index, persist_index
+from storage.index_store import load_embedding_cache, load_index, persist_index
 
 FILES = {
     "auth.ts": (
@@ -32,6 +34,8 @@ DATA_TABLES = [
     "resolved_references",
     "resolved_imports",
     "relationships",
+    "chunks",
+    "embeddings",
 ]
 
 
@@ -158,6 +162,36 @@ class TestIndexStore(unittest.TestCase):
         }
         self.assertEqual(loaded_targets, original_targets)
 
+    def test_round_trip_preserves_chunks(self):
+        original, loaded = _persist_and_load(FILES)
+
+        original_chunks = {
+            (c.chunk_key, c.content_hash, c.chunk_version)
+            for c in original.chunks
+        }
+        loaded_chunks = {
+            (c.chunk_key, c.content_hash, c.chunk_version)
+            for c in loaded.chunks
+        }
+
+        self.assertEqual(loaded_chunks, original_chunks)
+
+        loaded_by_key = {c.chunk_key: c for c in loaded.chunks}
+
+        for chunk in original.chunks:
+            self.assertEqual(
+                loaded_by_key[chunk.chunk_key].embedding_text,
+                chunk.embedding_text,
+            )
+            self.assertEqual(
+                loaded_by_key[chunk.chunk_key].display_text,
+                chunk.display_text,
+            )
+            self.assertEqual(
+                loaded_by_key[chunk.chunk_key].relative_path,
+                chunk.relative_path,
+            )
+
     def test_round_trip_preserves_relationships_and_graph(self):
         original, loaded = _persist_and_load(FILES)
 
@@ -176,6 +210,39 @@ class TestIndexStore(unittest.TestCase):
             loaded.graph.callers_of(symbols_by_name["createAuth"].symbol_id),
             [symbols_by_name["login"]],
         )
+
+    def test_round_trip_preserves_embeddings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = str(Path(tmp) / "index.sqlite")
+
+            original = _build(FILES)
+            embeddings = {
+                chunk.chunk_key: np.full(8, float(index), dtype=np.float32)
+                for index, chunk in enumerate(original.chunks)
+            }
+            persist_index(
+                db_path,
+                original,
+                embeddings=embeddings,
+            )
+
+            cache = load_embedding_cache(db_path)
+            expected = {
+                chunk.content_hash: embeddings[chunk.chunk_key]
+                for chunk in original.chunks
+            }
+
+            self.assertEqual(set(cache), set(expected))
+            for content_hash, vector in cache.items():
+                np.testing.assert_array_equal(vector, expected[content_hash])
+
+    def test_persist_without_embeddings_leaves_cache_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = str(Path(tmp) / "index.sqlite")
+
+            persist_index(db_path, _build(FILES))
+
+            self.assertEqual(load_embedding_cache(db_path), {})
 
     def test_re_persist_does_not_duplicate(self):
         with tempfile.TemporaryDirectory() as tmp:

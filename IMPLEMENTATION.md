@@ -1303,7 +1303,7 @@ Do not invalidate the entire repository for every edit.
 
 # 15. Phase 9 — Hierarchical / Merkle Hashing
 
-Status: AFTER BASIC INCREMENTAL INDEXING
+Status: COMPLETE
 
 Goal:
 
@@ -1340,6 +1340,12 @@ repo_hash
 - never hash random IDs
 - changing one leaf should change only its ancestor hashes
 
+### Implemented
+
+- `indexing/merkle.py` — `NodeKind` (`FILE` / `DIRECTORY`), `MerkleNode(relative_path, kind, hash)`, `MerkleTree(nodes)` (`node_hash(path)`, `root_hash`), and `compute_merkle_tree(root_dir)`.
+- File leaves hash their content via the existing `analysis/fingerprints.py:compute_content_hash`; directories/root hash children sorted by basename, encoded as `name\0child_hash\0` (no mtime/size/random IDs). `EXCLUDE_DIRS` are skipped via `is_inside_excluded_dir`; unreadable files are skipped cleanly like `scan_files`. Single-file roots produce a single `FILE` node.
+- Deliberately no persistence or indexer wiring (rule 1.5): later phases (content-addressed chunk cache, content proofs) are the consumers.
+
 ### Tests
 
 Change one file.
@@ -1352,11 +1358,23 @@ affected directory hash ≠ old hash
 unrelated directory hash == old hash
 ```
 
+Additionally:
+
+```text
+file leaf hash == compute_content_hash(content)
+directory nodes are DIRECTORY kind
+tree hash is deterministic across two runs
+adding a file changes only its ancestors
+deleting a file changes only its ancestors
+hash is independent of file creation order
+single-file root hashes its content
+```
+
 ---
 
 # 16. Phase 10 — Semantic Chunking
 
-Status: AFTER GRAPH + PERSISTENCE
+Status: COMPLETE
 
 Goal:
 
@@ -1401,6 +1419,12 @@ chunk_version_hash
 
 This makes embedding reuse possible.
 
+### Implemented
+
+- `chunking/symbol_chunker.py` — `SemanticChunk` now carries `chunk_key` (== `symbol.stable_key`, never a UUID), `symbol_id`, `relative_path`, `embedding_text`, `display_text`, `content_hash` (SHA-256 of `embedding_text` via the existing `compute_content_hash`), and a constant `chunk_version = "v1"`. The UUID-derived `chunk_id` field is gone.
+- `build_semantic_chunk(symbol, graph, *, document_imports, exports)` builds the embedding text from all spec fields: `kind name`, `qualified name`, `file`, `parent` (via `graph.parents_of` → parent qualified name), `calls` (callees), `called by` (callers), `imports` (the symbol's document, sorted, formatted `import { imported_name } from "module_path"`), `exports` (only this symbol's aliases, sorted, with `symbol as alias` when renamed), then `source`. Empty relations render as `none`.
+- `build_semantic_chunks(result)` — one chunk per symbol, grouping imports/exports by `document_id`.
+
 ---
 
 ## Task 10.2 — Chunk Tests
@@ -1414,11 +1438,26 @@ login ← api.login
 
 assert the chunk contains the intended graph facts and excludes unrelated symbols.
 
+### Implemented
+
+- `tests/test_semantic_chunking.py` — fixture `auth.ts` (login calls createAuth), `api.ts` (run calls imported login), `util.ts` (unrelated format).
+  - Task 10.2: login's chunk embeds `qualified name`, `file: auth.ts`, `calls: createAuth`, `called by: run`, `exports: login`; excludes `format` / `util.ts` / `logout`. run's chunk embeds its `import { login } from "./auth"`.
+  - Task 10.1: `chunk_key` is the stable key (`auth.ts|typescript|login|function`); two full builds produce identical `chunk_key` / `content_hash` / `embedding_text` sets; a body edit changes `content_hash` while keeping `chunk_key`; distinct symbols have distinct keys; one chunk per symbol.
+- Persistence: `tests/test_index_store.py` round-trips `(chunk_key, content_hash, chunk_version)` plus full embedding/display/relative-path fidelity and includes `chunks` in the rollback table list; `tests/test_incremental_indexer.py` asserts a second no-op `reindex_index` keeps identical chunks.
+
+### Persistence
+
+- `storage/repositories/chunk_repository.py` — `insert_many`/`fetch_all` matching the repository pattern; `chunk_key` maps to the `chunks.chunk_id` primary-key column.
+- `models/build_result.py` — added `chunks: list[SemanticChunk]`.
+- `analysis/build_graph.py` — computes `result.chunks` as the final step after `run_graph_pass`.
+- `storage/index_store.py` — `chunk_repository.insert_many(conn, result.chunks)` inside the same transaction (after relationships); `load_index` reconstructs chunks from the table.
+- `indexing/indexer.py` — recomputes `result.chunks = build_semantic_chunks(result)` from the merged result immediately before `persist_index` (cheap; no per-file merge needed).
+
 ---
 
 # 17. Phase 11 — Local Embedding Store
 
-Status: AFTER CHUNKING
+Status: COMPLETE
 
 Goal:
 
@@ -1482,6 +1521,21 @@ Test:
 same chunk hash
 → no second embedding call
 ```
+
+### Implemented
+
+- `embeddings/provider.py` — `EmbeddingProvider` ABC with `dimension` and `embed(text)` / `embed_batch(texts)` / `embed_query(query)`; vectors are `numpy` arrays.
+- `embeddings/local_provider.py` — `LocalEmbeddingProvider` wraps `SentenceTransformer` (`all-MiniLM-L6-v2` default), returns normalized float32 vectors. The only place `SentenceTransformer` is referenced.
+- `embeddings/fake_provider.py` — deterministic `FakeEmbeddingProvider(dimension=8)`: SHA-256 of the text mapped to float32 in `[-1, 1)` and L2-normalized; same text → identical vector, no ML model loaded.
+- `indexing/vector_index.py` — now depends on `EmbeddingProvider` (`embed_batch` for `build`, `embed_query` for `search`); the old `EmbeddingEncoder` was deleted.
+- `indexing/embedding_store.py` — `embed_chunks(chunks, provider, cache) -> (embeddings_by_key, new_count)`: reuses any `content_hash` found in the cache, embeds only the missing chunks via `embed_batch`, and reports how many were newly embedded.
+- `storage/repositories/embedding_repository.py` — `insert_many` / `fetch_all` / `load_embedding_cache(conn)` (the last joins `chunks.content_hash` → vector); vectors are stored as float32 blobs.
+- `storage/index_store.py` — `persist_index(..., embeddings=None)` writes embeddings inside the same transaction (after chunks); new `load_embedding_cache(db_path)` wrapper.
+- `indexing/indexer.py` — `reindex_index(db_path, root_dir, *, embedding_provider=None)`. With no provider, embeddings are skipped entirely (no model loading, no cache IO beyond the existing path). With a provider, the existing cache is loaded, missing chunks are embedded, and `IndexRunReport.new_embeddings` reports the count. Threaded through `_incremental_rebuild` too.
+
+### Persistence
+
+- `embeddings` table (existing schema, BLOB) is already first in `_TABLES_IN_DEPENDENCY_ORDER`; chunk keys map to the `chunks.chunk_id` PK.
 
 ---
 
@@ -2055,6 +2109,7 @@ Update this section as work progresses.
 - [x] Confidence-based rename / move matching across index runs
 - [x] SQLite persistence (schema, db layer, repositories, atomic transactions, `persist_index`/`load_index` round-trip)
 - [x] Incremental indexing (file state inventory, `mtime`-hint / hash-based change detection, selective re-resolution, interface-aware dependency invalidation)
+- [x] Hierarchical / Merkle hashing (deterministic content+name subtree hashes over the repo tree)
 
 ## In Progress
 
@@ -2062,7 +2117,8 @@ Update this section as work progresses.
 
 ## Next
 
-- [ ] Hierarchical / Merkle hashing (Phase 9)
+- [x] Semantic chunking (Phase 10)
+- [x] Embedding provider abstraction / local embedding store (Phase 11)
 
 ---
 
@@ -2183,6 +2239,109 @@ Next:
 ```
 
 If a task changes architecture, record why.
+
+## 2026-08-17 — Phase 10 Semantic Chunking
+
+Status: COMPLETE
+
+Files changed:
+- chunking/symbol_chunker.py (rewrite)
+- storage/repositories/chunk_repository.py (new)
+- models/build_result.py (add `chunks`)
+- analysis/build_graph.py (compute chunks after `run_graph_pass`)
+- storage/index_store.py (persist/load chunks in the same transaction)
+- indexing/indexer.py (recompute chunks before `persist_index`)
+- tests/test_semantic_chunking.py (new)
+- tests/test_index_store.py (chunk round-trip + rollback coverage)
+- tests/test_incremental_indexer.py (second run keeps identical chunks)
+
+Implementation:
+- Task 10.1: `SemanticChunk` is now content-addressed and stable — `chunk_key == symbol.stable_key` (never a UUID), `content_hash` = SHA-256 of `embedding_text` via the existing `compute_content_hash`, and a constant `chunk_version = "v1"`. The old UUID-derived `chunk_id` was dropped. `build_semantic_chunks(result)` produces one chunk per symbol and groups imports/exports by `document_id`.
+- Task 10.2: `build_semantic_chunk(symbol, graph, *, document_imports, exports)` embeds every spec field — kind+name, qualified name, file path, parent context (`graph.parents_of` → parent qualified name), calls, called by, imports (document's, sorted, `import { imported_name } from "module_path"`), exports (only this symbol's aliases, sorted, `symbol as alias` when renamed), then source; empty relations render as `none`.
+- Persistence: `chunk_repository.insert_many` maps `chunk_key` → the existing `chunks.chunk_id` PK column and runs inside the same transaction as the rest of the snapshot (after relationships); `load_index` reconstructs `result.chunks`. The incremental indexer recomputes `result.chunks = build_semantic_chunks(result)` from the merged result right before persist (cheap, no per-file merge), and the full-build path already gets chunks from `build_graph`.
+
+Tests:
+- `test_semantic_chunking.py`: login's chunk contains qualified name, `file: auth.ts`, `calls: createAuth`, `called by: run`, `exports: login`; excludes `format`/`util.ts`/`logout`. Deterministic `chunk_key`/`content_hash` across two builds; body edit → changed `content_hash`, same `chunk_key`; distinct symbols → distinct keys; one chunk per symbol; run's chunk embeds its import.
+- `test_index_store.py`: `persist_index`/`load_index` round-trip preserves `(chunk_key, content_hash, chunk_version)` and full embedding/display/relative-path fidelity; `chunks` added to the rollback table list.
+- `test_incremental_indexer.py`: a second no-op `reindex_index` keeps identical `chunk_key` / `content_hash` / `embedding_text` sets.
+
+Result:
+- 170 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 159).
+
+Decision / deviation:
+- `chunk_key` reuses `symbol.stable_key` directly (path|language|qualified_name|kind) instead of a separate hash, so distinct symbols are guaranteed distinct keys while body edits keep the key stable — exactly what embedding reuse needs.
+- To avoid an import cycle between `models/build_result` and `chunking/symbol_chunker`, `build_result.py` uses `from __future__ import annotations` + a `TYPE_CHECKING` import for `SemanticChunk`; `symbol_chunker` imports `BuildResult` normally.
+
+Next:
+- Phase 12 SQLite FTS5 (after persistence) — see section 18.
+
+## 2026-08-17 — Phase 11 Local Embedding Store
+
+Status: COMPLETE
+
+Files changed:
+- embeddings/provider.py (new — `EmbeddingProvider` ABC)
+- embeddings/local_provider.py (new — `LocalEmbeddingProvider`)
+- embeddings/fake_provider.py (new — `FakeEmbeddingProvider`)
+- embeddings/encoder.py (deleted)
+- indexing/vector_index.py (refactor to `EmbeddingProvider`)
+- indexing/embedding_store.py (new — `embed_chunks`)
+- storage/repositories/embedding_repository.py (new)
+- storage/index_store.py (`persist_index` embeddings param + `load_embedding_cache`)
+- indexing/indexer.py (optional `embedding_provider` + `new_embeddings` report)
+- pyproject.toml (add `numpy`, `sentence-transformers`), uv.lock, uv sync
+- tests/test_embedding_provider.py (new)
+- tests/test_embedding_store.py (new)
+- tests/test_embedding_indexer.py (new)
+- tests/test_index_store.py (embeddings round-trip + rollback coverage)
+
+Implementation:
+- Task 11.1: `EmbeddingProvider` exposes `dimension`, `embed(text)`, `embed_batch(texts)`, `embed_query(query)`. `LocalEmbeddingProvider` is the only place `SentenceTransformer` is referenced (model `all-MiniLM-L6-v2`, normalized float32 vectors); `indexing/vector_index.py` now consumes the abstraction via `embed_batch`/`embed_query`, and the old `embeddings/encoder.py` was deleted.
+- Task 11.2: `FakeEmbeddingProvider(dimension=8)` derives a deterministic, L2-normalized vector from the SHA-256 of the text — no ML model in unit tests.
+- Cache + persistence: `indexing/embedding_store.py::embed_chunks(chunks, provider, cache)` returns `(embeddings_by_key, new_count)`, reusing vectors by `content_hash` and embedding only the missing chunks. `persist_index` writes embeddings in the same transaction (after chunks); `load_embedding_cache(db_path)` returns a `content_hash → vector` map (float32 blobs).
+- Indexer wiring: `reindex_index(db_path, root_dir, *, embedding_provider=None)`. Provider `None` → embeddings skipped (existing behavior, no model load); provider supplied → cache reuse + persistence + `IndexRunReport.new_embeddings`, threaded through both the full-build and `_incremental_rebuild` paths.
+
+Tests:
+- `test_embedding_provider.py`: dimension, determinism, distinct vectors for distinct texts, batch shape/dtype, L2 normalization, `embed_query == embed`, empty batch.
+- `test_embedding_store.py`: empty cache embeds all; full cache is a no-op (no `embed_batch` call); partial cache embeds only missing; empty chunk list.
+- `test_embedding_indexer.py`: first run embeds every chunk; no-op run reuses all (0 new, vectors unchanged); body edit re-embeds only the changed chunk (`new_embeddings == 1`, unchanged chunks keep their cached vectors); persistence round-trip (float32, dim 8, normalized); no-provider run skips embeddings entirely.
+- `test_index_store.py`: `persist_index(..., embeddings=...)` round-trips through `load_embedding_cache`; `embeddings` added to the rollback table list.
+
+Result:
+- 188 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 170).
+
+Decision / deviation:
+- Cache is keyed by `content_hash`, so any chunk whose embedding text is unchanged reuses its stored vector across runs; a body edit changes the hash and re-embeds only that chunk (same `chunk_key`, new vector).
+- `embed_batch` returns a float32 2-D `numpy` array; blobs are stored raw as float32 bytes.
+
+Next:
+- Phase 12 SQLite FTS5 (after persistence) — see section 18.
+
+## 2026-08-17 — Phase 9 Hierarchical / Merkle Hashing
+
+Status: COMPLETE
+
+Files changed:
+- indexing/merkle.py (new)
+- tests/test_merkle.py (new)
+
+Implementation:
+- `compute_merkle_tree(root_dir)` builds a deterministic Merkle tree over the repo file tree: file leaves hash content via the existing `compute_content_hash`; directories and the root hash children (names + child hashes) sorted by basename and encoded as `name\0child_hash\0`. Only content and normalized names are hashed — never mtime, size, or random IDs — so a change to one leaf changes only its ancestor hashes.
+- `EXCLUDE_DIRS` are skipped via the existing `is_inside_excluded_dir`; unreadable files are skipped cleanly (mirrors `scan_files`). Single-file roots produce a single `FILE` node whose hash is the content hash.
+- Deliberately no persistence or indexer wiring (rule 1.5): later phases (content-addressed chunk cache in Phases 10/11, content proofs in Phase 19) are the consumers.
+
+Tests:
+- `test_merkle.py`: file leaf == `compute_content_hash(content)`; directory nodes are `DIRECTORY` kind; tree hash deterministic across runs; changing one file changes its hash + affected dir + root but leaves the unrelated `lib/` dir unchanged; adding and deleting a file change only affected subtrees; hash independent of file creation order; single-file root hashes content.
+
+Result:
+- 159 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 151).
+
+Decision / deviation:
+- Chose a pure content+name hash with NUL-separated `name\0hash\0` entries so no delimiter collision is possible; sibling order is fixed by basename sort.
+- Scoped Phase 9 to the tree module and tests per the spec (rules + tests only); cross-run "detect unchanged subtrees cheaply" comparison is deferred to the persistence consumers.
+
+Next:
+- Phase 10 semantic chunking (done — see entry above).
 
 ## 2026-08-17 — Phase 8 Incremental Indexing
 

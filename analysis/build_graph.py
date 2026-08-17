@@ -7,6 +7,7 @@ from analysis.passes.reference_pass import run_reference_pass
 from analysis.passes.relationship_pass import run_relationship_pass
 from analysis.passes.resolver_pass import run_reference_resolver_pass
 from analysis.passes.symbol_pass import run_symbol_pass
+from chunking.symbol_chunker import build_semantic_chunks
 from ingestion.loader import load_code_files
 from models.build_result import BuildResult
 from models.indexing_context import IndexingContext
@@ -92,5 +93,10 @@ def build_graph(root_dir: str) -> BuildResult:
     # Build Graph
     #
     run_graph_pass(result=build_result)
+
+    #
+    # Semantic Chunking
+    #
+    build_result.chunks = build_semantic_chunks(build_result)
 
     return build_result

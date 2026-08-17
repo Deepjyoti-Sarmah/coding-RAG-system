@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
@@ -10,6 +13,9 @@ from models.entities.references import Reference
 from models.entities.resolved_reference import ResolvedReference
 from models.entities.symbols import Symbol
 from models.relationships.relationships import Relationship
+
+if TYPE_CHECKING:
+    from chunking.symbol_chunker import SemanticChunk
 
 
 @dataclass(slots=True)
@@ -33,5 +39,7 @@ class BuildResult:
     resolved_references: list[ResolvedReference] = field(default_factory=list)
 
     relationships: list[Relationship] = field(default_factory=list)
+
+    chunks: list[SemanticChunk] = field(default_factory=list)
 
     graph: CodeGraph = field(default_factory=CodeGraph)
