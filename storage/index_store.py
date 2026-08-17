@@ -1,9 +1,11 @@
 import storage.db as db
 import storage.schema as schema
 from models.build_result import BuildResult
+from models.file_state import FileState
 from storage.repositories import (
     document_repository,
     export_repository,
+    file_state_repository,
     import_repository,
     reference_repository,
     relationship_repository,
@@ -30,6 +32,7 @@ _TABLES_IN_DEPENDENCY_ORDER = [
 def persist_index(
     db_path: str,
     result: BuildResult,
+    file_states: list[FileState] | None = None,
 ) -> None:
     conn = db.connect(db_path)
 
@@ -59,6 +62,19 @@ def persist_index(
                 conn,
                 result.graph.relationships(),
             )
+
+            if file_states is not None:
+                file_state_repository.insert_many(conn, file_states)
+    finally:
+        conn.close()
+
+
+def load_file_states(db_path: str) -> list[FileState]:
+    conn = db.connect(db_path)
+
+    try:
+        schema.create_schema(conn)
+        return file_state_repository.fetch_all(conn)
     finally:
         conn.close()
 
