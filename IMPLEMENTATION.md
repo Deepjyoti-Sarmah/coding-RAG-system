@@ -1190,7 +1190,7 @@ Use only after testing behavior.
 
 # 14. Phase 8 — Incremental Indexing
 
-Status: NOT STARTED
+Status: COMPLETE
 
 Goal:
 
@@ -1211,6 +1211,12 @@ last_indexed_at
 Hash is the correctness signal.
 
 mtime is only a cheap change hint.
+
+### Implemented
+
+- `storage/repositories/file_state_repository.py` — upsert + `fetch_all` for the existing `file_state` table.
+- `storage/index_store.persist_index(..., file_states=None)` writes the inventory in the same transaction; `load_file_states(db_path)` reads it back (creating the schema if needed).
+- `FileState` (`models/file_state.py`) was already in place from Phase 7.
 
 ---
 
@@ -1247,6 +1253,13 @@ zero semantic rebuilds
 zero new embeddings
 ```
 
+### Implemented
+
+- `indexing/diff.py:scan_files` classifies every repo file against the previous `file_state` inventory.
+- Fast path: stored `mtime_ns` + `size_bytes` match → `UNCHANGED` without reading the file (cheap hint). Otherwise the file is read, hashed, and compared (correctness signal) — so a pure `touch` is still `UNCHANGED`.
+- `FileChange` enum: `NEW` / `CHANGED` / `UNCHANGED` / `DELETED`.
+- Tests cover the exact `a.ts` / `b.ts` fixture: the second run reports both `UNCHANGED`, `parsed_files == 0`, `resolved_references == 0`, `new_embeddings == 0`.
+
 ---
 
 ## Task 8.3 — Dependency Invalidation
@@ -1272,6 +1285,19 @@ public semantic interface changed
 ```
 
 Do not invalidate the entire repository for every edit.
+
+### Implemented
+
+- `indexing/diff.py:interface_fingerprint` = sorted `(exported_name, signature_hash)` tuples per file — the public semantic interface.
+- `indexing/diff.py:importers_of` resolves each import to repo-relative candidate paths (reusing `resolve_module_path`) and maps module → importing document ids.
+- `indexing/indexer.py:reindex_index(db_path, root_dir) -> IndexRunReport`:
+  - No previous `file_state` inventory → falls back to a full `build_graph` + `persist_index`.
+  - `REBUILD` set = `NEW` ∪ `CHANGED` (re-extracted through the existing passes; `run_parse_pass` gained an optional `documents` filter).
+  - `RE-RESOLVE` set = importers of interface-changed or deleted files; untouched files are reused verbatim (documents/symbols/imports/exports/references/resolutions all carried from the stored index).
+  - Symbol identity reconciled via Phase 6 `match_symbols` so edited symbols keep their `symbol_id` and cross-file references stay valid without re-resolving untouched files.
+  - Imports/references are only re-resolved for the affected set, then merged back before the snapshot persist.
+  - Report exposes per-path `changes`, `parsed_files`, `resolved_references`, `new_embeddings` (0 until Phase 11).
+- Tests: body edit keeps importer resolved without re-resolution; export rename/signature change re-resolves the importer to `UNRESOLVED`; deletion removes symbols and invalidates importers; identity preserved across edits.
 
 ---
 
@@ -2028,6 +2054,7 @@ Update this section as work progresses.
 - [x] Symbol fingerprints (name-independent signatures, body-excluding)
 - [x] Confidence-based rename / move matching across index runs
 - [x] SQLite persistence (schema, db layer, repositories, atomic transactions, `persist_index`/`load_index` round-trip)
+- [x] Incremental indexing (file state inventory, `mtime`-hint / hash-based change detection, selective re-resolution, interface-aware dependency invalidation)
 
 ## In Progress
 
@@ -2035,7 +2062,7 @@ Update this section as work progresses.
 
 ## Next
 
-- [ ] File hashing / change detection (Phase 8 incremental indexing)
+- [ ] Hierarchical / Merkle hashing (Phase 9)
 
 ---
 
@@ -2156,6 +2183,43 @@ Next:
 ```
 
 If a task changes architecture, record why.
+
+## 2026-08-17 — Phase 8 Incremental Indexing
+
+Status: COMPLETE
+
+Files changed:
+- indexing/diff.py (new)
+- indexing/indexer.py (new)
+- storage/repositories/file_state_repository.py (new)
+- tests/test_file_state.py (new)
+- tests/test_change_detection.py (new)
+- tests/test_incremental_indexer.py (new)
+- ingestion/loader.py (refactor: `iter_repo_files` / `build_document`)
+- analysis/passes/parse_pass.py (optional `documents` filter)
+- storage/index_store.py (`persist_index(..., file_states)`, `load_file_states`)
+
+Implementation:
+- Task 8.1: `file_state_repository` (upsert + `fetch_all`) fills the `file_state` table created in Phase 7. `persist_index` writes the inventory in the same transaction; `load_file_states` reads it back.
+- Task 8.2: `indexing/diff.py:scan_files` classifies `NEW` / `CHANGED` / `UNCHANGED` / `DELETED`. `mtime_ns` + `size_bytes` is the cheap hint (no content read); the SHA-256 content hash is the correctness signal (a pure `touch` stays `UNCHANGED`).
+- Task 8.3: `interface_fingerprint` (sorted `(exported_name, signature_hash)`) distinguishes content change from public-interface change; `importers_of` (via `resolve_module_path`) finds importers. `indexing/indexer.py:reindex_index` rebuilds only `NEW`/`CHANGED` files, re-resolves only importers of interface-changed/deleted files, reuses everything else, reconciles symbol identity via Phase 6 `match_symbols`, and persists a merged snapshot.
+- First run (no prior `file_state`) falls back to `build_graph` + `persist_index`, so the existing pipeline is untouched.
+
+Tests:
+- `test_file_state.py`: repository round-trip, upsert replace, schema creation on load.
+- `test_change_detection.py`: first scan all NEW; unchanged scan skips content reads; `touch` still UNCHANGED; edit → CHANGED; add/delete → NEW/DELETED.
+- `test_incremental_indexer.py`: second run is a no-op (0 parses, 0 re-resolves, 0 embeddings); editing one file rebuilds only that file; body edit preserves symbol identity and does not invalidate importers; export rename re-resolves the importer to UNRESOLVED; deletion removes symbols and invalidates importers.
+
+Result:
+- 151 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 136).
+
+Decision / deviation:
+- `persist_index` remains a full snapshot replace; the win is skipping parse/extraction/resolution for unchanged files, not writing less data. Change detection / merging is the Phase 8 scope; Phase 9 adds subtree hashing on top.
+- Re-resolution re-runs the existing resolvers over stored `Reference`/`ImportReference` objects (no re-parse of importers), matching the doc's "affected semantic data may need re-resolution".
+- Symbol identity carry-over (Phase 6 `match_symbols`) is required for correctness: it lets untouched importers keep pointing at edited symbols without re-resolution.
+
+Next:
+- Phase 9 hierarchical / Merkle hashing.
 
 ## 2026-08-15 — Phase 7 SQLite Persistence
 

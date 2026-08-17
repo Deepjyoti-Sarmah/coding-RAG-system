@@ -1149,6 +1149,8 @@ Do not claim a specific token reduction until it is measured.
 - Local semantic models
 - Stable symbol identities (qualified names, content/signature hashes, stable keys)
 - Confidence-based rename / move matching across index runs
+- SQLite persistence (schema, repositories, atomic snapshot persist / load round-trip)
+- Incremental indexing (file-state inventory, hash-based change detection, selective re-resolution with interface-aware dependency invalidation)
 
 ## In Progress
 
