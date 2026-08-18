@@ -5,6 +5,7 @@ import storage.schema as schema
 from models.build_result import BuildResult
 from models.entities.fts_hit import FtsHit
 from models.file_state import FileState
+from retrieval.context_builder import ContextPack, build_context_pack
 from retrieval.hybrid_retriever import HybridRetriever
 from retrieval.numpy_vector_store import NumpyVectorStore
 from storage.repositories import (
@@ -158,6 +159,30 @@ def build_hybrid_retriever(
         embed=embed,
         resolved_imports=result.resolved_import_references,
         exports=result.exports,
+    )
+
+
+def build_context_pack_from_index(
+    db_path: str,
+    query: str,
+    *,
+    token_budget: int,
+    provider=None,
+    top_k: int = 5,
+) -> ContextPack:
+    result = load_index(db_path)
+    retriever = build_hybrid_retriever(db_path, provider=provider)
+
+    retrieval = retriever.retrieve(query, top_k=top_k)
+
+    symbols_by_key = {symbol.stable_key: symbol for symbol in result.symbols}
+
+    return build_context_pack(
+        retrieval.candidates,
+        query=query,
+        graph=result.graph,
+        symbols_by_key=symbols_by_key,
+        token_budget=token_budget,
     )
 
 
