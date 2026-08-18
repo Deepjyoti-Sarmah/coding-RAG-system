@@ -5,6 +5,7 @@ import storage.schema as schema
 from models.build_result import BuildResult
 from models.entities.fts_hit import FtsHit
 from models.file_state import FileState
+from retrieval.numpy_vector_store import NumpyVectorStore
 from storage.repositories import (
     chunk_fts_repository,
     chunk_repository,
@@ -118,6 +119,23 @@ def search_lexical(db_path: str, query: str, *, limit: int = 10) -> list[FtsHit]
     try:
         schema.create_schema(conn)
         return chunk_fts_repository.search(conn, query, limit=limit)
+    finally:
+        conn.close()
+
+
+def load_vector_store(db_path: str) -> NumpyVectorStore:
+    conn = db.connect(db_path)
+
+    try:
+        schema.create_schema(conn)
+        chunks_by_key = {chunk.chunk_key: chunk for chunk in chunk_repository.fetch_all(conn)}
+        vectors = embedding_repository.fetch_all(conn)
+        entries = [
+            (chunks_by_key[chunk_key], vector)
+            for chunk_key, vector in vectors.items()
+            if chunk_key in chunks_by_key
+        ]
+        return NumpyVectorStore(entries)
     finally:
         conn.close()
 
