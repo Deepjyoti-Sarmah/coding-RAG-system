@@ -7,6 +7,8 @@ from pathlib import Path
 import numpy as np
 
 from analysis.build_graph import build_graph
+from embeddings.fake_provider import FakeEmbeddingProvider
+from indexing.embedding_queue import enqueue_embedding_jobs, run_embedding_worker
 from models.build_result import BuildResult
 from storage import db
 from storage.index_store import load_embedding_cache, load_index, persist_index
@@ -36,6 +38,7 @@ DATA_TABLES = [
     "relationships",
     "chunks",
     "embeddings",
+    "chunks_fts",
 ]
 
 
@@ -216,19 +219,14 @@ class TestIndexStore(unittest.TestCase):
             db_path = str(Path(tmp) / "index.sqlite")
 
             original = _build(FILES)
-            embeddings = {
-                chunk.chunk_key: np.full(8, float(index), dtype=np.float32)
-                for index, chunk in enumerate(original.chunks)
-            }
-            persist_index(
-                db_path,
-                original,
-                embeddings=embeddings,
-            )
+            persist_index(db_path, original)
+            enqueue_embedding_jobs(db_path, original.chunks)
+            provider = FakeEmbeddingProvider(dimension=8)
+            run_embedding_worker(db_path, provider)
 
             cache = load_embedding_cache(db_path)
             expected = {
-                chunk.content_hash: embeddings[chunk.chunk_key]
+                chunk.content_hash: provider.embed(chunk.embedding_text)
                 for chunk in original.chunks
             }
 

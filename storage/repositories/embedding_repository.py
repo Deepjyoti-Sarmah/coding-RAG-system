@@ -1,9 +1,13 @@
 import numpy as np
 
 
-def insert_many(conn, embeddings: dict[str, np.ndarray]) -> None:
+def upsert(conn, embeddings: dict[str, np.ndarray]) -> None:
     conn.executemany(
-        "INSERT INTO embeddings (chunk_id, embedding) VALUES (?, ?)",
+        """
+        INSERT INTO embeddings (chunk_id, embedding) VALUES (?, ?)
+        ON CONFLICT(chunk_id) DO UPDATE SET
+            embedding = excluded.embedding
+        """,
         [
             (chunk_id, _encode(vector))
             for chunk_id, vector in embeddings.items()
@@ -25,6 +29,8 @@ def load_embedding_cache(conn) -> dict[str, np.ndarray]:
         SELECT c.content_hash, e.embedding
         FROM embeddings e
         JOIN chunks c ON c.chunk_id = e.chunk_id
+        JOIN embedding_jobs j ON j.chunk_key = c.chunk_id
+        WHERE j.status = 'DONE' AND j.content_hash = c.content_hash
         """
     ).fetchall()
 

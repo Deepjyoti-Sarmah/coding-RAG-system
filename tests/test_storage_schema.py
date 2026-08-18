@@ -13,6 +13,7 @@ EXPECTED_TABLES = {
     "relationships",
     "chunks",
     "embeddings",
+    "embedding_jobs",
     "file_state",
     "index_metadata",
     "chunks_fts",

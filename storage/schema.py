@@ -110,8 +110,17 @@ TABLES = [
     """,
     """
     CREATE TABLE IF NOT EXISTS embeddings (
-        chunk_id  TEXT PRIMARY KEY REFERENCES chunks(chunk_id) ON DELETE CASCADE,
+        chunk_id  TEXT PRIMARY KEY,
         embedding BLOB NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS embedding_jobs (
+        chunk_key    TEXT PRIMARY KEY,
+        content_hash TEXT NOT NULL,
+        status       TEXT NOT NULL,
+        attempts     INTEGER NOT NULL DEFAULT 0,
+        error        TEXT
     )
     """,
     """

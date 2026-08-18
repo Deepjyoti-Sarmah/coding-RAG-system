@@ -21,7 +21,6 @@ from storage.repositories import (
 )
 
 _TABLES_IN_DEPENDENCY_ORDER = [
-    "embeddings",
     "resolved_imports",
     "resolved_references",
     "relationships",
@@ -40,7 +39,6 @@ def persist_index(
     db_path: str,
     result: BuildResult,
     file_states: list[FileState] | None = None,
-    embeddings: dict[str, np.ndarray] | None = None,
 ) -> None:
     conn = db.connect(db_path)
 
@@ -77,13 +75,31 @@ def persist_index(
                 {symbol.symbol_id: symbol for symbol in result.symbols},
             )
 
-            if embeddings:
-                embedding_repository.insert_many(conn, embeddings)
+            _prune_derived(conn, result.chunks)
 
             if file_states is not None:
                 file_state_repository.insert_many(conn, file_states)
     finally:
         conn.close()
+
+
+def _prune_derived(conn, chunks: list) -> None:
+    current_keys = {chunk.chunk_key for chunk in chunks}
+
+    if not current_keys:
+        conn.execute("DELETE FROM embeddings")
+        conn.execute("DELETE FROM embedding_jobs")
+        return
+
+    placeholders = ",".join("?" * len(current_keys))
+    conn.execute(
+        f"DELETE FROM embeddings WHERE chunk_id NOT IN ({placeholders})",
+        list(current_keys),
+    )
+    conn.execute(
+        f"DELETE FROM embedding_jobs WHERE chunk_key NOT IN ({placeholders})",
+        list(current_keys),
+    )
 
 
 def load_embedding_cache(db_path: str) -> dict[str, np.ndarray]:

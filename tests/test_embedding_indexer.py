@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from embeddings.fake_provider import FakeEmbeddingProvider
+from indexing.embedding_queue import run_embedding_worker
 from indexing.indexer import reindex_index
 from storage.index_store import load_embedding_cache, load_index
 
@@ -34,51 +35,47 @@ class TestEmbeddingIndexer(unittest.TestCase):
 
     def test_first_run_embeds_every_chunk(self):
         _write(self.root, AUTH)
-
-        report = reindex_index(
-            self.db_path,
-            str(self.root),
-            embedding_provider=self.provider,
-        )
+        reindex_index(self.db_path, str(self.root))
 
         chunk_count = len(load_index(self.db_path).chunks)
+        report = run_embedding_worker(self.db_path, self.provider)
+
         self.assertGreater(chunk_count, 0)
-        self.assertEqual(report.new_embeddings, chunk_count)
+        self.assertEqual(report.claimed, chunk_count)
+        self.assertEqual(report.done, chunk_count)
 
     def test_noop_run_reuses_all_embeddings(self):
         _write(self.root, AUTH)
-        reindex_index(self.db_path, str(self.root), embedding_provider=self.provider)
+        reindex_index(self.db_path, str(self.root))
+        run_embedding_worker(self.db_path, self.provider)
         before = load_embedding_cache(self.db_path)
 
-        report = reindex_index(
-            self.db_path,
-            str(self.root),
-            embedding_provider=self.provider,
-        )
+        reindex_index(self.db_path, str(self.root))
+        report = run_embedding_worker(self.db_path, self.provider)
 
         after = load_embedding_cache(self.db_path)
-        self.assertEqual(report.new_embeddings, 0)
+        self.assertEqual(report.claimed, 0)
+        self.assertEqual(report.done, 0)
         self.assertEqual(set(before), set(after))
         for content_hash, vector in before.items():
             np.testing.assert_array_equal(vector, after[content_hash])
 
     def test_body_edit_reembeds_only_changed_chunk(self):
         _write(self.root, AUTH)
-        reindex_index(self.db_path, str(self.root), embedding_provider=self.provider)
+        reindex_index(self.db_path, str(self.root))
+        run_embedding_worker(self.db_path, self.provider)
 
         before = load_embedding_cache(self.db_path)
         _write(
             self.root,
             {"a.ts": "export function createAuth() { return 2; }\n"},
         )
-        report = reindex_index(
-            self.db_path,
-            str(self.root),
-            embedding_provider=self.provider,
-        )
+        reindex_index(self.db_path, str(self.root))
+        report = run_embedding_worker(self.db_path, self.provider)
         after = load_embedding_cache(self.db_path)
 
-        self.assertEqual(report.new_embeddings, 1)
+        self.assertEqual(report.claimed, 1)
+        self.assertEqual(report.done, 1)
 
         unchanged_hashes = {
             chunk.content_hash
@@ -91,7 +88,8 @@ class TestEmbeddingIndexer(unittest.TestCase):
 
     def test_embeddings_round_trip_persistence(self):
         _write(self.root, AUTH)
-        reindex_index(self.db_path, str(self.root), embedding_provider=self.provider)
+        reindex_index(self.db_path, str(self.root))
+        run_embedding_worker(self.db_path, self.provider)
 
         cache = load_embedding_cache(self.db_path)
 
@@ -101,12 +99,11 @@ class TestEmbeddingIndexer(unittest.TestCase):
             self.assertEqual(vector.shape, (8,))
             self.assertAlmostEqual(np.linalg.norm(vector), 1.0, places=6)
 
-    def test_without_provider_skips_embeddings(self):
+    def test_without_worker_run_skips_embeddings(self):
         _write(self.root, AUTH)
 
-        report = reindex_index(self.db_path, str(self.root))
+        reindex_index(self.db_path, str(self.root))
 
-        self.assertEqual(report.new_embeddings, 0)
         self.assertEqual(load_embedding_cache(self.db_path), {})
 
 
