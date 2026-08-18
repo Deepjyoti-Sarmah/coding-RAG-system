@@ -5,6 +5,7 @@ import storage.schema as schema
 from models.build_result import BuildResult
 from models.entities.fts_hit import FtsHit
 from models.file_state import FileState
+from retrieval.hybrid_retriever import HybridRetriever
 from retrieval.numpy_vector_store import NumpyVectorStore
 from storage.repositories import (
     chunk_fts_repository,
@@ -138,6 +139,26 @@ def load_vector_store(db_path: str) -> NumpyVectorStore:
         return NumpyVectorStore(entries)
     finally:
         conn.close()
+
+
+def build_hybrid_retriever(
+    db_path: str,
+    provider=None,
+) -> HybridRetriever:
+    result = load_index(db_path)
+
+    vector_store = load_vector_store(db_path) if provider is not None else None
+    embed = provider.embed_query if provider is not None else None
+
+    return HybridRetriever(
+        symbol_index=result.symbol_index,
+        graph=result.graph,
+        fts_search=lambda query, limit: search_lexical(db_path, query, limit=limit),
+        vector_store=vector_store,
+        embed=embed,
+        resolved_imports=result.resolved_import_references,
+        exports=result.exports,
+    )
 
 
 def load_file_states(db_path: str) -> list[FileState]:
