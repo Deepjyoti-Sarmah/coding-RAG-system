@@ -1541,7 +1541,7 @@ same chunk hash
 
 # 18. Phase 12 — SQLite FTS5
 
-Status: AFTER PERSISTENCE
+Status: COMPLETE
 
 Goal:
 
@@ -1560,11 +1560,24 @@ Use FTS5 only for lexical retrieval.
 
 Do not treat FTS scores as semantic scores.
 
+### Implemented
+
+- `storage/schema.py` — `chunks_fts` FTS5 virtual table (`tokenize = 'porter unicode61'`) with `chunk_id UNINDEXED` plus `symbol_name`, `qualified_name`, `relative_path`, `chunk_text` columns; created idempotently with the rest of the schema. FTS rows are derived state, rebuilt on every persist.
+- `storage/repositories/chunk_fts_repository.py` — `insert_many(conn, chunks, symbols_by_id)` joins each chunk to its symbol for the structured name/qualified-name fields and indexes the chunk's `embedding_text`; `search(conn, query, limit)` builds a quoted-term `MATCH` query (whitespace split, `AND`-joined — no operator injection) and returns `FtsHit` rows ranked by `bm25(chunks_fts)` ascending (best first).
+- `models/entities/fts_hit.py` — `FtsHit(chunk_key, symbol_name, qualified_name, relative_path, score)`; the `chunk_key` is the stable key, so FTS hits merge cleanly with vector hits in hybrid retrieval.
+- `storage/index_store.py` — `persist_index` writes FTS rows in the same transaction (after chunks); `chunks_fts` added to `_TABLES_IN_DEPENDENCY_ORDER` so snapshot clears cover it; new `search_lexical(db_path, query, limit)` wrapper.
+- The score is purely lexical (BM25); nothing treats it as a semantic score.
+
+### Decision notes
+
+- `unicode61` + porter was chosen over `trigram` for predictable whole-identifier matching (spec: "exact identifiers"). Because FTS is rebuilt on every persist, switching tokenizers later is a one-line schema change.
+- No persistence of FTS rows beyond the snapshot replace: `load_index` reconstructs chunks and FTS is re-derived at persist time (source of truth is the semantic index).
+
 ---
 
 # 19. Phase 13 — Vector Retrieval
 
-Status: AFTER EMBEDDINGS
+Status: COMPLETE
 
 Goal:
 
@@ -1592,11 +1605,23 @@ VectorStore
 
 so the storage implementation can change without rewriting retrieval logic.
 
+### Implemented
+
+- `retrieval/vector_store.py` — `VectorStore` ABC with `search(query_vector, *, top_k, relative_path=None) -> list[VectorSearchHit]`; `VectorSearchHit(chunk_key, relative_path, score, chunk)`.
+- `retrieval/numpy_vector_store.py` — `NumpyVectorStore(entries)` builds an in-memory float32 matrix from `(SemanticChunk, vector)` pairs and does L2-normalized cosine search; optional `relative_path` filter (metadata filter). Local, top-k, no external extensions.
+- `storage/index_store.py` — `load_vector_store(db_path)` reconstructs a `NumpyVectorStore` by joining the persisted `chunks` and `embeddings` tables; because `persist_index` snapshots chunks + embeddings together in one transaction, the store always reflects the latest committed generation (incrementally updated by reindexing).
+- `indexing/vector_index.py` is unchanged: it remains the on-the-fly "embed texts then search" in-memory path used by `HybridRetriever`; `VectorStore` is the persisted-vector abstraction for retrieval over the on-disk index.
+
+### Decision notes
+
+- Requirement "incrementally updated" is satisfied by the snapshot-replace model: the embeddings table is rewritten in the same transaction as the rest of the index, and `load_vector_store` reads fresh state on demand. A live in-memory cache with subscription to reindex events is deferred until a consumer needs it.
+- No sqlite-vec / extension: the local numpy matrix over persisted float32 blobs covers current scale; the `VectorStore` boundary is where a storage-backed implementation would slot in without touching retrieval logic.
+
 ---
 
 # 20. Phase 14 — Hybrid Retrieval
 
-Status: AFTER FTS + VECTOR
+Status: COMPLETE
 
 Pipeline:
 
@@ -1620,9 +1645,32 @@ Start with simple weighted scoring or reciprocal rank fusion.
 
 Do not train a reranker before establishing a baseline.
 
+### Implemented
+
+- `retrieval/ranking.py` — `reciprocal_rank_fusion(ranked_lists, k=60)` merges best-first ranked key lists by `Σ 1/(k + rank + 1)`; a candidate surfaced by multiple sources outranks one from a single source.
+- `retrieval/candidate.py` — `HybridCandidate(chunk_key, symbol_id, symbol_name, qualified_name, relative_path, symbol_kind, score, sources)`. `chunk_key` is the stable key, so exact / FTS / vector candidates merge on one identity. `sources` records which strategies contributed.
+- `retrieval/hybrid_retriever.py` — rewritten `HybridRetriever`:
+  - **Query classification**: `who calls X` → `graph_callers`; `what does X call` → `graph_callees`; `where is X defined/implemented` → `exact_symbol`; anything else → `hybrid`.
+  - **Candidate merge**: FTS (`search_lexical`), vector (`VectorStore.search` via injected `embed`), and exact symbol lookups (per query token) are each ranked best-first and fused with RRF by `chunk_key`.
+  - **Rerank baseline**: a deterministic `NAME_MATCH_BOOST` (+0.5) lifts candidates whose symbol name appears verbatim in the query — the "exact symbol match" feature, deliberately heuristic (Phase 16 formalizes reranking).
+  - **Graph expansion**: the top hybrid candidate's 1-hop neighborhood (callers, callees, parent) is appended as supporting candidates tagged `source=("graph",)`, capped at `GRAPH_EXPANSION_LIMIT = 3`. This is the baseline that Phase 15 extends into proper seed-neighborhood retrieval.
+  - DB-free: `fts_search` / `vector_store` / `embed` are injected, keeping the retriever unit-testable with stubs.
+- `storage/index_store.py` — `build_hybrid_retriever(db_path, provider=None)` wires `load_index` + `search_lexical` + `load_vector_store` + `provider.embed_query`. With no provider the vector source is skipped gracefully.
+
+### Tests
+
+`tests/test_hybrid_retrieval.py` — RRF ordering (multi-source beats single-source); stub-driven merge/ranking/sources; graph expansion adds a caller tagged `graph`; FTS-only retrieval without a vector source; and integration via `reindex_index` → `build_hybrid_retriever`: `who calls`, `what does ... call`, `where is ... defined`, exact-name-first hybrid, no-provider fallback, and empty-index behavior.
+
+### Decision notes
+
+- No trained reranker: per spec, the baseline is deterministic weighted scoring (RRF + name-match boost). Phase 16 adds the full feature set only after this baseline is measured.
+- Graph expansion is deliberately capped and appended (supporting context), not fused into the main ranking — Phase 15 owns hop semantics and context budgets.
+
 ---
 
 # 21. Phase 15 — Graph-Aware Retrieval
+
+Status: COMPLETE
 
 For a semantic seed:
 
@@ -1648,9 +1696,31 @@ Do not blindly expand N hops.
 
 Context budgets matter.
 
+## Implemented
+
+- `retrieval/neighborhood.py` — `NeighborhoodHit(symbol, relation, hop)` and `expand_neighborhood(seed, *, graph, symbol_index, resolved_imports=None, exports=None, one_hop_budget=6, two_hop_budget=2)`:
+  - **1-hop** in stable order (`caller`, `callee`, `parent`, `import`, `export`): callers/callees/parents from the graph, imports as the seed document's resolved target symbols (`ResolvedImportReference.target_symbol`), exports as the seed document's module-scope symbols matching `Export.symbol_name`. Deduplicated by `symbol_id` (first relation wins), capped at `one_hop_budget`, with structural relations ranked before supporting ones so the budget never starves call context.
+  - **2-hop only when necessary**: when the seed has no direct call edges (no callers and no callees), one transitive hop is walked through the seed's children — each child's callees are appended as `relation="callee", hop=2`, capped at `two_hop_budget`. Class/namespace seeds whose nearest call context sits two hops away get method-level context; symbols with any direct call edge never trigger 2-hop.
+  - The seed itself is never a neighbor; results are deterministic across runs.
+- `retrieval/hybrid_retriever.py` — `HybridRetriever` gains optional `resolved_imports` / `exports`; `_expand_graph` (hybrid search) now uses `expand_neighborhood` instead of the Phase 14 `callers + callees + parents` hard-cap of 3. Supporting candidates stay tagged `("graph",)`. When `resolved_imports`/`exports` are not injected, imports/exports relations are skipped (stub tests unchanged).
+- `storage/index_store.py` — `build_hybrid_retriever` passes `resolved_imports=result.resolved_import_references` and `exports=result.exports`, so the persisted index enables full 1-hop expansion including imports and exports.
+
+### Tests
+
+- `tests/test_graph_retrieval.py` (new) — all five 1-hop relations present and deduped; import relation appears even when the imported symbol is never called; parent relation resolves the enclosing class; the same symbol reached via call and import is emitted once; 2-hop fires only for a seed with no direct call edges (class → method's callee at `hop=2`); 2-hop is absent when the seed has a direct callee; `one_hop_budget` caps exports and is configurable; deterministic order across two runs; isolated leaf produces an empty neighborhood; `resolved_imports=None`/`exports=None` skip supporting relations.
+- `tests/test_hybrid_retrieval.py` (extended) — stub-driven: expansion includes callers, callees, and export neighbors, plus an import neighbor for a seed that never calls the import; integration via `reindex_index` → `build_hybrid_retriever`: querying `orchestrate` surfaces its imported `helper` tagged `graph`.
+
+### Decision notes
+
+- 2-hop trigger is "no direct call edges → walk children's callees" per the chosen design: the nearest reachable call context for a class/namespace seed sits one containment hop plus one call hop away, and any symbol with a direct call edge already has sufficient 1-hop structural context.
+- Children are deliberately not a 1-hop relation (the spec lists five kinds); they serve only as the 2-hop bridge. `children_of` remains available to consumers that need containment context.
+- Imports/exports are document-scoped (the seed's file), consistent with the Phase 10 chunker, so a chunk and its neighborhood agree on what "imports/exports" mean.
+
 ---
 
 # 22. Phase 16 — Reranking
+
+Status: COMPLETE
 
 Start with deterministic features:
 
@@ -1680,9 +1750,40 @@ not just vector similarity.
 
 Only introduce a local model reranker after the heuristic baseline is measured.
 
+## Implemented
+
+- `retrieval/reranker.py` — `RerankFeatures(exact_symbol, path_match, kind_match, fts, vector, graph_distance, relationship)` and `rerank_candidates(candidates, query, *, graph, symbols_by_key, seed=None, preference=None)`. Each candidate's base RRF score gets a deterministic weighted boost (`RELATIONSHIP_WEIGHT = 1.0`, `EXACT_SYMBOL_WEIGHT = 0.8`, `GRAPH_DISTANCE_WEIGHT = 0.4`, `PATH_WEIGHT = 0.3`, `KIND_WEIGHT = 0.2`, `FTS_WEIGHT = 0.1`, `VECTOR_WEIGHT = 0.1`), then candidates are stable-sorted by final score:
+  - `exact_symbol` — symbol name appears verbatim in the query.
+  - `path_match` — graded `(0, 0.5, 1.0)` overlap of relative-path/qualified-name tokens with query tokens.
+  - `kind_match` — `function`/`class`/`method`/`variable` etc. appears in the query.
+  - `fts` / `vector` — weak source-presence features (rank position is already in the RRF base score).
+  - `graph_distance` — 1.0 for a direct graph neighbor of the seed (caller/callee/parent/child), 0.5 for distance 2, else 0.
+  - `relationship` — 1.0 only for the relation the query asks for (`caller` for "who calls X" / "callers of X" / "called by X"; `callee` for "what does X call" / "callees of X"; `definition` for "where is X defined" / "definition of X").
+- `detect_preference(query)` maps caller/callee/definition intent phrases to a `preference`, so relationship relevance dominates over vector similarity for graph-intent queries.
+- `retrieval/hybrid_retriever.py` — the `NAME_MATCH_BOOST` heuristic is replaced by the reranker. `_hybrid_search` now:
+  1. fuses FTS + vector + exact candidates (unchanged RRF baseline),
+  2. detects a unique `seed` symbol from query tokens (`_detect_seed`, ambiguous names produce no seed — no first-match guessing),
+  3. detects intent `preference`,
+  4. expands the neighborhood around the seed (falling back to the top candidate) via the Phase 15 `expand_neighborhood`,
+  5. reranks the combined candidate set with the deterministic features, then slices `top_k` — so graph neighbors can now outrank vector-similar-but-unrelated symbols instead of being appended after the slice.
+- The dedicated `graph_callers` / `graph_callees` / `exact_symbol` strategies are unchanged (they already return exactly the wanted relation).
+
+### Tests
+
+- `tests/test_reranker.py` (new) — `detect_preference` intent mapping; exact-symbol boost outranks a higher base score; `callers of` preference lifts the caller above a higher-scored callee; graph-distance boost lifts a neighbor over an unrelated symbol; kind and path boosts; FTS source presence breaks a tie; deterministic across two runs; `who calls login` ranks the caller first with the seed itself second.
+- `tests/test_hybrid_retrieval.py` (extended) — integration via `reindex_index` → `build_hybrid_retriever`: querying `callers of login` (a hybrid-path caller intent, not the routed canonical form) returns `run` — the incoming CALLS edge — as the top candidate.
+
+### Decision notes
+
+- No trained/local-model reranker per the spec: the baseline is deterministic feature scoring, measured before any model is introduced (rule 1.1).
+- `exact_symbol` reuses the verbatim-name feature the Phase 14 baseline already used; the other six features are added deterministically. Weights are chosen so relationship relevance dominates for graph-intent queries and exact symbol match dominates for definition-style queries; FTS/vector rank position remains in the base RRF score.
+- Graph-expanded candidates now participate in ranking instead of being appended after `top_k`; Phase 15's neighborhood module is unchanged and supplies the candidates.
+
 ---
 
 # 23. Phase 17 — Context Builder
+
+Status: COMPLETE
 
 Goal:
 
@@ -1721,9 +1822,25 @@ Rules:
 - enforce a hard budget
 - never silently exceed budget
 
+## Implemented
+
+- `retrieval/context_builder.py` — `estimate_tokens(text)` (`max(1, len(text) // 4)`, deterministic chars-per-token heuristic — no tokenizer dependency), `ContextEntry(chunk_key, symbol_id, qualified_name, symbol_kind, relative_path, location, role, source)`, `ContextPack(query, token_budget, total_tokens, primary_definitions, supporting_definitions, relationships, file_paths)`, and `build_context_pack(candidates, *, query, graph, symbols_by_key, token_budget)`.
+- `build_context_pack`:
+  - **Deduplicate overlapping source**: candidates are deduplicated by `chunk_key` (the stable symbol key), so a symbol surfaced by multiple sources contributes exactly one entry; `file_paths` is the sorted unique path set; candidates with no `Symbol` in `symbols_by_key` (no source available) are skipped.
+  - **Prioritize direct evidence**: candidates whose only source is `("graph",)` become `supporting`; everything else is `primary`. Primaries are added in rank order first, then supporting — a supporting symbol can never starve a primary.
+  - **Enforce a hard budget / never silently exceed**: an entry is added only if its `header + source` fits the remaining budget. If only the source does not fit, the symbol is emitted header-only (`source=""`, `location="path:line"`); if even the header does not fit, it is skipped — so **symbol boundaries are preserved** (a symbol's source is never truncated mid-body) and `total_tokens <= token_budget` always holds.
+  - **Important relationships**: `(source.qualified_name -> callee.qualified_name (calls))` edges from `graph.callees_of`, emitted only when *both* endpoints were selected, deduplicated and sorted deterministically.
+- `storage/index_store.py` — `build_context_pack_from_index(db_path, query, *, token_budget, provider=None, top_k=5)` = `load_index` + `build_hybrid_retriever` + `retrieve` + `build_context_pack`, mirroring the `build_hybrid_retriever` convenience (consumer: Phase 21 `ckg context` CLI).
+
+### Tests
+
+- `tests/test_context_builder.py` — token estimation (4 chars → 1 token, empty → 1, deterministic); single candidate is primary with full source; graph-only candidate is supporting; `total_tokens <= budget` across a range of budgets including a symbol whose source alone exceeds the budget; symbol boundaries preserved (header-only fallback, never a truncated body); a symbol skipped when even its header does not fit; primary-before-supporting when budget is tight; duplicate candidates appear once; relationships only among selected symbols; file-path dedup + sort; unknown candidate keys skipped; determinism across two runs; empty candidates → empty pack; integration via `reindex_index` → `build_context_pack_from_index` (queried symbol is primary, budget respected, with and without an embedding provider).
+
 ---
 
 # 24. Phase 18 — Incremental Embedding / Async Worker
+
+Status: COMPLETE
 
 Embedding should not block semantic indexing.
 
@@ -1751,6 +1868,40 @@ FAILED
 Retry only failed embedding jobs.
 
 Do not re-embed chunks with unchanged content hashes.
+
+## Implemented
+
+- `storage/schema.py` — `embedding_jobs` table (`chunk_key` PK, `content_hash`, `status`, `attempts`, `error`); `SCHEMA_VERSION` bumped to 2. The `embeddings` table no longer has a `chunks` foreign key (embeddings are pruned explicitly, not via cascade — see below), matching `embedding_jobs`, which is also keyed by `chunk_key` rather than a DB relationship.
+- `models/entities/embedding_job_status.py` — `EmbeddingJobStatus` enum (`PENDING`, `PROCESSING`, `DONE`, `FAILED`). `models/entities/embedding_job.py` — `EmbeddingJob(chunk_key, content_hash, status, attempts, error)`.
+- `storage/repositories/embedding_job_repository.py`:
+  - `enqueue(conn, chunk_key, content_hash)` — upserts a job. A `FAILED` job stays `FAILED` (surfaced for retry, not silently reset); a `DONE` job with an unchanged `content_hash` stays `DONE` (never re-embedded); anything else (new chunk, or `DONE` with a changed `content_hash`) becomes `PENDING`.
+  - `claim(conn, limit)` — atomically moves `PENDING`/`FAILED` jobs to `PROCESSING` and returns them (single `UPDATE ... RETURNING`, so concurrent workers cannot double-claim). This is also the retry path: a `FAILED` job is claimable exactly like a `PENDING` one.
+  - `mark_done` / `mark_failed(error)` / `reenqueue` (resets to `PENDING`) / `status_counts` / `fetch_all`.
+- `indexing/embedding_queue.py`:
+  - `enqueue_embedding_jobs(db_path, chunks)` — called after `persist_index` with the just-persisted chunks; one `enqueue` per chunk in a single transaction. This is the non-blocking handoff: semantic indexing finishes and returns before any embedding work happens.
+  - `run_embedding_worker(db_path, provider, *, limit=None) -> EmbeddingRunReport(claimed, done, reused, stale, failed)` — the worker, run as a separate step:
+    1. `claim`s up to `limit` `PENDING`/`FAILED` jobs.
+    2. Re-checks each claimed job's `content_hash` against the chunk's *current* `content_hash` in the `chunks` table: a mismatch (the chunk changed again after this job was enqueued) is re-enqueued as `PENDING` with the fresh hash instead of being embedded with stale text; a chunk that no longer exists is dropped from the queue.
+    3. Embeds the rest via the Phase 11 `embed_chunks` (cache-aware — a chunk whose `content_hash` is already in the embedding cache is reused, not re-embedded).
+    4. On any embedding exception, every claimed-and-embeddable job in the batch is marked `FAILED` with the error message and the run returns early — a failed run never marks jobs `DONE`.
+    5. On success, embeddings are upserted and jobs marked `DONE` in one transaction.
+  - `queue_status(db_path) -> dict[str, int]` — status → count, for CLI/observability.
+- `storage/repositories/embedding_repository.py` — `insert_many` renamed to `upsert` (`ON CONFLICT DO UPDATE`, since a retried or re-embedded chunk revisits the same `chunk_id`). `load_embedding_cache` now joins through `embedding_jobs` and requires `status = 'DONE' AND content_hash` match, so an embedding is only usable as a reuse-cache hit once its job has actually completed — a `PROCESSING`/`FAILED` row's stale embedding (if any) is never served.
+- `storage/index_store.py` — `persist_index` no longer takes an `embeddings` argument; embedding is fully decoupled from the semantic-index transaction. `_prune_derived` deletes `embeddings`/`embedding_jobs` rows for chunks no longer present after a snapshot replace (mirrors `_clear_all`'s dependency-order cleanup for the derived embedding state).
+- `indexing/indexer.py` — `reindex_index` / `_incremental_rebuild` dropped the `embedding_provider` parameter and the old synchronous `_embed_for_persist` call entirely. After `persist_index`, `enqueue_embedding_jobs(db_path, result.chunks)` is called and `reindex_index` returns immediately — indexing is never blocked on embedding. `IndexRunReport.new_embeddings` stays at its default `0` (embedding counts now belong to `EmbeddingRunReport`, produced by the separate worker run).
+
+### Tests
+
+- `tests/test_embedding_queue.py` (new) — indexing enqueues every chunk as `PENDING`; the worker moves `PENDING` → `DONE` and `queue_status` reflects it; re-running the indexer over unchanged files keeps jobs `DONE` (not reset to `PENDING`) and the worker claims zero; a failing provider marks jobs `FAILED` and a later run with a working provider retries and completes exactly those jobs (retry-only-failed); `limit` caps how many jobs one worker run claims.
+- `tests/test_embedding_indexer.py` (rewritten from the Phase 11 synchronous-embedding version) — first run embeds every chunk via the worker; a no-op reindex leaves the worker with nothing to claim; a body edit re-enqueues and re-embeds only the changed chunk while other embeddings are untouched; embeddings round-trip through persistence; skipping the worker after `reindex_index` leaves the embedding cache empty.
+- `tests/test_index_store.py::test_round_trip_preserves_embeddings` — updated to go through `enqueue_embedding_jobs` + `run_embedding_worker` instead of a removed `persist_index(..., embeddings=...)` argument, since embeddings are no longer part of the persist transaction.
+- `tests/test_context_builder.py`, `tests/test_hybrid_retrieval.py`, `tests/test_vector_store.py` — integration setups updated to `reindex_index(...)` followed by `run_embedding_worker(...)` in place of the removed `embedding_provider=` kwarg.
+
+### Decision notes
+
+- The worker is invoked explicitly (as a plain function call in these tests); no background thread/process/scheduler is introduced yet — nothing in the current CLI/consumer surface needs one (rule 1.5), and `run_embedding_worker` is the seam a future scheduled/async runner would call into.
+- Retry has no attempt cap: `attempts` is tracked on every `EmbeddingJob` for future backoff/give-up policy, but nothing currently reads it. Adding a cap without a consumer would be speculative (rule 1.5).
+- Stale-hash re-enqueue (job claimed for content that has since changed again) takes priority over embedding-with-stale-text: correctness (rule 1.1) over throughput, since the alternative is silently caching an embedding for text that no longer matches any chunk.
 
 ---
 
@@ -2110,6 +2261,9 @@ Update this section as work progresses.
 - [x] SQLite persistence (schema, db layer, repositories, atomic transactions, `persist_index`/`load_index` round-trip)
 - [x] Incremental indexing (file state inventory, `mtime`-hint / hash-based change detection, selective re-resolution, interface-aware dependency invalidation)
 - [x] Hierarchical / Merkle hashing (deterministic content+name subtree hashes over the repo tree)
+- [x] Graph-aware retrieval (Phase 15: budgeted 1-hop seed neighborhoods over callers/callees/parent/imports/exports, 2-hop only for no-call-edge seeds)
+- [x] Heuristic reranking (Phase 16: deterministic feature scoring — exact/path/kind/FTS/vector/graph-distance/relationship — graph-expanded candidates compete in `top_k`)
+- [x] Context builder (Phase 17: budgeted `ContextPack` — primary/supporting definitions, important relationships, file paths, symbol-bounded source excerpts, hard token budget)
 
 ## In Progress
 
@@ -2117,8 +2271,10 @@ Update this section as work progresses.
 
 ## Next
 
-- [x] Semantic chunking (Phase 10)
-- [x] Embedding provider abstraction / local embedding store (Phase 11)
+- [ ] Async embedding worker / incremental embedding (Phase 18)
+- [ ] Index generations (Phase 20)
+- [ ] CLI / MCP integration (Phase 21)
+- [ ] Evaluation suite (Phase 22)
 
 ---
 
@@ -2239,6 +2395,90 @@ Next:
 ```
 
 If a task changes architecture, record why.
+
+## 2026-08-19 — Phase 17 Context Builder
+
+Status: COMPLETE
+
+Files changed:
+- retrieval/context_builder.py (new — `estimate_tokens`, `ContextEntry`, `ContextPack`, `build_context_pack`)
+- storage/index_store.py (`build_context_pack_from_index`)
+- tests/test_context_builder.py (new)
+
+Implementation:
+- `build_context_pack(candidates, *, query, graph, symbols_by_key, token_budget)` turns the reranked candidate list into a `ContextPack` with `primary_definitions`, `supporting_definitions`, `relationships`, and `file_paths`. Candidates are deduplicated by the stable `chunk_key`; candidates whose only source is `("graph",)` are `supporting`, everything else `primary`. Primaries are added in rank order before supporting (direct evidence wins). Each symbol is added whole (header + full source) or, when only the source does not fit the remaining budget, as a header-only entry — never a truncated body — so the hard budget is never exceeded even for a single oversized symbol. Relationships are `source -> callee (calls)` edges among selected symbols; `file_paths` is the sorted unique path set. `estimate_tokens` uses `max(1, len(text) // 4)` (deterministic, no tokenizer dependency).
+- `build_context_pack_from_index(db_path, query, *, token_budget, provider=None, top_k=5)` wires `load_index` + `build_hybrid_retriever` + `retrieve` + `build_context_pack` so the persisted-index path produces a pack end-to-end.
+
+Tests:
+- `test_context_builder.py` (17): token estimation; primary/supporting role split; hard budget across a range of budgets; header-only fallback (symbol boundaries preserved); symbol skipped when its header alone does not fit; primary-before-supporting on a tight budget; dedup of duplicate candidates; relationships only among selected symbols; file-path dedup/sort; unknown keys skipped; determinism; empty candidates → empty pack; integration with and without an embedding provider.
+
+Result:
+- 260 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 243).
+
+Decision / deviation:
+- Token budget is approximated with the standard 4-chars-per-token heuristic (`len(text) // 4`); a real tokenizer is not a dependency and would not change the hard-budget guarantee.
+- Role split reuses the Phase 15/16 convention that graph-expanded candidates are tagged `("graph",)`; routed strategies (`graph_callers`, etc.) return only graph/`exact`-tagged candidates, which are the primary answer and are therefore all treated as primary evidence.
+- Source excerpts come from `Symbol.content` (== `SemanticChunk.display_text`), so no chunk-table join is needed; relationships are recomputed from `CodeGraph` on the selected set rather than persisted.
+
+Next:
+- Phase 18 incremental embedding / async worker.
+
+## 2026-08-19 — Phase 16 Reranking
+
+Status: COMPLETE
+
+Files changed:
+- retrieval/reranker.py (new — `RerankFeatures`, `detect_preference`, `rerank_candidates`)
+- retrieval/hybrid_retriever.py (`_hybrid_search` reranks combined main + graph candidates; `_detect_seed`; `NAME_MATCH_BOOST` removed)
+- tests/test_reranker.py (new)
+- tests/test_hybrid_retrieval.py (caller-intent integration test)
+
+Implementation:
+- `rerank_candidates` adds a deterministic weighted boost to each candidate's base RRF score across all seven Phase 16 features (exact symbol, path, kind, FTS presence, vector presence, graph distance, relationship relevance), then stable-sorts by final score. `detect_preference` maps caller/callee/definition intent phrases to a preference so graph-intent queries prioritize the matching edge kind over vector similarity.
+- `_hybrid_search` now detects a unique seed symbol (`_detect_seed`, ambiguous names → no seed), expands its neighborhood (Phase 15), reranks the combined main + expanded candidate set, then slices `top_k` — graph neighbors can now outrank vector-similar unrelated symbols instead of being appended after the slice.
+
+Tests:
+- `test_reranker.py` (12): intent mapping; exact-symbol boost; caller preference lifts the caller above a higher base score; graph-distance lifts a neighbor; kind/path boosts; FTS presence breaks a tie; determinism; `who calls login` ranks caller first.
+- `test_hybrid_retrieval.py` (1 new): `callers of login` (hybrid path) returns `run`, the incoming CALLS edge, first.
+
+Result:
+- 243 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 230).
+
+Decision / deviation:
+- No trained reranker (spec: measure the heuristic baseline first). Weights chosen so relationship relevance dominates for graph-intent queries and exact symbol match dominates for definition queries; FTS/vector rank position stays in the base RRF score.
+- Graph-expanded candidates now compete in the main ranking rather than being appended after `top_k`; Phase 15's `expand_neighborhood` is unchanged.
+
+Next:
+- Phase 17 context builder (budgeted `ContextPack` over ranked candidates).
+
+## 2026-08-19 — Phase 15 Graph-Aware Retrieval
+
+Status: COMPLETE
+
+Files changed:
+- retrieval/neighborhood.py (new — `NeighborhoodHit`, `expand_neighborhood`)
+- retrieval/hybrid_retriever.py (`resolved_imports`/`exports` params, `_expand_graph` uses `expand_neighborhood`)
+- storage/index_store.py (`build_hybrid_retriever` passes resolved imports + exports)
+- tests/test_graph_retrieval.py (new)
+- tests/test_hybrid_retrieval.py (expansion stub + integration tests)
+
+Implementation:
+- `expand_neighborhood(seed, *, graph, symbol_index, resolved_imports=None, exports=None, one_hop_budget=6, two_hop_budget=2)` produces a deduplicated, budgeted, deterministic neighborhood. 1-hop covers callers, callees, parent, imports (seed document's resolved target symbols), and exports (seed document's module-scope exported symbols), ordered structural-first so the `one_hop_budget` never starves call context. 2-hop runs only when the seed has no direct call edges, walking the seed's children's callees once (`hop=2`), capped at `two_hop_budget`.
+- `HybridRetriever` now injects `resolved_imports` / `exports` (optional); `_expand_graph` delegates to `expand_neighborhood` and tags every supporting candidate `("graph",)`. `build_hybrid_retriever` wires the persisted index's resolved imports and exports so the full 1-hop set is available in the integration path.
+
+Tests:
+- `test_graph_retrieval.py` (12): five 1-hop relations present + deduped; import relation without a call; parent relation; dedup across call/import; 2-hop only for no-call-edge seeds; no 2-hop with a direct callee; budget caps exports and is configurable; deterministic order; isolated leaf empty; imports/exports skipped when not supplied.
+- `test_hybrid_retrieval.py` (3 new): stub-driven expansion surfaces callers/callees/exports and an import neighbor; integration `reindex_index` → `build_hybrid_retriever` surfaces an imported `helper` tagged `graph`.
+
+Result:
+- 230 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 215).
+
+Decision / deviation:
+- 2-hop trigger chosen: "no direct call edges → walk children's callees". Children are a 2-hop bridge only, not a 1-hop relation (spec lists five kinds). Imports/exports are document-scoped, matching the Phase 10 chunker.
+- `_expand_graph` no longer hard-caps appended supporting candidates at 3; the neighborhood budgets own the cap (Phase 15 owns hop semantics and context budgets per the Phase 14 decision note).
+
+Next:
+- Phase 16 heuristic reranking (deterministic features; no trained model yet).
 
 ## 2026-08-17 — Phase 10 Semantic Chunking
 
