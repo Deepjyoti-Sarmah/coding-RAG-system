@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 TABLES = [
     """
@@ -127,6 +127,16 @@ TABLES = [
     CREATE TABLE IF NOT EXISTS index_metadata (
         key   TEXT PRIMARY KEY,
         value TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
+        chunk_id UNINDEXED,
+        symbol_name,
+        qualified_name,
+        relative_path,
+        chunk_text,
+        tokenize = 'porter unicode61'
     )
     """,
 ]

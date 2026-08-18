@@ -15,6 +15,7 @@ EXPECTED_TABLES = {
     "embeddings",
     "file_state",
     "index_metadata",
+    "chunks_fts",
 }
 
 

@@ -3,8 +3,10 @@ import numpy as np
 import storage.db as db
 import storage.schema as schema
 from models.build_result import BuildResult
+from models.entities.fts_hit import FtsHit
 from models.file_state import FileState
 from storage.repositories import (
+    chunk_fts_repository,
     chunk_repository,
     document_repository,
     embedding_repository,
@@ -27,6 +29,7 @@ _TABLES_IN_DEPENDENCY_ORDER = [
     "exports",
     "imports",
     "chunks",
+    "chunks_fts",
     "symbols",
     "documents",
     "file_state",
@@ -68,6 +71,11 @@ def persist_index(
                 result.graph.relationships(),
             )
             chunk_repository.insert_many(conn, result.chunks)
+            chunk_fts_repository.insert_many(
+                conn,
+                result.chunks,
+                {symbol.symbol_id: symbol for symbol in result.symbols},
+            )
 
             if embeddings:
                 embedding_repository.insert_many(conn, embeddings)
@@ -84,6 +92,16 @@ def load_embedding_cache(db_path: str) -> dict[str, np.ndarray]:
     try:
         schema.create_schema(conn)
         return embedding_repository.load_embedding_cache(conn)
+    finally:
+        conn.close()
+
+
+def search_lexical(db_path: str, query: str, *, limit: int = 10) -> list[FtsHit]:
+    conn = db.connect(db_path)
+
+    try:
+        schema.create_schema(conn)
+        return chunk_fts_repository.search(conn, query, limit=limit)
     finally:
         conn.close()
 
