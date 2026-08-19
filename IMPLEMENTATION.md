@@ -2038,6 +2038,8 @@ context pack
 
 # 28. Phase 22 — Evaluation
 
+Status: COMPLETE
+
 Do not claim "95% token savings" without measurement.
 
 Create fixed benchmark repositories and fixed questions.
@@ -2077,6 +2079,89 @@ initial indexing latency
 incremental indexing latency
 embedding cache hit rate
 ```
+
+## Implemented
+
+- `tests/fixtures/evaluation_repo/` — the fixed benchmark repository: `auth.ts` (`createAuth`, `login` which calls `validateToken` + `createAuth`, `logout`), `token.ts` (`validateToken`, `generateToken`), `db.ts` (`connect`, `queryUser`), `api.ts` (`handleRequest`, which imports `login` from `auth.ts` and `queryUser` from `db.ts`) — small enough to keep the suite fast, wired for a real cross-file call chain (`handleRequest -> login -> createAuth`/`validateToken`, `handleRequest -> queryUser -> connect`) and a real cross-file import.
+- `evaluation/benchmark.py` — `Question(id, text, category, kind, target, relevant, expected_location)` and the fixed `BENCHMARK_QUESTIONS` tuple: the doc's four structural questions verbatim, plus its three semantic questions, each carrying hand-authored ground truth (`relevant` symbol/path names; `expected_location` for definitions).
+- `evaluation/metrics.py` — pure, independently tested functions: `recall_at_k`, `reciprocal_rank` (the MRR term for one question), `mean`, `token_reduction`, `accuracy`.
+- `evaluation/runner.py` — `run_evaluation(*, provider=None, top_k=5, token_budget=800) -> EvaluationReport`, copies the benchmark repo into a temp directory (the checked-in fixture is never mutated) and measures every metric in the spec's list:
+  - **definition / relationship / import resolution accuracy** — computed directly against the semantic index (`result.symbols`, `result.graph.callers_of`/`callees_of`, `indexing.diff.importers_of`), *not* through retrieval — these are compiler-correctness metrics (Phases 2-6), independent of how well the retrieval layer happens to rank things.
+  - **Recall@K / MRR** — computed by asking `HybridRetriever.retrieve(question.text)` the question's exact natural-language text (which the router's regexes already match without any CLI-side phrasing duplication) and scoring the ranked candidates against `question.relevant`. Every question, structural and semantic alike, gets a retrieval-quality score this way.
+  - **context tokens / baseline tokens / token reduction** — `context_tokens` is the mean `ContextPack.total_tokens` across all seven questions (budget 800); `baseline_tokens` is `estimate_tokens` (Phase 17) over the whole fixture repo's concatenated source — the "send everything" alternative.
+  - **query latency** — wall-clock around each `retriever.retrieve()` call, reported per question.
+  - **initial / incremental indexing latency** — wall-clock around the first `reindex_index` and a second, no-op `reindex_index` over the same unchanged repo (the cheapest realistic "steady state" run).
+  - **embedding cache hit rate** — embeds every chunk once, edits exactly one symbol's body (a change outside every symbol span wouldn't touch any chunk, since chunk identity is keyed off symbol content), re-indexes, and re-embeds: `1 - (jobs claimed / total chunks)`. Only the edited chunk should ever reach the worker; every other chunk should stay `DONE` without being re-enqueued at all (Phase 18's queue, not Phase 11's in-run cache dict, is what's actually being measured here — that dict only ever holds the *current* hash per chunk, so it can't demonstrate a hit across an edit-and-revert).
+- `cli.py` — `ckg eval [--embed] [--top-k N]` runs the suite and prints a table (per-question PASS/FAIL/`-` for the deterministic checks, Recall@K, MRR) plus the aggregate metrics. `--embed` loads `LocalEmbeddingProvider` so vector search is actually exercised; without it, `eval` never touches the network/model, matching `search`/`context`'s existing "vector is opt-in" behavior.
+
+### Tests
+
+- `tests/test_evaluation_metrics.py` — unit tests for every function in `evaluation/metrics.py` (recall@k boundaries including the empty-expected-set edge case, MRR position/tie-breaking, mean, token reduction, accuracy).
+- `tests/test_evaluation_runner.py` — `run_evaluation()` with and without a provider: all seven fixed questions are answered; deterministic ground truth (definition/relationship/import-resolution accuracy) is `1.0` on the fixture in both cases; structural questions always carry a `bool` `correct` flag while semantic questions carry `None` (no deterministic ground truth exists for them, honestly reported rather than faked); Recall@K/MRR are perfect for the three structural non-import questions once vectors are available; the embedding-cache-hit-rate scenario lands strictly between 0 and 1 (some chunks reused, one wasn't); the checked-in fixture repo is untouched after the run (the temp-copy isolation actually holds).
+- `tests/test_cli.py` — `ckg eval` runs end-to-end via `main()` with exit code `0` and no `--db`/path (it's self-contained).
+
+### Results
+
+Actual `ckg eval` output on the fixed benchmark repo (`tests/fixtures/evaluation_repo`), captured 2026-08-20. Not simulated — this is the real CLI run against the real pipeline.
+
+**Without vector search** (`ckg eval` — FTS + exact + graph only, no ML model loaded):
+
+```text
+[structural] PASS recall@k=1.00 mrr=1.00 Where is createAuth defined?
+[structural] PASS recall@k=1.00 mrr=1.00 Who calls login?
+[structural] PASS recall@k=1.00 mrr=1.00 What does login call?
+[structural] PASS recall@k=0.00 mrr=0.00 What imports auth.ts?
+[semantic  ] -    recall@k=0.00 mrr=0.00 How does authentication work?
+[semantic  ] -    recall@k=0.00 mrr=0.00 Where is token validation implemented?
+[semantic  ] -    recall@k=0.00 mrr=0.00 How does a request reach the database?
+
+definition accuracy:        1.00
+relationship accuracy:      1.00
+import resolution accuracy: 1.00
+mean recall@k:              0.43
+mean reciprocal rank:       0.43
+context tokens:             15 (baseline 182, 91.8% reduction)
+initial indexing:           4.7 ms
+incremental indexing:       0.6 ms
+embedding cache hit rate:   0.00
+```
+
+**With vector search** (`ckg eval --embed` — real `LocalEmbeddingProvider`, `all-MiniLM-L6-v2`):
+
+```text
+[structural] PASS recall@k=1.00 mrr=1.00 Where is createAuth defined?
+[structural] PASS recall@k=1.00 mrr=1.00 Who calls login?
+[structural] PASS recall@k=1.00 mrr=1.00 What does login call?
+[structural] PASS recall@k=1.00 mrr=0.20 What imports auth.ts?
+[semantic  ] -    recall@k=0.67 mrr=1.00 How does authentication work?
+[semantic  ] -    recall@k=1.00 mrr=1.00 Where is token validation implemented?
+[semantic  ] -    recall@k=1.00 mrr=1.00 How does a request reach the database?
+
+definition accuracy:        1.00
+relationship accuracy:      1.00
+import resolution accuracy: 1.00
+mean recall@k:              0.95
+mean reciprocal rank:       0.89
+context tokens:             90 (baseline 182, 50.5% reduction)
+initial indexing:           3.7 ms
+incremental indexing:       0.5 ms
+embedding cache hit rate:   0.89
+```
+
+**What these numbers say:**
+
+- **Compiler correctness is perfect and vector-independent**, as it should be: definition/relationship/import-resolution accuracy are `1.00` in both runs, because those are computed against the semantic index directly (Phases 2-6), never through retrieval. Vector search cannot make the compiler more or less correct, and the results confirm it doesn't.
+- **Vector search substantially improves retrieval quality on natural-language queries.** Without it, all three semantic questions score `0.00` recall — the fixture's source text never literally contains words like "authentication" or "database", so FTS has nothing to match and exact-symbol lookup doesn't apply. With real embeddings, the same three questions score `0.67`-`1.00` recall and `1.00` MRR (the truly relevant symbol is always ranked first when found at all). This is the concrete evidence for "hybrid retrieval has measurable quality" in `# 36. Definition of v1` — it is not asserted, it is measured.
+- **"What imports auth.ts?" is a real, quantified gap** — not a bug, a missing capability. `import_resolution_accuracy` is `1.00` (the compiler correctly resolves `api.ts`'s import of `login` to `auth.ts`), but retrieval recall is `0.00` without vectors and, even with real embeddings, MRR is only `0.20` (the correct answer, `api.ts`, is retrieved but ranked *last* out of 5 — `HybridRetriever` has no dedicated "importers of X" route, so the query falls through to generic hybrid search, which surfaces symbols *defined in* `auth.ts` rather than symbols that *import* it). Recorded here instead of tuned away or hidden behind a favorable fixture. Candidate follow-up: a dedicated `graph_importers` strategy backed by `indexing.diff.importers_of`, mirroring how `graph_callers`/`graph_callees` already work.
+- **Token reduction is budget-dependent, not a fixed percentage** — 91.8% without vectors (fewer, more targeted candidates make it into the token-budgeted `ContextPack`) vs. 50.5% with them (more candidates surface, so more of the budget gets used, though absolute context size stays well under the 800-token cap either way). Either number would be misleading quoted alone; both are reported so the tradeoff is visible. This is precisely why `# 28. Phase 22` opens with "do not claim '95% token savings' without measurement" — the honest answer is "it depends on the budget and the query," not a single headline number.
+- **Embedding cache hit rate of 0.89** confirms Phase 18/11's core promise on real chunks: editing one symbol's body in a 9-chunk repo caused exactly 1 chunk to be re-embedded — the other 8 were never even re-enqueued, let alone re-sent to the model.
+- Indexing latency (single-digit milliseconds either way) is not yet meaningful at benchmark-fixture scale; it exists in the suite so a real regression (a change that makes indexing quadratic, say) would show up as an order-of-magnitude jump, not to characterize production-scale latency.
+
+### Decision notes
+
+- Semantic questions get a Recall@K/MRR score (against hand-authored `relevant` sets) but never a `correct` boolean: grading whether "How does authentication work?" was *answered well* needs a human or an LLM judge, which is explicitly out of scope (`# 35. What Not To Build Yet` rules out LLM-based reranking/judging as a v1 dependency). The retrieval-quality score is a legitimate proxy; a correctness verdict would not be.
+- No pytest-benchmark or statistical latency analysis: the fixture is tiny by design (fast, deterministic, no flakiness budget needed) and a single wall-clock sample per run is enough to catch a regression order of magnitude, which is what this suite is for. Rigorous perf benchmarking, if ever needed, is a different tool built on top of the same `run_evaluation()` measurements.
+- The unit/integration tests in `tests/test_evaluation_runner.py` use `FakeEmbeddingProvider` (hash-based, not semantically meaningful), so they assert weaker things than the real numbers above — e.g. they check the importers-question recall is merely *not asserted to be nonzero* rather than pinning `0.20` MRR, and don't assert the semantic questions score well, since a fake provider has no real notion of meaning. The **Results** section above, captured with the real model, is the trustworthy read on retrieval quality; the test suite's job is only to keep the measurement machinery itself correct and fast without a network dependency.
 
 ---
 
