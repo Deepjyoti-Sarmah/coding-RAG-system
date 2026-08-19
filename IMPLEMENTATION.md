@@ -1970,6 +1970,8 @@ Do not build these distributed-system features in the local v1.
 
 # 26. Phase 20 — Index Generations
 
+Status: COMPLETE
+
 Every successful indexing transaction should produce a consistent logical generation.
 
 Example:
@@ -1985,6 +1987,22 @@ generation 42
 Readers should never observe half of generation 41 and half of generation 42.
 
 Use SQLite transactions for atomic publication.
+
+## Implemented
+
+- Atomic publication already existed since Phase 7 (Task 7.3): `persist_index` does a full snapshot-replace — clear then re-insert every table — inside one `db.transaction`, so a reader never observes a half-written snapshot; a failure anywhere rolls back the whole thing. Phase 20 makes that guarantee *observable* by adding an explicit, monotonic generation counter that publishes atomically with the data it labels.
+- `storage/schema.py` — `current_generation(conn) -> int` / `bump_generation(conn) -> int` follow the existing `schema_version`/`set_schema_version` pattern: both read/write the `generation` key in the already-present `index_metadata` table (no new table — rule 1.5). `bump_generation` reads-then-writes `current + 1` and returns the new value; a database that has never had `create_schema` run, or has no `generation` row yet, reads as generation `0`.
+- `storage/index_store.py` — `persist_index` calls `schema.bump_generation(conn)` as the **last** statement inside the same transaction that writes the snapshot (after `file_state_repository.insert_many`). Because it's in the same transaction: a successful persist always ends with `generation == N+1` exactly matching the just-committed data, and a failed persist (any exception, e.g. the existing FK-violation test) rolls back the bump along with everything else — the generation counter and the data it describes can never disagree. `current_generation(db_path) -> int` is a new reader wrapper (`db.connect` + `schema.current_generation`) for callers/tests/future CLI status.
+
+### Tests
+
+- `tests/test_storage_schema.py` — `current_generation` is `0` before `create_schema`; `bump_generation` increments (`1`, then `2`) and `current_generation` reflects the last bump.
+- `tests/test_index_store.py` — `current_generation` is `0` for a database that has never been persisted; two successful `persist_index` calls produce generations `1` then `2`; a `persist_index` call that raises `sqlite3.IntegrityError` (the existing rollback fixture) leaves the generation at its last successful value instead of bumping.
+
+### Decision notes
+
+- No separate "generations" table or history: the spec only requires that readers never see a torn generation, not that past generations be enumerable or diffable — that would be speculative (rule 1.5) without a consumer needing generation history.
+- `IndexRunReport` is intentionally not extended with a `generation` field yet: nothing in the current codebase reads it (Phase 21's `ckg status` is the natural future consumer). `current_generation(db_path)` is available as a plain reader in the meantime.
 
 ---
 

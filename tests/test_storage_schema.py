@@ -59,6 +59,21 @@ class TestSchema(unittest.TestCase):
         self.assertEqual(schema.schema_version(conn), 0)
         conn.close()
 
+    def test_generation_zero_before_create(self):
+        conn = db.connect(":memory:")
+
+        self.assertEqual(schema.current_generation(conn), 0)
+        conn.close()
+
+    def test_bump_generation_increments_and_persists(self):
+        conn = db.connect(":memory:")
+        schema.create_schema(conn)
+
+        self.assertEqual(schema.bump_generation(conn), 1)
+        self.assertEqual(schema.bump_generation(conn), 2)
+        self.assertEqual(schema.current_generation(conn), 2)
+        conn.close()
+
     def test_relationships_unique_index(self):
         conn = db.connect(":memory:")
         schema.create_schema(conn)

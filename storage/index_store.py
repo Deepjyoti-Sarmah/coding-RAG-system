@@ -82,6 +82,18 @@ def persist_index(
 
             if file_states is not None:
                 file_state_repository.insert_many(conn, file_states)
+
+            schema.bump_generation(conn)
+    finally:
+        conn.close()
+
+
+def current_generation(db_path: str) -> int:
+    conn = db.connect(db_path)
+
+    try:
+        schema.create_schema(conn)
+        return schema.current_generation(conn)
     finally:
         conn.close()
 

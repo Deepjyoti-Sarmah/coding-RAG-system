@@ -183,3 +183,28 @@ def set_schema_version(conn, version: int) -> None:
         """,
         (str(version),),
     )
+
+
+def current_generation(conn) -> int:
+    try:
+        row = conn.execute(
+            "SELECT value FROM index_metadata WHERE key = 'generation'"
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return 0
+
+    return int(row["value"]) if row is not None else 0
+
+
+def bump_generation(conn) -> int:
+    generation = current_generation(conn) + 1
+
+    conn.execute(
+        """
+        INSERT INTO index_metadata (key, value) VALUES ('generation', ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        """,
+        (str(generation),),
+    )
+
+    return generation

@@ -11,7 +11,12 @@ from embeddings.fake_provider import FakeEmbeddingProvider
 from indexing.embedding_queue import enqueue_embedding_jobs, run_embedding_worker
 from models.build_result import BuildResult
 from storage import db
-from storage.index_store import load_embedding_cache, load_index, persist_index
+from storage.index_store import (
+    current_generation,
+    load_embedding_cache,
+    load_index,
+    persist_index,
+)
 
 FILES = {
     "auth.ts": (
@@ -286,6 +291,45 @@ class TestIndexStore(unittest.TestCase):
                     self.assertEqual(count, 0, f"{table} should be empty")
             finally:
                 conn.close()
+
+            self.assertEqual(current_generation(db_path), 0)
+
+    def test_generation_is_zero_before_any_persist(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = str(Path(tmp) / "index.sqlite")
+
+            self.assertEqual(current_generation(db_path), 0)
+
+    def test_generation_increments_on_each_successful_persist(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = str(Path(tmp) / "index.sqlite")
+
+            original = _build(FILES)
+            persist_index(db_path, original)
+            self.assertEqual(current_generation(db_path), 1)
+
+            persist_index(db_path, original)
+            self.assertEqual(current_generation(db_path), 2)
+
+    def test_failed_persist_does_not_bump_generation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = str(Path(tmp) / "index.sqlite")
+
+            original = _build(FILES)
+            persist_index(db_path, original)
+            self.assertEqual(current_generation(db_path), 1)
+
+            broken = BuildResult(
+                documents=original.documents,
+                symbols=[
+                    replace(original.symbols[0], document_id="missing-document")
+                ],
+            )
+
+            with self.assertRaises(sqlite3.IntegrityError):
+                persist_index(db_path, broken)
+
+            self.assertEqual(current_generation(db_path), 1)
 
 
 if __name__ == "__main__":
