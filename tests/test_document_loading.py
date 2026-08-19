@@ -75,6 +75,40 @@ class TestDirectoryLoad(unittest.TestCase):
                 {"auth.ts"},
             )
 
+    def test_honors_gitignore(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".gitignore").write_text("*.gen.ts\n", encoding="utf-8")
+            (root / "auth.ts").write_text("export const a = 1;\n", encoding="utf-8")
+            (root / "schema.gen.ts").write_text(
+                "export const s = 1;\n", encoding="utf-8"
+            )
+
+            documents = load_code_files(str(root))
+
+            self.assertEqual(
+                {d.relative_path for d in documents},
+                {"auth.ts"},
+            )
+
+    def test_honors_ckgignore(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".ckgignore").write_text("fixtures/\n", encoding="utf-8")
+            (root / "auth.ts").write_text("export const a = 1;\n", encoding="utf-8")
+            fixtures = root / "fixtures"
+            fixtures.mkdir()
+            (fixtures / "sample.ts").write_text(
+                "export const s = 1;\n", encoding="utf-8"
+            )
+
+            documents = load_code_files(str(root))
+
+            self.assertEqual(
+                {d.relative_path for d in documents},
+                {"auth.ts"},
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

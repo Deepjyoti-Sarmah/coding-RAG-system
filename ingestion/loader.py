@@ -7,6 +7,7 @@ from config import (
     INCLUDE_EXTENSIONS,
     MAX_FILE_SIZE_BYTES,
 )
+from ingestion.ignore_rules import load_ignore_rules
 from ingestion.language import detect_language
 from models.entities.documents import Document
 
@@ -30,6 +31,7 @@ def iter_repo_files(path: str | Path) -> Iterator[tuple[Path, str]]:
     root_path = Path(path).resolve()
 
     is_single_file = root_path.is_file()
+    ignore_rules = None if is_single_file else load_ignore_rules(root_path)
 
     files = [root_path] if is_single_file else root_path.rglob("*")
 
@@ -46,6 +48,9 @@ def iter_repo_files(path: str | Path) -> Iterator[tuple[Path, str]]:
         relative_path = (
             file_path.name if is_single_file else str(file_path.relative_to(root_path))
         )
+
+        if ignore_rules is not None and ignore_rules.is_ignored(relative_path):
+            continue
 
         yield file_path, relative_path
 

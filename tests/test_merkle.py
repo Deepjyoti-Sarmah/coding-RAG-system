@@ -122,6 +122,23 @@ class TestMerkleTree(unittest.TestCase):
             compute_merkle_tree(str(second_root)).root_hash,
         )
 
+    def test_honors_gitignore_for_files_and_directories(self):
+        _write(
+            self.root,
+            {
+                ".gitignore": "*.gen.ts\nvendor/\n",
+                "schema.gen.ts": "export const s = 1;\n",
+                "vendor/lib.ts": "export const v = 1;\n",
+            },
+        )
+
+        tree = compute_merkle_tree(str(self.root))
+
+        self.assertNotIn("schema.gen.ts", tree.nodes)
+        self.assertNotIn("vendor", tree.nodes)
+        self.assertNotIn("vendor/lib.ts", tree.nodes)
+        self.assertIn("src/auth.ts", tree.nodes)
+
     def test_single_file_root_hashes_content(self):
         (self.root / "standalone.ts").write_text("export const z = 1;\n")
 

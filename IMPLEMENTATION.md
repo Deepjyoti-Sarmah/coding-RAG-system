@@ -1907,6 +1907,8 @@ Do not re-embed chunks with unchanged content hashes.
 
 # 25. Phase 19 — Secure Local Indexing
 
+Status: IN PROGRESS (ignore rules complete; derived-state boundary and content-addressed cache are pre-existing/covered by earlier phases, not revisited here)
+
 Adopt local-safe ideas from production code indexing systems.
 
 ## Ignore rules
@@ -1919,6 +1921,23 @@ Honor:
 ```
 
 before parsing or embedding.
+
+### Implemented
+
+- `ingestion/ignore_rules.py` — `IgnoreRules.is_ignored(relative_path, *, is_dir=False)` wraps a `pathspec.PathSpec` (the `gitignore` pattern factory, full gitwildmatch semantics including negation and directory-only patterns). `load_ignore_rules(root_dir)` reads `.gitignore` then `.ckgignore` from the repo root and concatenates their patterns — `.ckgignore` adds project-specific ignores on top of `.gitignore` rather than replacing it. Only root-level ignore files are read; nested per-directory ignore files are not supported yet (no consumer needs them — rule 1.5). Missing files simply contribute no patterns, so a repo with neither file ignores nothing (never `None`, so callers don't need extra branching).
+- `ingestion/loader.py:iter_repo_files` — the single file-discovery choke point already used by `load_code_files` and (transitively, via `indexing/diff.py:scan_files`) by the incremental indexer. It now loads ignore rules once per call and skips any file whose repo-relative path matches, alongside the existing `EXCLUDE_DIRS`/`INCLUDE_EXTENSIONS` checks. Every consumer of `iter_repo_files` — `load_code_files`, `scan_files`, `reindex_index` — honors `.gitignore`/`.ckgignore` for free before parsing or embedding.
+- `indexing/merkle.py:compute_merkle_tree` — walks the tree independently of `iter_repo_files` (it hashes all files, not just supported extensions), so it did **not** automatically inherit the new rule; `_build_directory` now also takes `ignore_rules` and checks it for every entry (`is_dir=True` for directories, so a directory-only pattern like `vendor/` prunes the whole subtree instead of only individual files) — otherwise a `.gitignore`'d directory would still perturb ancestor hashes.
+
+### Tests
+
+- `tests/test_ignore_rules.py` (new) — no ignore files ignores nothing; a `.gitignore` glob pattern; a directory pattern matches nested files at any depth; `.ckgignore` patterns are honored on their own; `.gitignore` and `.ckgignore` combine; negation (`!pattern`) un-ignores; `is_dir=True` applies a directory-only pattern that a same-named file wouldn't match.
+- `tests/test_document_loading.py` — `load_code_files` skips a `.gitignore`'d glob and a `.ckgignore`'d directory.
+- `tests/test_merkle.py` — `compute_merkle_tree` excludes both a `.gitignore`'d file and an entire `.gitignore`'d directory (neither the directory node nor anything under it appears in the tree).
+
+### Decision notes
+
+- Chose `pathspec` (the standard library for this) over hand-rolling gitignore semantics — directory pruning, negation, and glob edge cases are exactly the kind of thing rule 1.4 says not to guess at.
+- `.gitignore` and `.ckgignore` are additive, not alternatives: a repo already has a `.gitignore` for its own reasons (build output, `node_modules`, etc.) and `.ckgignore` is for indexer-specific exclusions (e.g. fixtures/generated code a developer still wants tracked in git but not semantically indexed).
 
 ## Derived-state boundary
 

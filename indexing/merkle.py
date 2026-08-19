@@ -4,6 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from analysis.fingerprints import compute_content_hash
+from ingestion.ignore_rules import IgnoreRules, load_ignore_rules
 from ingestion.loader import is_inside_excluded_dir
 
 
@@ -55,6 +56,7 @@ def compute_merkle_tree(root_dir: str) -> MerkleTree:
         path=root_path,
         relative_path="",
         nodes=nodes,
+        ignore_rules=load_ignore_rules(root_path),
     )
 
     return MerkleTree(nodes=nodes)
@@ -65,6 +67,7 @@ def _build_directory(
     path: Path,
     relative_path: str,
     nodes: dict[str, MerkleNode],
+    ignore_rules: IgnoreRules,
 ) -> str:
     children: list[tuple[str, str]] = []
 
@@ -76,11 +79,15 @@ def _build_directory(
             entry.name if relative_path == "" else f"{relative_path}/{entry.name}"
         )
 
+        if ignore_rules.is_ignored(child_relative_path, is_dir=entry.is_dir()):
+            continue
+
         if entry.is_dir():
             child_hash = _build_directory(
                 path=entry,
                 relative_path=child_relative_path,
                 nodes=nodes,
+                ignore_rules=ignore_rules,
             )
             nodes[child_relative_path] = MerkleNode(
                 relative_path=child_relative_path,
