@@ -2008,6 +2008,8 @@ Use SQLite transactions for atomic publication.
 
 # 27. Phase 21 — Agent / CLI Integration
 
+Status: COMPLETE
+
 Only after retrieval is reliable.
 
 Start with a local CLI/library:
@@ -2033,6 +2035,33 @@ graph neighborhood
 semantic search
 context pack
 ```
+
+## Implemented
+
+- `cli.py` (repo root) — a thin `argparse` dispatcher over pure, independently-testable `cmd_*` functions (`cmd_index`, `cmd_status`, `cmd_search`, `cmd_definition`, `cmd_callers`, `cmd_callees`, `cmd_imports`, `cmd_context`), each taking a `db_path` and returning a value (`IndexRunReport`, `HybridRetrieval`, `ContextPack`, a status `dict`, or a list of `(ImportReference, ResolvedImportReference | None)`). `main(argv)` parses arguments, formats, and prints; it contains no logic of its own, so tests exercise the `cmd_*` functions directly and only lightly touch `main()` for dispatch/exit-code behavior.
+- `ckg index <path>` — `Path(db_path).parent.mkdir(parents=True, exist_ok=True)` then `reindex_index`; embedding is opt-in via `--embed` (loads `LocalEmbeddingProvider` and runs the Phase 18 worker after indexing), consistent with "embedding must not block indexing" — a plain `ckg index` never loads the ML model.
+- `ckg status` — generation (Phase 20), document/symbol/chunk/embedding counts, and the embedding job queue breakdown (Phase 18's `queue_status`), so a user can see whether embeddings are still pending before running `search`.
+- `ckg search` / `ckg context` — the only commands that can use vector search, since they alone reach `HybridRetriever`'s general `hybrid` strategy; `_resolve_provider` auto-detects whether embeddings exist (`has_embeddings`, via the Phase 11 embedding cache) and only then lazily imports and loads `LocalEmbeddingProvider` — `--no-vector` forces FTS/exact-only. `definition`/`callers`/`callees` route through `HybridRetriever`'s dedicated regex-matched strategies (`exact_symbol`/`graph_callers`/`graph_callees`), which never touch FTS or vectors, so they never load a provider at all.
+- `ckg definition` / `ckg callers` / `ckg callees` — formats the query into the exact phrasing `HybridRetriever.retrieve` already routes deterministically (`"where is {name} defined"`, `"who calls {name}"`, `"what does {name} call"`) rather than duplicating routing logic in the CLI.
+- `ckg imports <file>` — lists the file's own `import_reference`s (module path, imported name, local name) each paired with its `ResolvedImportReference` when one exists, matched by object identity (`id()`) within a single `load_index()` call — the same reused-instance pattern persistence already relies on (`ids_by_import_object` in `import_repository`). An import to a target outside the repo (no matching document) has no `ResolvedImportReference` at all and prints as `unresolved`, rather than being silently dropped.
+- Read commands (`status`/`search`/`definition`/`callers`/`callees`/`imports`/`context`) check `Path(db_path).exists()` first and print a "run `ckg index` first" message with exit code `1` instead of a raw `sqlite3` error on a repo that was never indexed.
+- No `[project.scripts]` entry point: this project isn't currently packaged (`uv sync` warned that entry points need `tool.uv.package = true` or a `[build-system]`, which would require restructuring the flat top-level module layout) — invoke via `uv run python cli.py <command>` for now. Revisit if/when the project is packaged for distribution.
+- `mcp_server.py` (repo root) — an MCP server (`mcp` dependency, `mcp.server.mcpserver.MCPServer`) exposing eight `@mcp.tool()`-decorated functions that wrap the *same* `cmd_*` functions the CLI uses: `index_repository`, `repository_status`, `definition`, `callers`, `callees`, `search`, `imports`, `context` — directly covering the spec's four agent requests (exact definition → `definition`; graph neighborhood → `callers`/`callees`; semantic search → `search`; context pack → `context`), plus indexing/status so an agent can bootstrap a repo through the same protocol without shelling out to the CLI first.
+  - Every tool returns a plain JSON-serializable `dict` (never a raw dataclass/`HybridRetrieval`/`ContextPack`) via small `_candidate_dict`/`_import_dict`/`_context_entry_dict` helpers — deliberately not relying on the framework's dataclass-to-schema inference, so serialization is exactly what the docstring promises regardless of SDK internals.
+  - Read tools (`definition`/`callers`/`callees`/`search`/`imports`/`context`) return `{"error": "...Call index_repository(path=...) first."}` instead of raising when nothing has been indexed yet — a *soft* error (`is_error=False`, readable JSON) so an agent can read the message and self-correct by calling `index_repository`, rather than the call failing at the protocol level.
+  - `search`/`context` reuse `cli.resolve_provider` (promoted from a CLI-private `_resolve_provider` to a shared function once this became its second caller — rule 1.5) to auto-detect whether embeddings exist before lazily loading `LocalEmbeddingProvider`, exactly mirroring the CLI's "vector is opt-in, never loaded just to answer an exact query" behavior.
+  - `main()` runs `mcp.run(transport="stdio")` — the standard local-process transport for a coding-agent-invoked MCP server (Claude Code, Codex CLI, etc. all launch MCP servers over stdio).
+
+### Tests
+
+- `tests/test_cli.py` — `cmd_index` creates the db and reports parsed files; embeddings stay empty without a provider and populate with one (`FakeEmbeddingProvider`, no network/model download); `cmd_status` reports generation/counts/queue state; `cmd_search` without a provider still finds exact/FTS matches, and with a provider surfaces a `vector`-sourced candidate; `cmd_definition`/`cmd_callers`/`cmd_callees` return the expected symbol sets; `cmd_imports` pairs a resolved import with its target document/symbol and returns `[]` for an unknown file; `cmd_context` respects the token budget. `TestCliMain` exercises `main()` argv dispatch and exit codes (`index` creates the db; `status` before any index exits `1`; `status`/`search` after indexing exit `0`) — deliberately never passes `--embed`, so the test suite never loads a real ML model.
+- `tests/test_mcp_server.py` (`unittest.IsolatedAsyncioTestCase`, calling `mcp.list_tools()`/`mcp.call_tool()` in-process — no subprocess or real stdio transport needed) — all eight tools are registered; `repository_status` on an unindexed path reports `{"indexed": False}` rather than erroring; a read tool before indexing returns the soft "call index_repository" error; indexing then status/definition/callers/callees/imports/search/context all round-trip through JSON with the expected values, including that `imports` resolves `api.ts`'s import of `login` to `auth.ts::login` and `search` without embedding reports `vector_search_used: False`.
+
+### Decision notes
+
+- The CLI resolves its own default database location (`<path>/.ckg/index.sqlite`) rather than requiring `--db` on every call, so the example commands in this spec (`ckg index .`, `ckg status`, ...) work as written from within a repo. `mcp_server.py` reuses the same `default_db_path`, so an agent and a human running the CLI against the same repo share one index.
+- MCP tools take the same `path` parameter the CLI does (not an implicit cwd) because an MCP server is a long-lived process an agent may point at multiple repositories across a session, unlike the CLI which is invoked fresh per command from within a repo.
+- `structured_content` on tool results is left as the framework default (no `structured_output=True`) because every tool's return type is a generic `dict`, not a `TypedDict`/pydantic model — forcing structured output would only yield an unhelpful `{"type": "object"}` schema. The JSON text content already carries the full structured payload, which is what every test asserts against.
 
 ---
 
@@ -2386,6 +2415,12 @@ Update this section as work progresses.
 - [x] Graph-aware retrieval (Phase 15: budgeted 1-hop seed neighborhoods over callers/callees/parent/imports/exports, 2-hop only for no-call-edge seeds)
 - [x] Heuristic reranking (Phase 16: deterministic feature scoring — exact/path/kind/FTS/vector/graph-distance/relationship — graph-expanded candidates compete in `top_k`)
 - [x] Context builder (Phase 17: budgeted `ContextPack` — primary/supporting definitions, important relationships, file paths, symbol-bounded source excerpts, hard token budget)
+- [x] Async embedding worker / incremental embedding (Phase 18: PENDING/PROCESSING/DONE/FAILED queue, retry-only-failed, no re-embedding of unchanged content hashes)
+- [x] Ignore rules (Phase 19: `.gitignore`/`.ckgignore` honored by file discovery and the Merkle walk)
+- [x] Index generations (Phase 20: atomic generation counter published in the same transaction as the snapshot it labels)
+- [x] Local CLI (Phase 21: `ckg index/status/search/definition/callers/callees/imports/context/eval`)
+- [x] Evaluation suite (Phase 22: fixed benchmark repo + questions, compiler-accuracy + retrieval-quality + latency + cache-hit-rate metrics, `ckg eval`)
+- [x] MCP / agent protocol integration (Phase 21: `mcp_server.py`, eight tools over stdio, wrapping the same `cmd_*` functions the CLI uses)
 
 ## In Progress
 
@@ -2393,10 +2428,7 @@ Update this section as work progresses.
 
 ## Next
 
-- [ ] Async embedding worker / incremental embedding (Phase 18)
-- [ ] Index generations (Phase 20)
-- [ ] CLI / MCP integration (Phase 21)
-- [ ] Evaluation suite (Phase 22)
+(none — v1 scope from `# 34. Immediate Execution Order` is complete; see `# 36. Definition of v1` for the outstanding "hybrid retrieval has measurable quality" bar, which `ckg eval` now measures but has not been judged against yet)
 
 ---
 
