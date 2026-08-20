@@ -722,9 +722,9 @@ Test:
 
 ```ts
 function outer() {
-    function inner() {
-        login();
-    }
+  function inner() {
+    login();
+  }
 }
 ```
 
@@ -744,8 +744,8 @@ Fixture:
 const login = globalLogin;
 
 function outer() {
-    const login = localLogin;
-    login();
+  const login = localLogin;
+  login();
 }
 ```
 
@@ -1829,7 +1829,7 @@ Rules:
   - **Deduplicate overlapping source**: candidates are deduplicated by `chunk_key` (the stable symbol key), so a symbol surfaced by multiple sources contributes exactly one entry; `file_paths` is the sorted unique path set; candidates with no `Symbol` in `symbols_by_key` (no source available) are skipped.
   - **Prioritize direct evidence**: candidates whose only source is `("graph",)` become `supporting`; everything else is `primary`. Primaries are added in rank order first, then supporting — a supporting symbol can never starve a primary.
   - **Enforce a hard budget / never silently exceed**: an entry is added only if its `header + source` fits the remaining budget. If only the source does not fit, the symbol is emitted header-only (`source=""`, `location="path:line"`); if even the header does not fit, it is skipped — so **symbol boundaries are preserved** (a symbol's source is never truncated mid-body) and `total_tokens <= token_budget` always holds.
-  - **Important relationships**: `(source.qualified_name -> callee.qualified_name (calls))` edges from `graph.callees_of`, emitted only when *both* endpoints were selected, deduplicated and sorted deterministically.
+  - **Important relationships**: `(source.qualified_name -> callee.qualified_name (calls))` edges from `graph.callees_of`, emitted only when _both_ endpoints were selected, deduplicated and sorted deterministically.
 - `storage/index_store.py` — `build_context_pack_from_index(db_path, query, *, token_budget, provider=None, top_k=5)` = `load_index` + `build_hybrid_retriever` + `retrieve` + `build_context_pack`, mirroring the `build_hybrid_retriever` convenience (consumer: Phase 21 `ckg context` CLI).
 
 ### Tests
@@ -1881,7 +1881,7 @@ Do not re-embed chunks with unchanged content hashes.
   - `enqueue_embedding_jobs(db_path, chunks)` — called after `persist_index` with the just-persisted chunks; one `enqueue` per chunk in a single transaction. This is the non-blocking handoff: semantic indexing finishes and returns before any embedding work happens.
   - `run_embedding_worker(db_path, provider, *, limit=None) -> EmbeddingRunReport(claimed, done, reused, stale, failed)` — the worker, run as a separate step:
     1. `claim`s up to `limit` `PENDING`/`FAILED` jobs.
-    2. Re-checks each claimed job's `content_hash` against the chunk's *current* `content_hash` in the `chunks` table: a mismatch (the chunk changed again after this job was enqueued) is re-enqueued as `PENDING` with the fresh hash instead of being embedded with stale text; a chunk that no longer exists is dropped from the queue.
+    2. Re-checks each claimed job's `content_hash` against the chunk's _current_ `content_hash` in the `chunks` table: a mismatch (the chunk changed again after this job was enqueued) is re-enqueued as `PENDING` with the fresh hash instead of being embedded with stale text; a chunk that no longer exists is dropped from the queue.
     3. Embeds the rest via the Phase 11 `embed_chunks` (cache-aware — a chunk whose `content_hash` is already in the embedding cache is reused, not re-embedded).
     4. On any embedding exception, every claimed-and-embeddable job in the batch is marked `FAILED` with the error message and the run returns early — a failed run never marks jobs `DONE`.
     5. On success, embeddings are upserted and jobs marked `DONE` in one transaction.
@@ -1990,7 +1990,7 @@ Use SQLite transactions for atomic publication.
 
 ## Implemented
 
-- Atomic publication already existed since Phase 7 (Task 7.3): `persist_index` does a full snapshot-replace — clear then re-insert every table — inside one `db.transaction`, so a reader never observes a half-written snapshot; a failure anywhere rolls back the whole thing. Phase 20 makes that guarantee *observable* by adding an explicit, monotonic generation counter that publishes atomically with the data it labels.
+- Atomic publication already existed since Phase 7 (Task 7.3): `persist_index` does a full snapshot-replace — clear then re-insert every table — inside one `db.transaction`, so a reader never observes a half-written snapshot; a failure anywhere rolls back the whole thing. Phase 20 makes that guarantee _observable_ by adding an explicit, monotonic generation counter that publishes atomically with the data it labels.
 - `storage/schema.py` — `current_generation(conn) -> int` / `bump_generation(conn) -> int` follow the existing `schema_version`/`set_schema_version` pattern: both read/write the `generation` key in the already-present `index_metadata` table (no new table — rule 1.5). `bump_generation` reads-then-writes `current + 1` and returns the new value; a database that has never had `create_schema` run, or has no `generation` row yet, reads as generation `0`.
 - `storage/index_store.py` — `persist_index` calls `schema.bump_generation(conn)` as the **last** statement inside the same transaction that writes the snapshot (after `file_state_repository.insert_many`). Because it's in the same transaction: a successful persist always ends with `generation == N+1` exactly matching the just-committed data, and a failed persist (any exception, e.g. the existing FK-violation test) rolls back the bump along with everything else — the generation counter and the data it describes can never disagree. `current_generation(db_path) -> int` is a new reader wrapper (`db.connect` + `schema.current_generation`) for callers/tests/future CLI status.
 
@@ -2046,9 +2046,9 @@ context pack
 - `ckg imports <file>` — lists the file's own `import_reference`s (module path, imported name, local name) each paired with its `ResolvedImportReference` when one exists, matched by object identity (`id()`) within a single `load_index()` call — the same reused-instance pattern persistence already relies on (`ids_by_import_object` in `import_repository`). An import to a target outside the repo (no matching document) has no `ResolvedImportReference` at all and prints as `unresolved`, rather than being silently dropped.
 - Read commands (`status`/`search`/`definition`/`callers`/`callees`/`imports`/`context`) check `Path(db_path).exists()` first and print a "run `ckg index` first" message with exit code `1` instead of a raw `sqlite3` error on a repo that was never indexed.
 - No `[project.scripts]` entry point: this project isn't currently packaged (`uv sync` warned that entry points need `tool.uv.package = true` or a `[build-system]`, which would require restructuring the flat top-level module layout) — invoke via `uv run python cli.py <command>` for now. Revisit if/when the project is packaged for distribution.
-- `mcp_server.py` (repo root) — an MCP server (`mcp` dependency, `mcp.server.mcpserver.MCPServer`) exposing eight `@mcp.tool()`-decorated functions that wrap the *same* `cmd_*` functions the CLI uses: `index_repository`, `repository_status`, `definition`, `callers`, `callees`, `search`, `imports`, `context` — directly covering the spec's four agent requests (exact definition → `definition`; graph neighborhood → `callers`/`callees`; semantic search → `search`; context pack → `context`), plus indexing/status so an agent can bootstrap a repo through the same protocol without shelling out to the CLI first.
+- `mcp_server.py` (repo root) — an MCP server (`mcp` dependency, `mcp.server.mcpserver.MCPServer`) exposing eight `@mcp.tool()`-decorated functions that wrap the _same_ `cmd_*` functions the CLI uses: `index_repository`, `repository_status`, `definition`, `callers`, `callees`, `search`, `imports`, `context` — directly covering the spec's four agent requests (exact definition → `definition`; graph neighborhood → `callers`/`callees`; semantic search → `search`; context pack → `context`), plus indexing/status so an agent can bootstrap a repo through the same protocol without shelling out to the CLI first.
   - Every tool returns a plain JSON-serializable `dict` (never a raw dataclass/`HybridRetrieval`/`ContextPack`) via small `_candidate_dict`/`_import_dict`/`_context_entry_dict` helpers — deliberately not relying on the framework's dataclass-to-schema inference, so serialization is exactly what the docstring promises regardless of SDK internals.
-  - Read tools (`definition`/`callers`/`callees`/`search`/`imports`/`context`) return `{"error": "...Call index_repository(path=...) first."}` instead of raising when nothing has been indexed yet — a *soft* error (`is_error=False`, readable JSON) so an agent can read the message and self-correct by calling `index_repository`, rather than the call failing at the protocol level.
+  - Read tools (`definition`/`callers`/`callees`/`search`/`imports`/`context`) return `{"error": "...Call index_repository(path=...) first."}` instead of raising when nothing has been indexed yet — a _soft_ error (`is_error=False`, readable JSON) so an agent can read the message and self-correct by calling `index_repository`, rather than the call failing at the protocol level.
   - `search`/`context` reuse `cli.resolve_provider` (promoted from a CLI-private `_resolve_provider` to a shared function once this became its second caller — rule 1.5) to auto-detect whether embeddings exist before lazily loading `LocalEmbeddingProvider`, exactly mirroring the CLI's "vector is opt-in, never loaded just to answer an exact query" behavior.
   - `main()` runs `mcp.run(transport="stdio")` — the standard local-process transport for a coding-agent-invoked MCP server (Claude Code, Codex CLI, etc. all launch MCP servers over stdio).
 
@@ -2115,12 +2115,12 @@ embedding cache hit rate
 - `evaluation/benchmark.py` — `Question(id, text, category, kind, target, relevant, expected_location)` and the fixed `BENCHMARK_QUESTIONS` tuple: the doc's four structural questions verbatim, plus its three semantic questions, each carrying hand-authored ground truth (`relevant` symbol/path names; `expected_location` for definitions).
 - `evaluation/metrics.py` — pure, independently tested functions: `recall_at_k`, `reciprocal_rank` (the MRR term for one question), `mean`, `token_reduction`, `accuracy`.
 - `evaluation/runner.py` — `run_evaluation(*, provider=None, top_k=5, token_budget=800) -> EvaluationReport`, copies the benchmark repo into a temp directory (the checked-in fixture is never mutated) and measures every metric in the spec's list:
-  - **definition / relationship / import resolution accuracy** — computed directly against the semantic index (`result.symbols`, `result.graph.callers_of`/`callees_of`, `indexing.diff.importers_of`), *not* through retrieval — these are compiler-correctness metrics (Phases 2-6), independent of how well the retrieval layer happens to rank things.
+  - **definition / relationship / import resolution accuracy** — computed directly against the semantic index (`result.symbols`, `result.graph.callers_of`/`callees_of`, `indexing.diff.importers_of`), _not_ through retrieval — these are compiler-correctness metrics (Phases 2-6), independent of how well the retrieval layer happens to rank things.
   - **Recall@K / MRR** — computed by asking `HybridRetriever.retrieve(question.text)` the question's exact natural-language text (which the router's regexes already match without any CLI-side phrasing duplication) and scoring the ranked candidates against `question.relevant`. Every question, structural and semantic alike, gets a retrieval-quality score this way.
   - **context tokens / baseline tokens / token reduction** — `context_tokens` is the mean `ContextPack.total_tokens` across all seven questions (budget 800); `baseline_tokens` is `estimate_tokens` (Phase 17) over the whole fixture repo's concatenated source — the "send everything" alternative.
   - **query latency** — wall-clock around each `retriever.retrieve()` call, reported per question.
   - **initial / incremental indexing latency** — wall-clock around the first `reindex_index` and a second, no-op `reindex_index` over the same unchanged repo (the cheapest realistic "steady state" run).
-  - **embedding cache hit rate** — embeds every chunk once, edits exactly one symbol's body (a change outside every symbol span wouldn't touch any chunk, since chunk identity is keyed off symbol content), re-indexes, and re-embeds: `1 - (jobs claimed / total chunks)`. Only the edited chunk should ever reach the worker; every other chunk should stay `DONE` without being re-enqueued at all (Phase 18's queue, not Phase 11's in-run cache dict, is what's actually being measured here — that dict only ever holds the *current* hash per chunk, so it can't demonstrate a hit across an edit-and-revert).
+  - **embedding cache hit rate** — embeds every chunk once, edits exactly one symbol's body (a change outside every symbol span wouldn't touch any chunk, since chunk identity is keyed off symbol content), re-indexes, and re-embeds: `1 - (jobs claimed / total chunks)`. Only the edited chunk should ever reach the worker; every other chunk should stay `DONE` without being re-enqueued at all (Phase 18's queue, not Phase 11's in-run cache dict, is what's actually being measured here — that dict only ever holds the _current_ hash per chunk, so it can't demonstrate a hit across an edit-and-revert).
 - `cli.py` — `ckg eval [--embed] [--top-k N]` runs the suite and prints a table (per-question PASS/FAIL/`-` for the deterministic checks, Recall@K, MRR) plus the aggregate metrics. `--embed` loads `LocalEmbeddingProvider` so vector search is actually exercised; without it, `eval` never touches the network/model, matching `search`/`context`'s existing "vector is opt-in" behavior.
 
 ### Tests
@@ -2181,16 +2181,16 @@ embedding cache hit rate:   0.89
 
 - **Compiler correctness is perfect and vector-independent**, as it should be: definition/relationship/import-resolution accuracy are `1.00` in both runs, because those are computed against the semantic index directly (Phases 2-6), never through retrieval. Vector search cannot make the compiler more or less correct, and the results confirm it doesn't.
 - **Vector search substantially improves retrieval quality on natural-language queries.** Without it, all three semantic questions score `0.00` recall — the fixture's source text never literally contains words like "authentication" or "database", so FTS has nothing to match and exact-symbol lookup doesn't apply. With real embeddings, the same three questions score `0.67`-`1.00` recall and `1.00` MRR (the truly relevant symbol is always ranked first when found at all). This is the concrete evidence for "hybrid retrieval has measurable quality" in `# 36. Definition of v1` — it is not asserted, it is measured.
-- **"What imports auth.ts?" is a real, quantified gap** — not a bug, a missing capability. `import_resolution_accuracy` is `1.00` (the compiler correctly resolves `api.ts`'s import of `login` to `auth.ts`), but retrieval recall is `0.00` without vectors and, even with real embeddings, MRR is only `0.20` (the correct answer, `api.ts`, is retrieved but ranked *last* out of 5 — `HybridRetriever` has no dedicated "importers of X" route, so the query falls through to generic hybrid search, which surfaces symbols *defined in* `auth.ts` rather than symbols that *import* it). Recorded here instead of tuned away or hidden behind a favorable fixture. Candidate follow-up: a dedicated `graph_importers` strategy backed by `indexing.diff.importers_of`, mirroring how `graph_callers`/`graph_callees` already work.
+- **"What imports auth.ts?" is a real, quantified gap** — not a bug, a missing capability. `import_resolution_accuracy` is `1.00` (the compiler correctly resolves `api.ts`'s import of `login` to `auth.ts`), but retrieval recall is `0.00` without vectors and, even with real embeddings, MRR is only `0.20` (the correct answer, `api.ts`, is retrieved but ranked _last_ out of 5 — `HybridRetriever` has no dedicated "importers of X" route, so the query falls through to generic hybrid search, which surfaces symbols _defined in_ `auth.ts` rather than symbols that _import_ it). Recorded here instead of tuned away or hidden behind a favorable fixture. Candidate follow-up: a dedicated `graph_importers` strategy backed by `indexing.diff.importers_of`, mirroring how `graph_callers`/`graph_callees` already work.
 - **Token reduction is budget-dependent, not a fixed percentage** — 91.8% without vectors (fewer, more targeted candidates make it into the token-budgeted `ContextPack`) vs. 50.5% with them (more candidates surface, so more of the budget gets used, though absolute context size stays well under the 800-token cap either way). Either number would be misleading quoted alone; both are reported so the tradeoff is visible. This is precisely why `# 28. Phase 22` opens with "do not claim '95% token savings' without measurement" — the honest answer is "it depends on the budget and the query," not a single headline number.
 - **Embedding cache hit rate of 0.89** confirms Phase 18/11's core promise on real chunks: editing one symbol's body in a 9-chunk repo caused exactly 1 chunk to be re-embedded — the other 8 were never even re-enqueued, let alone re-sent to the model.
 - Indexing latency (single-digit milliseconds either way) is not yet meaningful at benchmark-fixture scale; it exists in the suite so a real regression (a change that makes indexing quadratic, say) would show up as an order-of-magnitude jump, not to characterize production-scale latency.
 
 ### Decision notes
 
-- Semantic questions get a Recall@K/MRR score (against hand-authored `relevant` sets) but never a `correct` boolean: grading whether "How does authentication work?" was *answered well* needs a human or an LLM judge, which is explicitly out of scope (`# 35. What Not To Build Yet` rules out LLM-based reranking/judging as a v1 dependency). The retrieval-quality score is a legitimate proxy; a correctness verdict would not be.
+- Semantic questions get a Recall@K/MRR score (against hand-authored `relevant` sets) but never a `correct` boolean: grading whether "How does authentication work?" was _answered well_ needs a human or an LLM judge, which is explicitly out of scope (`# 35. What Not To Build Yet` rules out LLM-based reranking/judging as a v1 dependency). The retrieval-quality score is a legitimate proxy; a correctness verdict would not be.
 - No pytest-benchmark or statistical latency analysis: the fixture is tiny by design (fast, deterministic, no flakiness budget needed) and a single wall-clock sample per run is enough to catch a regression order of magnitude, which is what this suite is for. Rigorous perf benchmarking, if ever needed, is a different tool built on top of the same `run_evaluation()` measurements.
-- The unit/integration tests in `tests/test_evaluation_runner.py` use `FakeEmbeddingProvider` (hash-based, not semantically meaningful), so they assert weaker things than the real numbers above — e.g. they check the importers-question recall is merely *not asserted to be nonzero* rather than pinning `0.20` MRR, and don't assert the semantic questions score well, since a fake provider has no real notion of meaning. The **Results** section above, captured with the real model, is the trustworthy read on retrieval quality; the test suite's job is only to keep the measurement machinery itself correct and fast without a network dependency.
+- The unit/integration tests in `tests/test_evaluation_runner.py` use `FakeEmbeddingProvider` (hash-based, not semantically meaningful), so they assert weaker things than the real numbers above — e.g. they check the importers-question recall is merely _not asserted to be nonzero_ rather than pinning `0.20` MRR, and don't assert the semantic questions score well, since a fake provider has no real notion of meaning. The **Results** section above, captured with the real model, is the trustworthy read on retrieval quality; the test suite's job is only to keep the measurement machinery itself correct and fast without a network dependency.
 
 ---
 
@@ -2530,21 +2530,27 @@ After each task, append:
 Status: COMPLETE
 
 Files changed:
+
 - ...
 
 Implementation:
+
 - ...
 
 Tests:
+
 - ...
 
 Result:
+
 - ...
 
 Decision / deviation:
+
 - ...
 
 Next:
+
 - ...
 ```
 
@@ -2555,26 +2561,32 @@ If a task changes architecture, record why.
 Status: COMPLETE
 
 Files changed:
+
 - retrieval/context_builder.py (new — `estimate_tokens`, `ContextEntry`, `ContextPack`, `build_context_pack`)
 - storage/index_store.py (`build_context_pack_from_index`)
 - tests/test_context_builder.py (new)
 
 Implementation:
+
 - `build_context_pack(candidates, *, query, graph, symbols_by_key, token_budget)` turns the reranked candidate list into a `ContextPack` with `primary_definitions`, `supporting_definitions`, `relationships`, and `file_paths`. Candidates are deduplicated by the stable `chunk_key`; candidates whose only source is `("graph",)` are `supporting`, everything else `primary`. Primaries are added in rank order before supporting (direct evidence wins). Each symbol is added whole (header + full source) or, when only the source does not fit the remaining budget, as a header-only entry — never a truncated body — so the hard budget is never exceeded even for a single oversized symbol. Relationships are `source -> callee (calls)` edges among selected symbols; `file_paths` is the sorted unique path set. `estimate_tokens` uses `max(1, len(text) // 4)` (deterministic, no tokenizer dependency).
 - `build_context_pack_from_index(db_path, query, *, token_budget, provider=None, top_k=5)` wires `load_index` + `build_hybrid_retriever` + `retrieve` + `build_context_pack` so the persisted-index path produces a pack end-to-end.
 
 Tests:
+
 - `test_context_builder.py` (17): token estimation; primary/supporting role split; hard budget across a range of budgets; header-only fallback (symbol boundaries preserved); symbol skipped when its header alone does not fit; primary-before-supporting on a tight budget; dedup of duplicate candidates; relationships only among selected symbols; file-path dedup/sort; unknown keys skipped; determinism; empty candidates → empty pack; integration with and without an embedding provider.
 
 Result:
+
 - 260 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 243).
 
 Decision / deviation:
+
 - Token budget is approximated with the standard 4-chars-per-token heuristic (`len(text) // 4`); a real tokenizer is not a dependency and would not change the hard-budget guarantee.
 - Role split reuses the Phase 15/16 convention that graph-expanded candidates are tagged `("graph",)`; routed strategies (`graph_callers`, etc.) return only graph/`exact`-tagged candidates, which are the primary answer and are therefore all treated as primary evidence.
 - Source excerpts come from `Symbol.content` (== `SemanticChunk.display_text`), so no chunk-table join is needed; relationships are recomputed from `CodeGraph` on the selected set rather than persisted.
 
 Next:
+
 - Phase 18 incremental embedding / async worker.
 
 ## 2026-08-19 — Phase 16 Reranking
@@ -2582,27 +2594,33 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - retrieval/reranker.py (new — `RerankFeatures`, `detect_preference`, `rerank_candidates`)
 - retrieval/hybrid_retriever.py (`_hybrid_search` reranks combined main + graph candidates; `_detect_seed`; `NAME_MATCH_BOOST` removed)
 - tests/test_reranker.py (new)
 - tests/test_hybrid_retrieval.py (caller-intent integration test)
 
 Implementation:
+
 - `rerank_candidates` adds a deterministic weighted boost to each candidate's base RRF score across all seven Phase 16 features (exact symbol, path, kind, FTS presence, vector presence, graph distance, relationship relevance), then stable-sorts by final score. `detect_preference` maps caller/callee/definition intent phrases to a preference so graph-intent queries prioritize the matching edge kind over vector similarity.
 - `_hybrid_search` now detects a unique seed symbol (`_detect_seed`, ambiguous names → no seed), expands its neighborhood (Phase 15), reranks the combined main + expanded candidate set, then slices `top_k` — graph neighbors can now outrank vector-similar unrelated symbols instead of being appended after the slice.
 
 Tests:
+
 - `test_reranker.py` (12): intent mapping; exact-symbol boost; caller preference lifts the caller above a higher base score; graph-distance lifts a neighbor; kind/path boosts; FTS presence breaks a tie; determinism; `who calls login` ranks caller first.
 - `test_hybrid_retrieval.py` (1 new): `callers of login` (hybrid path) returns `run`, the incoming CALLS edge, first.
 
 Result:
+
 - 243 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 230).
 
 Decision / deviation:
+
 - No trained reranker (spec: measure the heuristic baseline first). Weights chosen so relationship relevance dominates for graph-intent queries and exact symbol match dominates for definition queries; FTS/vector rank position stays in the base RRF score.
 - Graph-expanded candidates now compete in the main ranking rather than being appended after `top_k`; Phase 15's `expand_neighborhood` is unchanged.
 
 Next:
+
 - Phase 17 context builder (budgeted `ContextPack` over ranked candidates).
 
 ## 2026-08-19 — Phase 15 Graph-Aware Retrieval
@@ -2610,6 +2628,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - retrieval/neighborhood.py (new — `NeighborhoodHit`, `expand_neighborhood`)
 - retrieval/hybrid_retriever.py (`resolved_imports`/`exports` params, `_expand_graph` uses `expand_neighborhood`)
 - storage/index_store.py (`build_hybrid_retriever` passes resolved imports + exports)
@@ -2617,21 +2636,26 @@ Files changed:
 - tests/test_hybrid_retrieval.py (expansion stub + integration tests)
 
 Implementation:
+
 - `expand_neighborhood(seed, *, graph, symbol_index, resolved_imports=None, exports=None, one_hop_budget=6, two_hop_budget=2)` produces a deduplicated, budgeted, deterministic neighborhood. 1-hop covers callers, callees, parent, imports (seed document's resolved target symbols), and exports (seed document's module-scope exported symbols), ordered structural-first so the `one_hop_budget` never starves call context. 2-hop runs only when the seed has no direct call edges, walking the seed's children's callees once (`hop=2`), capped at `two_hop_budget`.
 - `HybridRetriever` now injects `resolved_imports` / `exports` (optional); `_expand_graph` delegates to `expand_neighborhood` and tags every supporting candidate `("graph",)`. `build_hybrid_retriever` wires the persisted index's resolved imports and exports so the full 1-hop set is available in the integration path.
 
 Tests:
+
 - `test_graph_retrieval.py` (12): five 1-hop relations present + deduped; import relation without a call; parent relation; dedup across call/import; 2-hop only for no-call-edge seeds; no 2-hop with a direct callee; budget caps exports and is configurable; deterministic order; isolated leaf empty; imports/exports skipped when not supplied.
 - `test_hybrid_retrieval.py` (3 new): stub-driven expansion surfaces callers/callees/exports and an import neighbor; integration `reindex_index` → `build_hybrid_retriever` surfaces an imported `helper` tagged `graph`.
 
 Result:
+
 - 230 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 215).
 
 Decision / deviation:
+
 - 2-hop trigger chosen: "no direct call edges → walk children's callees". Children are a 2-hop bridge only, not a 1-hop relation (spec lists five kinds). Imports/exports are document-scoped, matching the Phase 10 chunker.
 - `_expand_graph` no longer hard-caps appended supporting candidates at 3; the neighborhood budgets own the cap (Phase 15 owns hop semantics and context budgets per the Phase 14 decision note).
 
 Next:
+
 - Phase 16 heuristic reranking (deterministic features; no trained model yet).
 
 ## 2026-08-17 — Phase 10 Semantic Chunking
@@ -2639,6 +2663,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - chunking/symbol_chunker.py (rewrite)
 - storage/repositories/chunk_repository.py (new)
 - models/build_result.py (add `chunks`)
@@ -2650,23 +2675,28 @@ Files changed:
 - tests/test_incremental_indexer.py (second run keeps identical chunks)
 
 Implementation:
+
 - Task 10.1: `SemanticChunk` is now content-addressed and stable — `chunk_key == symbol.stable_key` (never a UUID), `content_hash` = SHA-256 of `embedding_text` via the existing `compute_content_hash`, and a constant `chunk_version = "v1"`. The old UUID-derived `chunk_id` was dropped. `build_semantic_chunks(result)` produces one chunk per symbol and groups imports/exports by `document_id`.
 - Task 10.2: `build_semantic_chunk(symbol, graph, *, document_imports, exports)` embeds every spec field — kind+name, qualified name, file path, parent context (`graph.parents_of` → parent qualified name), calls, called by, imports (document's, sorted, `import { imported_name } from "module_path"`), exports (only this symbol's aliases, sorted, `symbol as alias` when renamed), then source; empty relations render as `none`.
 - Persistence: `chunk_repository.insert_many` maps `chunk_key` → the existing `chunks.chunk_id` PK column and runs inside the same transaction as the rest of the snapshot (after relationships); `load_index` reconstructs `result.chunks`. The incremental indexer recomputes `result.chunks = build_semantic_chunks(result)` from the merged result right before persist (cheap, no per-file merge), and the full-build path already gets chunks from `build_graph`.
 
 Tests:
+
 - `test_semantic_chunking.py`: login's chunk contains qualified name, `file: auth.ts`, `calls: createAuth`, `called by: run`, `exports: login`; excludes `format`/`util.ts`/`logout`. Deterministic `chunk_key`/`content_hash` across two builds; body edit → changed `content_hash`, same `chunk_key`; distinct symbols → distinct keys; one chunk per symbol; run's chunk embeds its import.
 - `test_index_store.py`: `persist_index`/`load_index` round-trip preserves `(chunk_key, content_hash, chunk_version)` and full embedding/display/relative-path fidelity; `chunks` added to the rollback table list.
 - `test_incremental_indexer.py`: a second no-op `reindex_index` keeps identical `chunk_key` / `content_hash` / `embedding_text` sets.
 
 Result:
+
 - 170 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 159).
 
 Decision / deviation:
+
 - `chunk_key` reuses `symbol.stable_key` directly (path|language|qualified_name|kind) instead of a separate hash, so distinct symbols are guaranteed distinct keys while body edits keep the key stable — exactly what embedding reuse needs.
 - To avoid an import cycle between `models/build_result` and `chunking/symbol_chunker`, `build_result.py` uses `from __future__ import annotations` + a `TYPE_CHECKING` import for `SemanticChunk`; `symbol_chunker` imports `BuildResult` normally.
 
 Next:
+
 - Phase 12 SQLite FTS5 (after persistence) — see section 18.
 
 ## 2026-08-17 — Phase 11 Local Embedding Store
@@ -2674,6 +2704,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - embeddings/provider.py (new — `EmbeddingProvider` ABC)
 - embeddings/local_provider.py (new — `LocalEmbeddingProvider`)
 - embeddings/fake_provider.py (new — `FakeEmbeddingProvider`)
@@ -2690,25 +2721,30 @@ Files changed:
 - tests/test_index_store.py (embeddings round-trip + rollback coverage)
 
 Implementation:
+
 - Task 11.1: `EmbeddingProvider` exposes `dimension`, `embed(text)`, `embed_batch(texts)`, `embed_query(query)`. `LocalEmbeddingProvider` is the only place `SentenceTransformer` is referenced (model `all-MiniLM-L6-v2`, normalized float32 vectors); `indexing/vector_index.py` now consumes the abstraction via `embed_batch`/`embed_query`, and the old `embeddings/encoder.py` was deleted.
 - Task 11.2: `FakeEmbeddingProvider(dimension=8)` derives a deterministic, L2-normalized vector from the SHA-256 of the text — no ML model in unit tests.
 - Cache + persistence: `indexing/embedding_store.py::embed_chunks(chunks, provider, cache)` returns `(embeddings_by_key, new_count)`, reusing vectors by `content_hash` and embedding only the missing chunks. `persist_index` writes embeddings in the same transaction (after chunks); `load_embedding_cache(db_path)` returns a `content_hash → vector` map (float32 blobs).
 - Indexer wiring: `reindex_index(db_path, root_dir, *, embedding_provider=None)`. Provider `None` → embeddings skipped (existing behavior, no model load); provider supplied → cache reuse + persistence + `IndexRunReport.new_embeddings`, threaded through both the full-build and `_incremental_rebuild` paths.
 
 Tests:
+
 - `test_embedding_provider.py`: dimension, determinism, distinct vectors for distinct texts, batch shape/dtype, L2 normalization, `embed_query == embed`, empty batch.
 - `test_embedding_store.py`: empty cache embeds all; full cache is a no-op (no `embed_batch` call); partial cache embeds only missing; empty chunk list.
 - `test_embedding_indexer.py`: first run embeds every chunk; no-op run reuses all (0 new, vectors unchanged); body edit re-embeds only the changed chunk (`new_embeddings == 1`, unchanged chunks keep their cached vectors); persistence round-trip (float32, dim 8, normalized); no-provider run skips embeddings entirely.
 - `test_index_store.py`: `persist_index(..., embeddings=...)` round-trips through `load_embedding_cache`; `embeddings` added to the rollback table list.
 
 Result:
+
 - 188 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 170).
 
 Decision / deviation:
+
 - Cache is keyed by `content_hash`, so any chunk whose embedding text is unchanged reuses its stored vector across runs; a body edit changes the hash and re-embeds only that chunk (same `chunk_key`, new vector).
 - `embed_batch` returns a float32 2-D `numpy` array; blobs are stored raw as float32 bytes.
 
 Next:
+
 - Phase 12 SQLite FTS5 (after persistence) — see section 18.
 
 ## 2026-08-17 — Phase 9 Hierarchical / Merkle Hashing
@@ -2716,25 +2752,31 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - indexing/merkle.py (new)
 - tests/test_merkle.py (new)
 
 Implementation:
+
 - `compute_merkle_tree(root_dir)` builds a deterministic Merkle tree over the repo file tree: file leaves hash content via the existing `compute_content_hash`; directories and the root hash children (names + child hashes) sorted by basename and encoded as `name\0child_hash\0`. Only content and normalized names are hashed — never mtime, size, or random IDs — so a change to one leaf changes only its ancestor hashes.
 - `EXCLUDE_DIRS` are skipped via the existing `is_inside_excluded_dir`; unreadable files are skipped cleanly (mirrors `scan_files`). Single-file roots produce a single `FILE` node whose hash is the content hash.
 - Deliberately no persistence or indexer wiring (rule 1.5): later phases (content-addressed chunk cache in Phases 10/11, content proofs in Phase 19) are the consumers.
 
 Tests:
+
 - `test_merkle.py`: file leaf == `compute_content_hash(content)`; directory nodes are `DIRECTORY` kind; tree hash deterministic across runs; changing one file changes its hash + affected dir + root but leaves the unrelated `lib/` dir unchanged; adding and deleting a file change only affected subtrees; hash independent of file creation order; single-file root hashes content.
 
 Result:
+
 - 159 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 151).
 
 Decision / deviation:
+
 - Chose a pure content+name hash with NUL-separated `name\0hash\0` entries so no delimiter collision is possible; sibling order is fixed by basename sort.
 - Scoped Phase 9 to the tree module and tests per the spec (rules + tests only); cross-run "detect unchanged subtrees cheaply" comparison is deferred to the persistence consumers.
 
 Next:
+
 - Phase 10 semantic chunking (done — see entry above).
 
 ## 2026-08-17 — Phase 8 Incremental Indexing
@@ -2742,6 +2784,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - indexing/diff.py (new)
 - indexing/indexer.py (new)
 - storage/repositories/file_state_repository.py (new)
@@ -2753,25 +2796,30 @@ Files changed:
 - storage/index_store.py (`persist_index(..., file_states)`, `load_file_states`)
 
 Implementation:
+
 - Task 8.1: `file_state_repository` (upsert + `fetch_all`) fills the `file_state` table created in Phase 7. `persist_index` writes the inventory in the same transaction; `load_file_states` reads it back.
 - Task 8.2: `indexing/diff.py:scan_files` classifies `NEW` / `CHANGED` / `UNCHANGED` / `DELETED`. `mtime_ns` + `size_bytes` is the cheap hint (no content read); the SHA-256 content hash is the correctness signal (a pure `touch` stays `UNCHANGED`).
 - Task 8.3: `interface_fingerprint` (sorted `(exported_name, signature_hash)`) distinguishes content change from public-interface change; `importers_of` (via `resolve_module_path`) finds importers. `indexing/indexer.py:reindex_index` rebuilds only `NEW`/`CHANGED` files, re-resolves only importers of interface-changed/deleted files, reuses everything else, reconciles symbol identity via Phase 6 `match_symbols`, and persists a merged snapshot.
 - First run (no prior `file_state`) falls back to `build_graph` + `persist_index`, so the existing pipeline is untouched.
 
 Tests:
+
 - `test_file_state.py`: repository round-trip, upsert replace, schema creation on load.
 - `test_change_detection.py`: first scan all NEW; unchanged scan skips content reads; `touch` still UNCHANGED; edit → CHANGED; add/delete → NEW/DELETED.
 - `test_incremental_indexer.py`: second run is a no-op (0 parses, 0 re-resolves, 0 embeddings); editing one file rebuilds only that file; body edit preserves symbol identity and does not invalidate importers; export rename re-resolves the importer to UNRESOLVED; deletion removes symbols and invalidates importers.
 
 Result:
+
 - 151 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 136).
 
 Decision / deviation:
+
 - `persist_index` remains a full snapshot replace; the win is skipping parse/extraction/resolution for unchanged files, not writing less data. Change detection / merging is the Phase 8 scope; Phase 9 adds subtree hashing on top.
 - Re-resolution re-runs the existing resolvers over stored `Reference`/`ImportReference` objects (no re-parse of importers), matching the doc's "affected semantic data may need re-resolution".
 - Symbol identity carry-over (Phase 6 `match_symbols`) is required for correctness: it lets untouched importers keep pointing at edited symbols without re-resolution.
 
 Next:
+
 - Phase 9 hierarchical / Merkle hashing.
 
 ## 2026-08-15 — Phase 7 SQLite Persistence
@@ -2779,12 +2827,13 @@ Next:
 Status: COMPLETE
 
 Files changed:
-- storage/__init__.py (new)
+
+- storage/**init**.py (new)
 - storage/db.py (new)
 - storage/schema.py (new)
 - storage/_rows.py (new)
 - storage/index_store.py (new)
-- storage/repositories/__init__.py (new)
+- storage/repositories/**init**.py (new)
 - storage/repositories/document_repository.py (new)
 - storage/repositories/symbol_repository.py (new)
 - storage/repositories/import_repository.py (new)
@@ -2798,19 +2847,23 @@ Files changed:
 - tests/test_index_store.py (new)
 
 Implementation:
+
 - Task 7.1: `storage/schema.py` creates all 10 suggested tables plus `resolved_references` and `resolved_imports` (BuildResult carries resolution data `load_index` must reconstruct), with PK/FK (`ON DELETE CASCADE`) and a `schema_version` in `index_metadata`.
 - Task 7.2: `storage/db.py` (connection + pragmas + `transaction`) and one repository module per entity under `storage/repositories/`; shared row helpers in `storage/_rows.py`.
 - Task 7.3: `storage/index_store.py:persist_index` does a full snapshot replace in a single transaction (clear + insert, FK-safe order); any failure rolls back so a partial index is never visible. `load_index` reconstructs `BuildResult` + rebuilds `SymbolIndex` and `CodeGraph`.
 
 Tests:
+
 - `test_db.py`: WAL / foreign_keys / busy_timeout pragmas; transaction commit and rollback; foreign-key enforcement.
 - `test_storage_schema.py`: all tables created; idempotent re-create; schema version; relationships unique index.
 - `test_index_store.py`: round-trip preserves documents, symbols (stable keys / qualified names / hashes), imports, exports, resolutions, references, resolved statuses/targets, relationships; rebuilt graph (`callees_of(login)`); re-persist does not duplicate; forced FK failure rolls back the entire index.
 
 Result:
+
 - 136 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 121).
 
 Decision / deviation:
+
 - `references` is a SQLite keyword and must be quoted as `"references"` in every statement.
 - Persist relationships from the deduplicated graph view (`result.graph.relationships()`); the raw per-occurrence list stays only in memory.
 - Resolved-import rows are linked to import rows by object identity within a single `persist_index` call (imports are occurrence rows with no in-memory id).
@@ -2818,6 +2871,7 @@ Decision / deviation:
 - Full snapshot replace per `persist_index`; change detection/merging is Phase 8.
 
 Next:
+
 - Phase 8 file hashing / change detection / incremental indexing.
 
 ## 2026-08-15 — Phase 0 Regression Tests
@@ -2825,25 +2879,31 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - tests/test_document_loading.py
 - tests/test_language_support.py
 - tests/test_location_access.py
 
 Implementation:
+
 - Phase 0 was already marked complete; added explicit regression tests for its four untested required outcomes (single document load, language/parser support alignment, location access).
 
 Tests:
+
 - Single-file and directory loading, excluded-dir and unsupported-extension skipping
 - Every `INCLUDE_EXTENSIONS` entry maps to a parser; unknown extensions do not
 - Symbol and reference `SourceLocation` values against known fixture sources
 
 Result:
+
 - 17 tests pass via `.venv/bin/python -m unittest discover -s tests`
 
 Decision / deviation:
+
 - Location assertions reflect actual Tree-sitter node semantics: a `variable_declarator` covers `x = 1`, a `function_declaration` covers the full declaration, and a reference covers just the identifier.
 
 Next:
+
 - Phase 1 (ParsedDocument IR)
 
 ## 2026-08-15 — Phase 1 ParsedDocument IR
@@ -2851,6 +2911,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - models/parsed_document.py
 - analysis/passes/parse_pass.py
 - models/indexing_context.py
@@ -2859,23 +2920,28 @@ Files changed:
 - tests/test_parse_pass.py
 
 Implementation:
+
 - Added `ParsedDocument(document, tree, file_hash)` model.
 - Added `run_parse_pass` that produces one `ParsedDocument` per supported document, skips unsupported languages cleanly, and flags `has_parse_errors`.
 - Added `parsed_documents` to `IndexingContext`; kept `extracted_symbols` since the reference pass still depends on it.
 - `build_graph` now parses once via the parse pass; the symbol pass consumes parsed trees. No semantic pass reparses a `Document`.
 
 Tests:
+
 - One `.ts` fixture produces one `Document`/`ParsedDocument` with a valid tree root and deterministic hash.
 - Supported language parsed; unsupported language skipped; parse errors represented without crashing.
 
 Result:
+
 - 24 tests pass via `.venv/bin/python -m unittest discover -s tests`.
 - `test_repo` build output unchanged (2 docs, 9 symbols, 11 references, 6 relationships).
 
 Decision / deviation:
+
 - Added `has_parse_errors` beyond the doc's suggested model because Task 1.2 requires parse errors to be represented; derived from `tree.root_node.has_error`.
 
 Next:
+
 - Phase 2 import pass wiring (Task 2.1).
 
 ## 2026-08-15 — Phase 3 Semantic Name Resolution
@@ -2883,6 +2949,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - models/entities/resolved_reference.py
 - analysis/semantic/name_resolver.py
 - analysis/passes/resolver_pass.py
@@ -2892,6 +2959,7 @@ Files changed:
 - tests/test_variable_extraction.py
 
 Implementation:
+
 - Replaced first-match global name lookup in the resolver pass with scope-aware resolution climbing `owner → parent → module`.
 - Added `ResolutionStatus` (resolved / unresolved / ambiguous); every reference now gets a `ResolvedReference` with a status.
 - Module scope is restricted to the reference's document so identical names in other files do not create false ambiguity.
@@ -2900,6 +2968,7 @@ Implementation:
 - Imports step of resolution order is an explicit `UNRESOLVED` stub until Phase 2 wiring lands.
 
 Tests:
+
 - Scope climb: inner → outer → module resolves `login()`.
 - Shadowing fixture (mandatory Task 3.2): local `login` wins over module `login`.
 - Cross-file: references in a file resolve to that file's symbol.
@@ -2908,14 +2977,17 @@ Tests:
 - Updated variable-extraction nested test: nested `const x` is now extracted as a VARIABLE owned by its function.
 
 Result:
+
 - 30 tests pass via `.venv/bin/python -m unittest discover -s tests`.
 - `test_repo` build stable: 9 symbols, 6 relationships; references now carry explicit statuses.
 
 Decision / deviation:
+
 - Chose Option A (extract local variables as symbols) so shadowing uses the existing `children_by_parent` chain instead of a parallel scope table.
 - Proceeded before Phase 2 as agreed; the imports branch of resolution order is stubbed.
 
 Next:
+
 - Phase 2 import pass wiring (Task 2.1).
 
 ## 2026-08-15 — Phase 2 Task 2.1 Import Pass
@@ -2923,25 +2995,31 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - analysis/passes/import_pass.py
 - analysis/build_graph.py
 - tests/test_import_pass.py
 
 Implementation:
+
 - Added `run_import_pass` that walks each `ParsedDocument` tree and appends `ImportReference`s to `BuildResult.import_references`.
 - Wired the import pass into `build_graph` after the symbol pass and before reference resolution.
 
 Tests:
+
 - named, multiple named, aliased, default, namespace, and mixed imports.
 
 Result:
+
 - 36 tests pass via `.venv/bin/python -m unittest discover -s tests`.
 - `test_repo` now produces 9 import references from `imports.ts` through the real pipeline.
 
 Decision / deviation:
+
 - Import resolver wiring (Task 2.2) remains pending.
 
 Next:
+
 - Task 2.2 import module resolver wiring.
 
 ## 2026-08-15 — Phase 2 Task 2.2 Import Module Resolver
@@ -2949,29 +3027,35 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - analysis/semantic/normalize_path.py
 - analysis/semantic/import_resolver.py
 - analysis/build_graph.py
 - tests/test_import_resolver.py
 
 Implementation:
+
 - Reworked module path resolution to be relative to the importing document's directory, supporting `./file`, `../file`, explicit `.ts/.tsx/.js/.jsx`, and `./directory/index.ts`.
 - Bare module specifiers (e.g. `lodash`) are out of scope and resolve to nothing.
 - Deterministic candidate order: explicit extension first, otherwise `.ts → .tsx → .js → .jsx`.
 - Wired `run_import_resolver_pass` into `build_graph` after the import pass.
 
 Tests:
+
 - `resolve_module_path`: relative-only filtering, extension order, extension preservation, parent-directory resolution.
 - `resolve_import`: sibling file with/without extension, parent directory, `.jsx`, directory index, missing module → None, bare specifier → None.
 
 Result:
+
 - 47 tests pass via `.venv/bin/python -m unittest discover -s tests`.
 - `test_repo`: all 9 imports resolve `./auth → auth.ts` through the real pipeline.
 
 Decision / deviation:
+
 - Kept resolution intentionally narrow per the task; no tsconfig/paths/node_modules resolution yet.
 
 Next:
+
 - Task 2.3 export model / Task 2.4 resolve imported symbols.
 
 ## 2026-08-15 — Phase 2 Task 2.3 Export Model + Task 2.4 Resolve Imported Symbol
@@ -2979,6 +3063,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - models/entities/exports.py (new)
 - indexing/export_index.py (new)
 - analysis/export_builder.py (new)
@@ -2997,6 +3082,7 @@ Files changed:
 - tests/test_import_symbol_resolution.py (new)
 
 Implementation:
+
 - Added `Export(document_id, exported_name, symbol_name, location)` and an `ExportIndex` keyed by `(document_id, exported_name)`.
 - Added an export extractor following the import pipeline pattern (node-type-keyed handlers in `analysis/export_handlers/`), wired in via `run_export_pass`.
 - Inspected Tree-sitter ASTs first (rule 1.3). Handled `export function`, `export const` (including multiple declarators), `export default <anonymous/named/class/identifier>`, `export { name }`, `export { name as alias }`, `export { name as default }`. Deferred re-exports (`export { a } from "./x"`, `export * from "./x"`) by skipping statements with a `source` field.
@@ -3004,18 +3090,22 @@ Implementation:
 - `resolve_imported_symbol` resolves imported name → export → module-scope symbol; returns `None` (never guesses) for namespace imports, missing exports, anonymous defaults, and ambiguous/duplicate exports.
 
 Tests:
+
 - `test_export_pass.py`: all supported export forms, multi-declarator, deferred re-exports, non-exported statements produce nothing.
 - `test_import_symbol_resolution.py`: alias/named/default/namespace imports, missing export, unresolved module, plus a `test_repo` pipeline test asserting `authLogin → auth.ts::login` and `signOut → auth.ts::logout`.
 
 Result:
+
 - 68 tests pass via `.venv/bin/python -m unittest discover -s tests`.
 - `test_repo` build: 5 exports extracted; 9 imports resolved to `auth.ts`, 6 of which resolve to a concrete symbol.
 
 Decision / deviation:
+
 - `export default function() {}` (anonymous) records `Export("default", None)` so the module is known to have a default export even though no named symbol exists.
 - Re-export resolution (`export * from`, `export { x } from`) intentionally deferred per the task spec.
 
 Next:
+
 - Cross-file name resolution (consult imports in the reference resolver).
 - Phase 4 member-expression resolution.
 
@@ -3024,11 +3114,13 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - analysis/semantic/name_resolver.py
 - analysis/passes/resolver_pass.py
 - tests/test_cross_file_resolution.py (new)
 
 Implementation:
+
 - Completed the `imports` step of the Phase 3 resolution order (`current scope → parent → module → imports → unresolved`), replacing the `UNRESOLVED` stub in `resolve_symbol`.
 - `resolve_symbol` now takes `resolved_import_references` and, after module-scope lookup fails, resolves the reference name against the document's imports by `local_name`.
 - Candidates are deduplicated by `target_symbol.symbol_id`; exactly one distinct target is `RESOLVED`, more than one is `AMBIGUOUS`.
@@ -3036,6 +3128,7 @@ Implementation:
 - `run_reference_resolver_pass` passes `result.resolved_import_references` into the resolver.
 
 Tests:
+
 - Named import call resolves to the exported symbol in `auth.ts` and emits a cross-file CALLS edge.
 - Aliased import (`authLogin()`) and default import resolve to the correct exported symbol.
 - Duplicate imports of the same symbol stay `RESOLVED` (dedup by symbol id).
@@ -3045,14 +3138,17 @@ Tests:
 - Namespace import, missing export, and unresolved module are all `UNRESOLVED`, no edge.
 
 Result:
+
 - 79 tests pass via `.venv/bin/python -m unittest discover -s tests`.
 - `test_repo` build stable: 2 docs, 9 symbols, 11 references, 6 relationships.
 
 Decision / deviation:
+
 - No new index/abstraction (rule 1.5): the resolver filters the resolved-import list directly. If performance warrants it later, add a document → local_name import index (Gate D).
 - Imported names bind at module scope of the importing document, so they are consulted only after module-scope symbol lookup fails, per the documented resolution order.
 
 Next:
+
 - Phase 4 member-expression resolution.
 
 ## 2026-08-15 — Phase 4 Member Expressions
@@ -3060,6 +3156,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - models/entities/references.py
 - analysis/reference_builder.py
 - analysis/reference_extractor.py
@@ -3070,6 +3167,7 @@ Files changed:
 - tests/test_member_expressions.py (new)
 
 Implementation:
+
 - Inspected Tree-sitter ASTs first (rule 1.3). Dot access is `member_expression` with `object`/`property` fields; called members sit in `call_expression.function`; `this`/`super` are distinct node types; object-literal keys are `property_identifier` in `pair` nodes (not member expressions).
 - Added `Reference.path: tuple[str, ...]` as the single access-path representation (`("auth", "client", "createAuth")`); `name` stays the property name.
 - The extractor now emits one reference per `member_expression` with the full path and does not descend into it, so `auth`/`client`/`createAuth` are no longer separate references.
@@ -3079,6 +3177,7 @@ Implementation:
 - `run_reference_resolver_pass` dispatches member references (path length > 1) to the member resolver and passes `context.export_index`.
 
 Tests:
+
 - Representation: single path reference per member expression, CALL vs MEMBER_ACCESS kinds, object/property parts not emitted separately.
 - Namespace import `auth.createAuth()` resolves to `auth.ts::createAuth` and emits a CALLS edge; deep path `auth.client.createAuth()` is UNRESOLVED.
 - `this.logout()` resolves to the class method; duplicate class methods are AMBIGUOUS.
@@ -3086,14 +3185,17 @@ Tests:
 - Member on unknown object is UNRESOLVED; member property never falls back to module scope; non-call member access produces no CALLS edge.
 
 Result:
+
 - 89 tests pass via `.venv/bin/python -m unittest discover -s tests`.
 - `test_repo` build: 2 docs, 9 symbols, 8 references (was 11 — object/property noise removed), 6 relationships, no false module-scope resolution on member properties.
 
 Decision / deviation:
+
 - Member resolution is limited to deterministic cases (namespace import, `this`, class scope). Computed access (`obj[key]`), `super.foo()`, and inheritance remain out of scope.
 - Object-literal keys are still extracted as references (pre-existing behavior); left unchanged to keep this phase focused on member expressions.
 
 Next:
+
 - Phase 5 knowledge-graph stabilization / relationship deduplication.
 
 ## 2026-08-15 — Phase 5 Knowledge Graph Stabilization
@@ -3101,27 +3203,33 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - models/relationships/relationships.py
 - graph/code_graph.py
 - tests/test_code_graph.py (new)
 
 Implementation:
+
 - Added `Relationship.key` returning the stable `(source_symbol_id, target_symbol_id, kind)` tuple.
 - `CodeGraph.add_relationships` deduplicates via an internal `_relationship_keys` set; `BuildResult.relationships` remains the raw per-occurrence list.
 - `CodeGraph` now exposes `symbols()` and `relationships()` as immutable tuples (no internal state leaking), plus `children_of()` (parent → children map) and `parents_of()` (immediate parent).
 - `callers_of()` / `callees_of()` are unchanged and become duplicate-free as a side effect of dedup.
 
 Tests:
+
 - Graph API: symbols/children/parents accessors, empty lookups, immutable copy behavior.
 - Dedup: `login(); login();` in one owner → 2 references, 1 unique CALLS edge, `callers_of(login)` returns the owner once; direct `add_relationships` dedup.
 
 Result:
+
 - 100 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 89).
 
 Decision / deviation:
+
 - Chose deduplication inside the graph (internal set) per the doc's option, keeping occurrence info recoverable in `BuildResult.relationships`.
 
 Next:
+
 - Phase 6 stable identities / fingerprints.
 
 ## 2026-08-15 — Phase 6 Stable Identity
@@ -3129,6 +3237,7 @@ Next:
 Status: COMPLETE
 
 Files changed:
+
 - models/entities/symbols.py
 - analysis/signature.py (new)
 - analysis/fingerprints.py (new)
@@ -3138,23 +3247,28 @@ Files changed:
 - tests/test_symbol_matching.py (new)
 
 Implementation:
+
 - Task 6.1: `Symbol` keeps `symbol_id` (UUID, internal entity identity) and gains `qualified_name` and `stable_key` (source identity). `qualified_name` is derived from the extraction-time owner chain; `stable_key = "{relative_path}|{language}|{qualified_name}|{kind.value}"` is deterministic across runs. `document_id` stays a UUID; `relative_path` is the stable document identity.
 - Task 6.2: `content_hash` (SHA-256 of symbol source) and `signature_hash` (SHA-256 of a name-independent, body-excluding signature) are computed once in `build_symbol`. `analysis/signature.py:extract_signature` produces `function({param types})[:{return type}]` / `class[:{extends}]` / `variable:{annotation}` / `variable:<{value type}>`. Signature inspection followed rule 1.3.
 - Task 6.3: `analysis/symbol_matching.py:match_symbols` matches old vs new symbol sets: exact stable key → HIGH; same scope + signature → MEDIUM (rename); same content hash at a new path → MEDIUM (move). LOW-confidence "similar source" matches are never accepted (Gate E: no guessing). Unique unclaimed candidates only.
 
 Tests:
+
 - `test_fingerprints.py`: determinism across two builds; qualified names for module/class-method/nested symbols; stable-key sensitivity to kind and path; signature excludes name and body but includes parameter types / return type / extends; content hash changes on any edit.
 - `test_symbol_matching.py`: unchanged repo → all HIGH; rename in place → MEDIUM; file move with unchanged content → MEDIUM; signature change keeps identity (HIGH); rename + signature change → new identity; ambiguous scope+signature → new identity; moved + edited → new identity.
 
 Result:
+
 - 121 tests pass via `.venv/bin/python -m unittest discover -s tests` (was 100).
 
 Decision / deviation:
+
 - Signature is shape-based and name-independent so that rename matching (step 2) can work; bodies are excluded per the task spec.
 - Step 3 of the matching ladder ("same signature + similar source") is recognized as LOW confidence and never produces a match, per the doc's "do not guess" rule.
 - Discovered `class_heritage` is a named child, not a registered field, in the current tree-sitter-typescript grammar; `_class_signature` finds it by child type (rule 1.3 AST inspection).
 
 Next:
+
 - Phase 7 SQLite persistence.
 
 ---
