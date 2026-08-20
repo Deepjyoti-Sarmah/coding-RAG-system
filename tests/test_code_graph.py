@@ -5,10 +5,10 @@ from pathlib import Path
 from analysis.build_graph import build_graph
 from graph.code_graph import CodeGraph
 from models.common.source_location import SourceLocation
-from models.entities.symbols import Symbol
 from models.entities.symbol_kind import SymbolKind
-from models.relationships.relationships import Relationship
+from models.entities.symbols import Symbol
 from models.relationships.relationship_kind import RelationshipKind
+from models.relationships.relationships import Relationship
 
 
 def _symbol(
@@ -97,11 +97,7 @@ class TestRelationshipDeduplication(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "a.ts").write_text(
-                "function login() {}\n"
-                "function outer() {\n"
-                "  login();\n"
-                "  login();\n"
-                "}\n",
+                "function login() {}\nfunction outer() {\n  login();\n  login();\n}\n",
                 encoding="utf-8",
             )
 
@@ -124,11 +120,7 @@ class TestRelationshipDeduplication(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "a.ts").write_text(
-                "function login() {}\n"
-                "function outer() {\n"
-                "  login();\n"
-                "  login();\n"
-                "}\n",
+                "function login() {}\nfunction outer() {\n  login();\n  login();\n}\n",
                 encoding="utf-8",
             )
 
@@ -143,9 +135,7 @@ class TestRelationshipDeduplication(unittest.TestCase):
 
     def test_add_relationships_deduplicates_in_graph(self):
         graph = CodeGraph()
-        graph.add_symbols(
-            [_symbol(symbol_id="outer", name="outer")]
-        )
+        graph.add_symbols([_symbol(symbol_id="outer", name="outer")])
         graph.add_relationships(
             [
                 Relationship(
