@@ -13,7 +13,7 @@ class VectorSearchHit:
     chunk_key: str
     relative_path: str
     score: float
-    chunk: "SemanticChunk | None" = None
+    chunk: SemanticChunk | None = None
 
 
 class VectorStore(ABC):
@@ -24,5 +24,4 @@ class VectorStore(ABC):
         *,
         top_k: int = 5,
         relative_path: str | None = None,
-    ) -> list[VectorSearchHit]:
-        ...
+    ) -> list[VectorSearchHit]: ...

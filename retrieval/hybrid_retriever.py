@@ -16,12 +16,8 @@ from retrieval.ranking import reciprocal_rank_fusion
 from retrieval.reranker import detect_preference, rerank_candidates
 from retrieval.vector_store import VectorStore
 
-WHO_CALLS_PATTERN = re.compile(
-    r"who calls\s+([A-Za-z_]\w*)", re.IGNORECASE
-)
-WHAT_CALLS_PATTERN = re.compile(
-    r"what does\s+([A-Za-z_]\w*)\s+call", re.IGNORECASE
-)
+WHO_CALLS_PATTERN = re.compile(r"who calls\s+([A-Za-z_]\w*)", re.IGNORECASE)
+WHAT_CALLS_PATTERN = re.compile(r"what does\s+([A-Za-z_]\w*)\s+call", re.IGNORECASE)
 WHERE_IS_PATTERN = re.compile(
     r"where is\s+([A-Za-z_]\w*)\s+(?:defined|implemented)", re.IGNORECASE
 )
@@ -81,7 +77,9 @@ class HybridRetriever:
             for caller in self.graph.callers_of(symbol.symbol_id):
                 candidates.append(self._from_symbol(caller, sources=("graph",)))
 
-        return HybridRetrieval(strategy="graph_callers", query=target_name, candidates=candidates)
+        return HybridRetrieval(
+            strategy="graph_callers", query=target_name, candidates=candidates
+        )
 
     def _graph_callees(self, target_name: str) -> HybridRetrieval:
         candidates: list[HybridCandidate] = []
@@ -90,7 +88,9 @@ class HybridRetriever:
             for callee in self.graph.callees_of(symbol.symbol_id):
                 candidates.append(self._from_symbol(callee, sources=("graph",)))
 
-        return HybridRetrieval(strategy="graph_callees", query=target_name, candidates=candidates)
+        return HybridRetrieval(
+            strategy="graph_callees", query=target_name, candidates=candidates
+        )
 
     def _exact_definition(self, symbol_name: str) -> HybridRetrieval:
         candidates = [
@@ -98,7 +98,9 @@ class HybridRetriever:
             for symbol in self.symbol_index.lookup_by_name(symbol_name)
         ]
 
-        return HybridRetrieval(strategy="exact_symbol", query=symbol_name, candidates=candidates)
+        return HybridRetrieval(
+            strategy="exact_symbol", query=symbol_name, candidates=candidates
+        )
 
     def _hybrid_search(self, query: str, top_k: int) -> HybridRetrieval:
         ranked: list[list[str]] = []
@@ -134,7 +136,9 @@ class HybridRetriever:
             for key in exact_keys:
                 source_by_key.setdefault(key, set()).add("exact")
 
-        symbols_by_key = {symbol.stable_key: symbol for symbol in self.symbol_index.symbols()}
+        symbols_by_key = {
+            symbol.stable_key: symbol for symbol in self.symbol_index.symbols()
+        }
         fused = reciprocal_rank_fusion(ranked)
 
         candidates: list[HybridCandidate] = []

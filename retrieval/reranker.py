@@ -170,10 +170,20 @@ def _relationship(
         return 1.0 if symbol.symbol_id == seed.symbol_id else 0.0
 
     if preference == PREFERENCE_CALLER:
-        return 1.0 if symbol.symbol_id in {c.symbol_id for c in graph.callers_of(seed.symbol_id)} else 0.0
+        return (
+            1.0
+            if symbol.symbol_id
+            in {c.symbol_id for c in graph.callers_of(seed.symbol_id)}
+            else 0.0
+        )
 
     if preference == PREFERENCE_CALLEE:
-        return 1.0 if symbol.symbol_id in {c.symbol_id for c in graph.callees_of(seed.symbol_id)} else 0.0
+        return (
+            1.0
+            if symbol.symbol_id
+            in {c.symbol_id for c in graph.callees_of(seed.symbol_id)}
+            else 0.0
+        )
 
     return 0.0
 

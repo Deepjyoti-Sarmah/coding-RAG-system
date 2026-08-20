@@ -65,7 +65,9 @@ def expand_neighborhood(
             if len(two_hop) >= two_hop_budget:
                 break
 
-    return [NeighborhoodHit(symbol=s, relation=r, hop=h) for r, h, s in [*hits, *two_hop]]
+    return [
+        NeighborhoodHit(symbol=s, relation=r, hop=h) for r, h, s in [*hits, *two_hop]
+    ]
 
 
 def _one_hop_relations(
@@ -101,7 +103,9 @@ def _one_hop_relations(
             ("export", symbol)
             for export in exports
             if export.document_id == seed.document_id and export.symbol_name is not None
-            for symbol in _module_symbols(symbol_index, seed.document_id, export.symbol_name)
+            for symbol in _module_symbols(
+                symbol_index, seed.document_id, export.symbol_name
+            )
         )
 
     return relations

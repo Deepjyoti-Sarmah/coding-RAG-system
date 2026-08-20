@@ -1,4 +1,5 @@
 from typing import Any
+
 from sklearn.metrics.pairwise import cosine_similarity
 
 
