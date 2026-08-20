@@ -24,12 +24,12 @@ class SemanticChunk:
     chunk_version: str = CHUNK_VERSION
 
 
-def build_semantic_chunks(result: "BuildResult") -> list[SemanticChunk]:
+def build_semantic_chunks(result: BuildResult) -> list[SemanticChunk]:
     imports_by_document: dict[str, list[ImportReference]] = {}
     for import_reference in result.import_references:
-        imports_by_document.setdefault(
-            import_reference.document_id, []
-        ).append(import_reference)
+        imports_by_document.setdefault(import_reference.document_id, []).append(
+            import_reference
+        )
 
     exports_by_document: dict[str, list[Export]] = {}
     for export in result.exports:
@@ -88,9 +88,7 @@ def get_related_names(symbols: list[Symbol]) -> str:
 
 def get_symbol_exports(exports: list[Export], symbol_name: str) -> str:
     aliases = sorted(
-        format_export(export)
-        for export in exports
-        if export.symbol_name == symbol_name
+        format_export(export) for export in exports if export.symbol_name == symbol_name
     )
 
     if not aliases:
@@ -144,6 +142,6 @@ def build_embedding_text(
 
 def format_import(import_reference: ImportReference) -> str:
     return (
-        f'import {{ {import_reference.imported_name} }} '
+        f"import {{ {import_reference.imported_name} }} "
         f'from "{import_reference.module_path}"'
     )

@@ -1,7 +1,7 @@
+import numpy as np
+
 from chunking.symbol_chunker import SemanticChunk
 from embeddings.provider import EmbeddingProvider
-
-import numpy as np
 
 
 class VectorIndex:

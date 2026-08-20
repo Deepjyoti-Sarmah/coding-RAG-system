@@ -1,11 +1,10 @@
 from tree_sitter import Language
 from tree_sitter_typescript import (
-    language_typescript,
     language_tsx,
+    language_typescript,
 )
 
 from parsing.tree_sitter_parser import TreeSitterParser
-
 
 PARSER = {
     "typescript": TreeSitterParser(

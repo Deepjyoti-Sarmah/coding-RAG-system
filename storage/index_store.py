@@ -1,13 +1,12 @@
 import numpy as np
 
-import storage.db as db
-import storage.schema as schema
 from models.build_result import BuildResult
 from models.entities.fts_hit import FtsHit
 from models.file_state import FileState
 from retrieval.context_builder import ContextPack, build_context_pack
 from retrieval.hybrid_retriever import HybridRetriever
 from retrieval.numpy_vector_store import NumpyVectorStore
+from storage import db, schema
 from storage.repositories import (
     chunk_fts_repository,
     chunk_repository,
@@ -142,7 +141,9 @@ def load_vector_store(db_path: str) -> NumpyVectorStore:
 
     try:
         schema.create_schema(conn)
-        chunks_by_key = {chunk.chunk_key: chunk for chunk in chunk_repository.fetch_all(conn)}
+        chunks_by_key = {
+            chunk.chunk_key: chunk for chunk in chunk_repository.fetch_all(conn)
+        }
         vectors = embedding_repository.fetch_all(conn)
         entries = [
             (chunks_by_key[chunk_key], vector)
@@ -222,10 +223,10 @@ def load_index(db_path: str) -> BuildResult:
 
         symbols_by_id = {symbol.symbol_id: symbol for symbol in symbols}
         documents_by_id = {document.document_id: document for document in documents}
-        references_by_id = {reference.reference_id: reference for reference in references}
-        imports_by_id = {
-            stored.import_id: stored for stored in stored_imports
+        references_by_id = {
+            reference.reference_id: reference for reference in references
         }
+        imports_by_id = {stored.import_id: stored for stored in stored_imports}
 
         resolved_references = resolved_reference_repository.fetch_all(
             conn,
@@ -242,9 +243,7 @@ def load_index(db_path: str) -> BuildResult:
         result = BuildResult(
             documents=documents,
             symbols=symbols,
-            import_references=[
-                stored.import_reference for stored in stored_imports
-            ],
+            import_references=[stored.import_reference for stored in stored_imports],
             exports=exports,
             resolved_import_references=resolved_imports,
             references=references,

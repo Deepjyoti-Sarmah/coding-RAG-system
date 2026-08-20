@@ -1,7 +1,6 @@
+import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
-
-import sqlite3
 
 BUSY_TIMEOUT_MS = 5000
 
