@@ -14,7 +14,13 @@ from evaluation.benchmark import (
     IMPORTERS,
     Question,
 )
-from evaluation.metrics import accuracy, mean, recall_at_k, reciprocal_rank, token_reduction
+from evaluation.metrics import (
+    accuracy,
+    mean,
+    recall_at_k,
+    reciprocal_rank,
+    token_reduction,
+)
 from indexing.diff import importers_of
 from indexing.embedding_queue import run_embedding_worker
 from indexing.indexer import reindex_index
@@ -113,7 +119,9 @@ def run_evaluation(
             # "importers" ground truth is expressed in file-path space, not
             # symbol-name space, so rank candidates by relative_path there.
             ranked = [
-                candidate.relative_path if question.kind == IMPORTERS else candidate.symbol_name
+                candidate.relative_path
+                if question.kind == IMPORTERS
+                else candidate.symbol_name
                 for candidate in retrieval.candidates
             ]
 
@@ -192,9 +200,7 @@ def _measure_embedding_cache_hit_rate(
     # Editing inside a function body (not just appending to the file) is
     # required: chunk identity is keyed off each *symbol's* content hash,
     # so a change outside every symbol span wouldn't touch any chunk.
-    edited_content = original_content.replace(
-        "token.length > 0", "token.length > 1"
-    )
+    edited_content = original_content.replace("token.length > 0", "token.length > 1")
     assert edited_content != original_content
 
     total_chunks = len(load_index(db_path).chunks)
@@ -221,7 +227,9 @@ def _check_ground_truth(
 ) -> bool | None:
     if question.kind == DEFINITION:
         matches = [s for s in result.symbols if s.name == question.target]
-        return len(matches) == 1 and matches[0].relative_path == question.expected_location
+        return (
+            len(matches) == 1 and matches[0].relative_path == question.expected_location
+        )
 
     if question.kind == CALLERS:
         matches = [s for s in result.symbols if s.name == question.target]

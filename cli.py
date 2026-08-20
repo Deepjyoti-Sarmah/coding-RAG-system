@@ -131,7 +131,9 @@ def cmd_context(
     )
 
 
-def cmd_eval(*, provider: EmbeddingProvider | None = None, top_k: int = 5) -> EvaluationReport:
+def cmd_eval(
+    *, provider: EmbeddingProvider | None = None, top_k: int = 5
+) -> EvaluationReport:
     return run_evaluation(provider=provider, top_k=top_k)
 
 
@@ -204,7 +206,7 @@ def _print_imports(
 
         print(
             f"{import_reference.local_name} <- {import_reference.imported_name} "
-            f"from \"{import_reference.module_path}\" -> {target}"
+            f'from "{import_reference.module_path}" -> {target}'
         )
 
 
@@ -217,7 +219,9 @@ def _print_context_pack(pack: ContextPack) -> None:
         ("supporting", pack.supporting_definitions),
     ):
         for entry in entries:
-            print(f"\n[{label}] {entry.qualified_name} ({entry.symbol_kind}) — {entry.location}")
+            print(
+                f"\n[{label}] {entry.qualified_name} ({entry.symbol_kind}) — {entry.location}"
+            )
             if entry.source:
                 print(entry.source)
 
@@ -231,7 +235,11 @@ def _print_eval_report(report: EvaluationReport) -> None:
     print("Benchmark: fixed evaluation repo (tests/fixtures/evaluation_repo)\n")
 
     for question in report.questions:
-        correct = "-" if question.correct is None else ("PASS" if question.correct else "FAIL")
+        correct = (
+            "-"
+            if question.correct is None
+            else ("PASS" if question.correct else "FAIL")
+        )
         print(
             f"[{question.category:10}] {correct:4} "
             f"recall@k={question.recall_at_k:.2f} mrr={question.reciprocal_rank:.2f} "
@@ -249,8 +257,12 @@ def _print_eval_report(report: EvaluationReport) -> None:
         f"(baseline {report.baseline_tokens}, "
         f"{report.token_reduction * 100:.1f}% reduction)"
     )
-    print(f"initial indexing:           {report.initial_indexing_seconds * 1000:.1f} ms")
-    print(f"incremental indexing:       {report.incremental_indexing_seconds * 1000:.1f} ms")
+    print(
+        f"initial indexing:           {report.initial_indexing_seconds * 1000:.1f} ms"
+    )
+    print(
+        f"incremental indexing:       {report.incremental_indexing_seconds * 1000:.1f} ms"
+    )
     print(f"embedding cache hit rate:   {report.embedding_cache_hit_rate:.2f}")
 
 
@@ -263,13 +275,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    index_parser = subparsers.add_parser("index", help="build or update the semantic index")
+    index_parser = subparsers.add_parser(
+        "index", help="build or update the semantic index"
+    )
     index_parser.add_argument("path")
     index_parser.add_argument(
         "--embed", action="store_true", help="also run the embedding worker"
     )
 
-    status_parser = subparsers.add_parser("status", help="show index generation and counts")
+    status_parser = subparsers.add_parser(
+        "status", help="show index generation and counts"
+    )
     status_parser.add_argument("path", nargs="?", default=".")
 
     search_parser = subparsers.add_parser("search", help="hybrid search over the index")
@@ -278,7 +294,9 @@ def build_parser() -> argparse.ArgumentParser:
     search_parser.add_argument("--top-k", type=int, default=5)
     search_parser.add_argument("--no-vector", action="store_true")
 
-    definition_parser = subparsers.add_parser("definition", help="find where a symbol is defined")
+    definition_parser = subparsers.add_parser(
+        "definition", help="find where a symbol is defined"
+    )
     definition_parser.add_argument("name")
     definition_parser.add_argument("path", nargs="?", default=".")
 
@@ -294,7 +312,9 @@ def build_parser() -> argparse.ArgumentParser:
     imports_parser.add_argument("file")
     imports_parser.add_argument("path", nargs="?", default=".")
 
-    context_parser = subparsers.add_parser("context", help="build a token-budgeted context pack")
+    context_parser = subparsers.add_parser(
+        "context", help="build a token-budgeted context pack"
+    )
     context_parser.add_argument("query")
     context_parser.add_argument("path", nargs="?", default=".")
     context_parser.add_argument("--budget", type=int, default=2000)
@@ -304,7 +324,9 @@ def build_parser() -> argparse.ArgumentParser:
     eval_parser = subparsers.add_parser(
         "eval", help="run the fixed benchmark and report retrieval/indexing metrics"
     )
-    eval_parser.add_argument("--embed", action="store_true", help="also exercise vector search")
+    eval_parser.add_argument(
+        "--embed", action="store_true", help="also exercise vector search"
+    )
     eval_parser.add_argument("--top-k", type=int, default=5)
 
     return parser
