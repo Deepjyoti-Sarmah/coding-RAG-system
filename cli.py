@@ -10,9 +10,11 @@ from models.entities.import_references import ImportReference
 from models.entities.resolved_import_reference import ResolvedImportReference
 from retrieval.context_builder import ContextPack
 from retrieval.hybrid_retriever import HybridRetrieval
-from storage.index_store import (
+from retrieval.index_queries import (
     build_context_pack_from_index,
     build_hybrid_retriever,
+)
+from storage.index_store import (
     current_generation,
     load_embedding_cache,
     load_index,

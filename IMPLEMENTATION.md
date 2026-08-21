@@ -2556,6 +2556,32 @@ Next:
 
 If a task changes architecture, record why.
 
+## 2026-08-21 — Refactor: storage stops depending on retrieval
+
+Status: COMPLETE
+
+Files changed:
+
+- retrieval/index_queries.py (new — `load_vector_store`, `build_hybrid_retriever`, `build_context_pack_from_index`)
+- storage/index_store.py (those three removed; new `load_chunk_vectors`; no longer imports `retrieval`)
+- cli.py, evaluation/runner.py, tests/test_vector_store.py, tests/test_context_builder.py, tests/test_hybrid_retrieval.py (import sites)
+- models/indexing_context.py (stale TODO removed — `export_index` is already a field)
+
+Problem:
+
+- `storage/index_store.py` imported `retrieval.context_builder`, `retrieval.hybrid_retriever` and `retrieval.numpy_vector_store`, so the persistence layer depended on the retrieval layer, inverting `# 32. Module Responsibilities`. Three of its eleven functions were retrieval wiring rather than persistence.
+
+Implementation:
+
+- The three retrieval-assembly functions moved to `retrieval/index_queries.py`. `storage` keeps a new `load_chunk_vectors`, which returns `(chunk, vector)` pairs and knows nothing about `NumpyVectorStore`.
+- Dependency direction is now `retrieval -> storage` only; `storage` imports no higher layer.
+
+Result:
+
+- 348 tests pass, unchanged. `storage/index_store.py` 267 -> 223 lines, 11 -> 9 functions.
+
+Remaining known inversion: `models/build_result.py` imports `CodeGraph` and `SymbolIndex`, and `models/indexing_context.py` imports three indexes, so `models` is not yet a leaf. Tracked as the `BuildResult` decomposition.
+
 ## 2026-08-21 — Refactor: extract the incremental rebuild plan
 
 Status: COMPLETE

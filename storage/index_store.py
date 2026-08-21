@@ -1,11 +1,9 @@
 import numpy as np
 
-from models.build_result import BuildResult
+from analysis.build_result import BuildResult
+from chunking.symbol_chunker import SemanticChunk
 from models.entities.fts_hit import FtsHit
 from models.file_state import FileState
-from retrieval.context_builder import ContextPack, build_context_pack
-from retrieval.hybrid_retriever import HybridRetriever
-from retrieval.numpy_vector_store import NumpyVectorStore
 from storage import db, schema
 from storage.repositories import (
     chunk_fts_repository,
@@ -97,7 +95,7 @@ def current_generation(db_path: str) -> int:
         conn.close()
 
 
-def _prune_derived(conn, chunks: list) -> None:
+def _prune_derived(conn, chunks: list[SemanticChunk]) -> None:
     current_keys = {chunk.chunk_key for chunk in chunks}
 
     if not current_keys:
@@ -136,67 +134,26 @@ def search_lexical(db_path: str, query: str, *, limit: int = 10) -> list[FtsHit]
         conn.close()
 
 
-def load_vector_store(db_path: str) -> NumpyVectorStore:
+def load_chunk_vectors(
+    db_path: str,
+) -> list[tuple[SemanticChunk, np.ndarray]]:
+    """Every chunk that has an embedding, paired with it."""
     conn = db.connect(db_path)
 
     try:
         schema.create_schema(conn)
+
         chunks_by_key = {
             chunk.chunk_key: chunk for chunk in chunk_repository.fetch_all(conn)
         }
-        vectors = embedding_repository.fetch_all(conn)
-        entries = [
+
+        return [
             (chunks_by_key[chunk_key], vector)
-            for chunk_key, vector in vectors.items()
+            for chunk_key, vector in embedding_repository.fetch_all(conn).items()
             if chunk_key in chunks_by_key
         ]
-        return NumpyVectorStore(entries)
     finally:
         conn.close()
-
-
-def build_hybrid_retriever(
-    db_path: str,
-    provider=None,
-) -> HybridRetriever:
-    result = load_index(db_path)
-
-    vector_store = load_vector_store(db_path) if provider is not None else None
-    embed = provider.embed_query if provider is not None else None
-
-    return HybridRetriever(
-        symbol_index=result.symbol_index,
-        graph=result.graph,
-        fts_search=lambda query, limit: search_lexical(db_path, query, limit=limit),
-        vector_store=vector_store,
-        embed=embed,
-        resolved_imports=result.resolved_import_references,
-        exports=result.exports,
-    )
-
-
-def build_context_pack_from_index(
-    db_path: str,
-    query: str,
-    *,
-    token_budget: int,
-    provider=None,
-    top_k: int = 5,
-) -> ContextPack:
-    result = load_index(db_path)
-    retriever = build_hybrid_retriever(db_path, provider=provider)
-
-    retrieval = retriever.retrieve(query, top_k=top_k)
-
-    symbols_by_key = {symbol.stable_key: symbol for symbol in result.symbols}
-
-    return build_context_pack(
-        retrieval.candidates,
-        query=query,
-        graph=result.graph,
-        symbols_by_key=symbols_by_key,
-        token_budget=token_budget,
-    )
 
 
 def load_file_states(db_path: str) -> list[FileState]:

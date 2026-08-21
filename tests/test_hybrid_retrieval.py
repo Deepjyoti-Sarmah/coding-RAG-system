@@ -8,11 +8,10 @@ from embeddings.fake_provider import FakeEmbeddingProvider
 from indexing.embedding_queue import run_embedding_worker
 from indexing.indexer import reindex_index
 from models.entities.fts_hit import FtsHit
-from retrieval.candidate import HybridCandidate
 from retrieval.hybrid_retriever import HybridRetriever
+from retrieval.index_queries import build_hybrid_retriever
 from retrieval.ranking import reciprocal_rank_fusion
 from retrieval.vector_store import VectorSearchHit, VectorStore
-from storage.index_store import build_hybrid_retriever
 
 AUTH = {
     "auth.ts": (
@@ -96,7 +95,7 @@ class TestHybridRetrieverStubs(unittest.TestCase):
         )
 
     def test_hybrid_merges_and_ranks_candidates(self):
-        result = self._graph_and_index()
+        self._graph_and_index()
         login_key = "auth.ts|typescript|login|function"
         create_auth_key = "auth.ts|typescript|createAuth|function"
 

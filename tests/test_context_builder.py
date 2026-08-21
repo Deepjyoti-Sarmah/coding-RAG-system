@@ -14,7 +14,7 @@ from retrieval.context_builder import (
     build_context_pack,
     estimate_tokens,
 )
-from storage.index_store import build_context_pack_from_index
+from retrieval.index_queries import build_context_pack_from_index
 
 AUTH = {
     "auth.ts": (
@@ -301,7 +301,7 @@ class TestBuildContextFromIndex(unittest.TestCase):
         )
 
         self.assertEqual(
-            [entry.qualified_name for entry in pack.primary_definitions][0],
+            next(entry.qualified_name for entry in pack.primary_definitions),
             "login",
         )
         self.assertLessEqual(pack.total_tokens, 400)
