@@ -6,15 +6,7 @@ from uuid import uuid4
 
 from analysis.build_graph import build_graph
 from analysis.fingerprints import compute_content_hash
-from analysis.passes.export_pass import run_export_pass
-from analysis.passes.graph_pass import run_graph_pass
-from analysis.passes.import_pass import run_import_pass
-from analysis.passes.import_resolver_pass import run_import_resolver_pass
-from analysis.passes.parse_pass import run_parse_pass
-from analysis.passes.reference_pass import run_reference_pass
-from analysis.passes.relationship_pass import run_relationship_pass
-from analysis.passes.resolver_pass import run_reference_resolver_pass
-from analysis.passes.symbol_pass import run_symbol_pass
+from analysis.pipeline import run_extraction_passes, run_resolution_passes
 from analysis.symbol_matching import match_symbols
 from chunking.symbol_chunker import build_semantic_chunks
 from indexing.diff import (
@@ -130,23 +122,11 @@ def _incremental_rebuild(
         if path in documents_by_path
     ]
 
-    run_parse_pass(
+    run_extraction_passes(
         context=context,
         result=result,
         documents=rebuild_documents,
     )
-
-    for parsed in context.parsed_documents:
-        run_symbol_pass(
-            document=parsed.document,
-            tree=parsed.tree,
-            context=context,
-            result=result,
-        )
-
-    run_import_pass(context=context, result=result)
-    run_export_pass(context=context, result=result)
-    run_reference_pass(context=context, result=result)
 
     fresh_reference_count = len(result.references)
 
@@ -234,15 +214,16 @@ def _incremental_rebuild(
     context.export_index.add_many(result.exports)
     result.symbol_index = context.symbol_index
 
-    run_import_resolver_pass(context=context, result=result)
-    run_reference_resolver_pass(context=context, result=result)
+    run_resolution_passes(context=context, result=result)
 
+    # Untouched files keep the resolutions merged in above, so their raw
+    # imports and references are re-attached only after the resolver
+    # passes have run - re-resolving them would duplicate that work. The
+    # relationship and graph passes read `resolved_references`, not these
+    # lists, so attaching them afterwards is equivalent.
     for path in untouched_paths:
         result.import_references.extend(prev_imports_by_path.get(path, []))
         result.references.extend(prev_references_by_path.get(path, []))
-
-    run_relationship_pass(result=result)
-    run_graph_pass(result=result)
 
     result.chunks = build_semantic_chunks(result)
 

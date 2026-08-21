@@ -2556,6 +2556,40 @@ Next:
 
 If a task changes architecture, record why.
 
+## 2026-08-21 — Refactor: define the pass sequence once
+
+Status: COMPLETE
+
+Files changed:
+
+- analysis/pipeline.py (new — `run_extraction_passes`, `run_resolution_passes`)
+- analysis/build_graph.py (reduced to document loading + the two phases + chunking)
+- indexing/indexer.py (`_incremental_rebuild` calls the same two functions)
+- tests/test_pipeline_parity.py (new)
+
+Problem:
+
+- The full build (`analysis/build_graph.py`) and the incremental rebuild (`indexing/indexer.py::_incremental_rebuild`) each hard-coded the complete pass sequence, and ran two of the passes in different relative orders. Nothing tied them together, so a pass added to one and not the other would make the two paths silently produce different indexes for the same repository — with no failing test, because the incremental tests seed their database through the incremental path.
+
+Implementation:
+
+- `analysis/pipeline.py` defines the sequence once, split into the two phases the incremental path needs to interleave reuse merging between: `run_extraction_passes` (parse, symbol, import, export, reference) and `run_resolution_passes` (import resolver, reference resolver, relationship, graph). The per-document `run_symbol_pass` loop, previously duplicated in both callers, moved inside `run_extraction_passes`.
+- `build_graph` now runs reference extraction before import resolution, matching the incremental order. Safe because reference extraction reads only symbol nodes.
+- In `_incremental_rebuild`, re-attaching untouched files' raw imports and references moved after `run_resolution_passes`. Equivalent because the relationship and graph passes read `resolved_references`, not those lists; a comment records why the merge cannot move earlier (it would re-resolve reused imports).
+
+Tests:
+
+- `test_pipeline_parity.py` (3): reaching a repository state in one shot and reaching it through incremental edits must produce the same symbols, relationships, resolution statuses and import targets, compared via `stable_key` rather than UUID entity ids. Covers files added one at a time, an importer indexed before its dependency exists, and an edited file.
+- Verified the parity suite catches the Phase 8 Task 8.3 invalidation bug independently: with that fix reverted, the importer-before-dependency case fails on a missing `calls` edge.
+
+Result:
+
+- 340 tests pass (was 337).
+
+Decision / deviation:
+
+- Kept two functions rather than one `run_all_passes`, because the incremental path must merge reused symbols, exports and resolutions between extraction and resolution. A single entry point would have needed a callback, which is the more complicated design.
+
 ## 2026-08-21 — Docs/model accuracy: drop never-emitted enum values, refresh README status
 
 Status: COMPLETE
