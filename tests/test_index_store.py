@@ -7,9 +7,9 @@ from pathlib import Path
 import numpy as np
 
 from analysis.build_graph import build_graph
+from analysis.build_result import BuildResult
 from embeddings.fake_provider import FakeEmbeddingProvider
 from indexing.embedding_queue import enqueue_embedding_jobs, run_embedding_worker
-from models.build_result import BuildResult
 from storage import db
 from storage.index_store import (
     current_generation,

@@ -4,7 +4,6 @@ from analysis.export_builder import build_export
 from models.entities.documents import Document
 from models.entities.exports import Export
 
-
 DECLARATION_NODE_TYPES = {
     "function_declaration",
     "class_declaration",

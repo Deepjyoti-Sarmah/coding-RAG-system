@@ -2556,6 +2556,182 @@ Next:
 
 If a task changes architecture, record why.
 
+## 2026-08-21 — Refactor: make `models` a leaf layer
+
+Status: COMPLETE
+
+Files changed:
+
+- models/build_result.py -> analysis/build_result.py
+- models/indexing_context.py -> analysis/indexing_context.py
+- 22 import sites updated
+
+Problem:
+
+- `models/build_result.py` imported `graph.CodeGraph` and `indexing.SymbolIndex`; `models/indexing_context.py` imported three indexes from `indexing`. `# 32` describes `models/` as "semantic data structures", but it depended on two higher layers, which put every package-level cycle in the codebase through it. `BuildResult` had already worked around one of these with a `TYPE_CHECKING` guard for `SemanticChunk`.
+
+Implementation:
+
+- Neither type is a semantic data structure: `BuildResult` is the pipeline accumulator and `IndexingContext` is the shared pass state, both mutated by passes. That is `analysis/`'s responsibility, so both moved there. `models/` now holds only entity dataclasses and imports no other layer.
+- Verified no module-level cycle is introduced: `indexing/{symbol,document,export}_index.py` and `graph/code_graph.py` import only `models.entities` / `models.relationships`, which are leaves.
+
+Result:
+
+- 348 tests pass, unchanged. `models` imports no other layer. Distinct package-level cycles 136 -> 5.
+- The 5 remaining cycles are `analysis <-> chunking` and `analysis <-> indexing`, inherent to `BuildResult` holding `SemanticChunk` and `SymbolIndex` while those packages consume analysis types. Left alone: breaking them means splitting `BuildResult`'s data from its derived indexes, which touches ~35 call sites for no functional gain.
+
+## 2026-08-21 — Refactor: storage stops depending on retrieval
+
+Status: COMPLETE
+
+Files changed:
+
+- retrieval/index_queries.py (new — `load_vector_store`, `build_hybrid_retriever`, `build_context_pack_from_index`)
+- storage/index_store.py (those three removed; new `load_chunk_vectors`; no longer imports `retrieval`)
+- cli.py, evaluation/runner.py, tests/test_vector_store.py, tests/test_context_builder.py, tests/test_hybrid_retrieval.py (import sites)
+- models/indexing_context.py (stale TODO removed — `export_index` is already a field)
+
+Problem:
+
+- `storage/index_store.py` imported `retrieval.context_builder`, `retrieval.hybrid_retriever` and `retrieval.numpy_vector_store`, so the persistence layer depended on the retrieval layer, inverting `# 32. Module Responsibilities`. Three of its eleven functions were retrieval wiring rather than persistence.
+
+Implementation:
+
+- The three retrieval-assembly functions moved to `retrieval/index_queries.py`. `storage` keeps a new `load_chunk_vectors`, which returns `(chunk, vector)` pairs and knows nothing about `NumpyVectorStore`.
+- Dependency direction is now `retrieval -> storage` only; `storage` imports no higher layer.
+
+Result:
+
+- 348 tests pass, unchanged. `storage/index_store.py` 267 -> 223 lines, 11 -> 9 functions.
+
+Remaining known inversion: `models/build_result.py` imports `CodeGraph` and `SymbolIndex`, and `models/indexing_context.py` imports three indexes, so `models` is not yet a leaf. Tracked as the `BuildResult` decomposition.
+
+## 2026-08-21 — Refactor: extract the incremental rebuild plan
+
+Status: COMPLETE
+
+Files changed:
+
+- indexing/rebuild_plan.py (new — `FilePartition`, `RebuildPlan`, `PreviousSnapshot`, `partition_files`, `build_previous_snapshot`, `plan_rebuild`, `group_by_path`)
+- indexing/indexer.py (`_incremental_rebuild` 185 -> 105 lines; new `_importers_for`, `_merge_reused_state`; five helpers moved out)
+- tests/test_rebuild_plan.py (new)
+
+Problem:
+
+- `_incremental_rebuild` was a 185-line function doing seven jobs: loading the previous snapshot, grouping seven collections by path, running passes, reconciling identity, computing invalidation, merging reuse, and persisting. `# 1.2` forbids exactly this. The Task 8.3 invalidation bug was a missing term in one set union buried at line 187, and could only be caught by indexing a real repository.
+
+Implementation:
+
+- `FilePartition` buckets every path by change kind; `PreviousSnapshot` replaces seven `prev_*_by_path` locals; `plan_rebuild` returns the `reresolve` / `untouched` decision along with the `invalidation_sources` it derived them from. The invalidation rule is now one readable expression with a comment explaining why new paths bypass the fingerprint comparison.
+- `group_by_path` absorbed `_group_resolved_references` and `_group_resolved_imports` via a `document_id` accessor, replacing three near-identical functions with one.
+- `_merge_reused_state` isolates the reuse folding and returns the carried-in reference count the run report needs.
+
+Tests:
+
+- `test_rebuild_plan.py` (8): partition bucketing; new / deleted / changed-interface / changed-signature files invalidate importers; identical interface does not; `untouched` excludes rebuilt and re-resolved paths.
+- Regression net verified: removing `partition.new` from the invalidation sources fails 4 tests across all three layers (unit, parity, integration).
+
+Result:
+
+- 348 tests pass (was 340). `indexing/indexer.py` 522 -> 404 lines.
+
+## 2026-08-21 — Refactor: define the pass sequence once
+
+Status: COMPLETE
+
+Files changed:
+
+- analysis/pipeline.py (new — `run_extraction_passes`, `run_resolution_passes`)
+- analysis/build_graph.py (reduced to document loading + the two phases + chunking)
+- indexing/indexer.py (`_incremental_rebuild` calls the same two functions)
+- tests/test_pipeline_parity.py (new)
+
+Problem:
+
+- The full build (`analysis/build_graph.py`) and the incremental rebuild (`indexing/indexer.py::_incremental_rebuild`) each hard-coded the complete pass sequence, and ran two of the passes in different relative orders. Nothing tied them together, so a pass added to one and not the other would make the two paths silently produce different indexes for the same repository — with no failing test, because the incremental tests seed their database through the incremental path.
+
+Implementation:
+
+- `analysis/pipeline.py` defines the sequence once, split into the two phases the incremental path needs to interleave reuse merging between: `run_extraction_passes` (parse, symbol, import, export, reference) and `run_resolution_passes` (import resolver, reference resolver, relationship, graph). The per-document `run_symbol_pass` loop, previously duplicated in both callers, moved inside `run_extraction_passes`.
+- `build_graph` now runs reference extraction before import resolution, matching the incremental order. Safe because reference extraction reads only symbol nodes.
+- In `_incremental_rebuild`, re-attaching untouched files' raw imports and references moved after `run_resolution_passes`. Equivalent because the relationship and graph passes read `resolved_references`, not those lists; a comment records why the merge cannot move earlier (it would re-resolve reused imports).
+
+Tests:
+
+- `test_pipeline_parity.py` (3): reaching a repository state in one shot and reaching it through incremental edits must produce the same symbols, relationships, resolution statuses and import targets, compared via `stable_key` rather than UUID entity ids. Covers files added one at a time, an importer indexed before its dependency exists, and an edited file.
+- Verified the parity suite catches the Phase 8 Task 8.3 invalidation bug independently: with that fix reverted, the importer-before-dependency case fails on a missing `calls` edge.
+
+Result:
+
+- 340 tests pass (was 337).
+
+Decision / deviation:
+
+- Kept two functions rather than one `run_all_passes`, because the incremental path must merge reused symbols, exports and resolutions between extraction and resolution. A single entry point would have needed a callback, which is the more complicated design.
+
+## 2026-08-21 — Docs/model accuracy: drop never-emitted enum values, refresh README status
+
+Status: COMPLETE
+
+Files changed:
+
+- models/relationships/relationship_kind.py (`IMPORTS`, `EXTENDS`, `IMPLEMENTS`, `USES` removed)
+- models/entities/symbol_kind.py (`INTERFACE`, `TYPE_ALIAS` removed)
+- models/entities/reference_kind.py (`IMPORT`, `TYPE` removed)
+- README.md (`Current Status`, `Knowledge Graph`)
+
+Problem:
+
+- Eight enum values were declared but never assigned anywhere in the codebase, in any commit in history. Indexing a fixture exercising every construct confirms the emitted vocabulary is exactly `SymbolKind` {FUNCTION, CLASS, METHOD, VARIABLE}, `RelationshipKind` {CALLS}, `ReferenceKind` {CALL, IDENTIFIER, MEMBER_ACCESS}. The unused values advertised a semantic model broader than the one the pipeline builds, which is the same failure mode `# 3. Current Project Rules` warns about for language support.
+- README `Current Status` was roughly fourteen phases stale: it listed sixteen delivered features under `Planned`, and named SQLite persistence and incremental indexing under `Completed` *and* `Planned` simultaneously. `Immediate Next Tasks` prescribed fifteen already-completed steps.
+- README `Knowledge Graph` presented five relationship kinds as the graph model and listed `imports_of(document)` / `imported_by(document)` as supported operations; `CodeGraph` implements only `callers_of`, `callees_of`, `children_of`, `parents_of`.
+
+Implementation:
+
+- Removed the eight unused enum values per `# 1.5` (no abstraction without a concrete use). Verified safe: `git grep` across all refs shows they were never emitted, so no persisted database can contain them and the `Kind(row["kind"])` round-trip in the repositories cannot encounter them. The storage schema stores `kind` as plain `TEXT` with no `CHECK` constraint, so no migration is required.
+- Rewrote README `Current Status` to match this file's `## Completed` checklist, and pointed readers here as the authoritative status document.
+- Added a README `Not Yet Modelled` section recording the three real gaps: type-level constructs (`interface` / `type` produce no symbol and no export, so their imports resolve to a document with `target_symbol` unset), class hierarchy (`extends` / `implements` emit no relationships), and type analysis.
+- Corrected the `Knowledge Graph` section to state that `CALLS` is the only emitted kind, that import edges live in the semantic model rather than the graph, and to list only the four operations `CodeGraph` actually exposes.
+
+Tests:
+
+- No behaviour change; 337 tests pass unchanged, ruff clean.
+
+Decision / deviation:
+
+- Deleted the unused values rather than annotating them as reserved. They are recorded as intended work in README `Planned`, which keeps the intent visible without an enum member that no code can produce.
+- Interface / type-alias extraction was documented as a gap rather than implemented. Adding it requires AST inspection first per `# 1.3`, plus symbol/export/fingerprint handling, and does not belong in a documentation-accuracy change.
+- README now states the CLI is invoked as `python cli.py <command>`; `ckg` is used as shorthand elsewhere in this file but no console script is installed.
+
+## 2026-08-21 — Phase 8 Task 8.3 Fix: new files must invalidate importers
+
+Status: COMPLETE
+
+Files changed:
+
+- indexing/indexer.py (`_incremental_rebuild` adds `new_paths` to the invalidation sources)
+- tests/test_incremental_indexer.py (new regression test)
+
+Problem:
+
+- `_incremental_rebuild` built its invalidation set as `interface_changed_paths | deleted_paths`. `interface_changed_paths` is derived only from `FileChange.CHANGED` paths, so `FileChange.NEW` was never an invalidation source. A file whose import previously failed to resolve stayed stale after the missing target was added: the importer is `UNCHANGED`, so it was never re-resolved. Reproduced as `b.ts` importing `./a` before `a.ts` exists — after adding `a.ts` the reference stayed `UNRESOLVED` until `b.ts` was independently edited. This is the ordinary "write the call site, then create the module" editing pattern, so every graph edge into a newly added file was missing for a full edit cycle.
+
+Implementation:
+
+- `new_paths` (the `FileChange.NEW` set) is unioned into `invalidation_sources`, so `_reresolve_paths` pulls the new file's importers out of `untouched_paths` and back into re-resolution. NEW paths are added directly rather than routed through `_interface_changed_paths`, which compares against a previous interface fingerprint and has none for a new file (`prev_docs_by_path[path]` would `KeyError`).
+
+Tests:
+
+- `test_new_file_invalidates_importers_of_previously_missing_module`: index `b.ts` alone and assert `createAuth` is `UNRESOLVED`, add `a.ts`, then assert the change set is `{a.ts: NEW, b.ts: UNCHANGED}` and the reference is `RESOLVED` without touching `b.ts`. Verified to fail before the fix and pass after.
+
+Result:
+
+- 337 tests pass (was 336).
+
+Decision / deviation:
+
+- The existing suite covered `interface_change` and `deleted_file` invalidation — the two cases the implementation actually wired up — which is why the gap survived. The NEW case is the third sibling and is now covered alongside them.
+
 ## 2026-08-19 — Phase 17 Context Builder
 
 Status: COMPLETE

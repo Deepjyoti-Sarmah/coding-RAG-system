@@ -1,8 +1,10 @@
+from collections.abc import Sequence
+
 from models.relationships.relationship_kind import RelationshipKind
 from models.relationships.relationships import Relationship
 
 
-def insert_many(conn, relationships: list[Relationship]) -> None:
+def insert_many(conn, relationships: Sequence[Relationship]) -> None:
     conn.executemany(
         """
         INSERT INTO relationships (source_symbol_id, target_symbol_id, kind)

@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 
 from analysis.build_graph import build_graph
+from analysis.build_result import BuildResult
 from chunking.symbol_chunker import CHUNK_VERSION, build_semantic_chunks
-from models.build_result import BuildResult
 
 FILES = {
     "auth.ts": (

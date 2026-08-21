@@ -25,7 +25,8 @@ from indexing.diff import importers_of
 from indexing.embedding_queue import run_embedding_worker
 from indexing.indexer import reindex_index
 from retrieval.context_builder import build_context_pack, estimate_tokens
-from storage.index_store import build_hybrid_retriever, load_index
+from retrieval.index_queries import build_hybrid_retriever
+from storage.index_store import load_index
 
 RECALL_K = 5
 

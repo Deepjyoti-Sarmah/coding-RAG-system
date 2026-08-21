@@ -94,7 +94,7 @@ def run_embedding_worker(
                 )
                 report.done = len(embeddable)
                 report.reused = len(embeddable) - missing
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - any provider failure marks jobs failed instead of crashing the run
             with db.transaction(conn):
                 for chunk in embeddable:
                     embedding_job_repository.mark_failed(conn, chunk.chunk_key, str(exc))

@@ -1,6 +1,6 @@
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
 
@@ -163,7 +163,7 @@ class HybridRetriever:
 
         expanded = self._expand_graph(candidates, symbols_by_key, seed=seed)
 
-        ranked = rerank_candidates(
+        reranked = rerank_candidates(
             [*candidates, *expanded],
             query,
             graph=self.graph,
@@ -175,7 +175,7 @@ class HybridRetriever:
         return HybridRetrieval(
             strategy="hybrid",
             query=query,
-            candidates=ranked[:top_k],
+            candidates=reranked[:top_k],
         )
 
     def _detect_seed(self, query: str) -> Symbol | None:

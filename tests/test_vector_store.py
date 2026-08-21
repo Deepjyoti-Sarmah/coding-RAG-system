@@ -8,8 +8,9 @@ from chunking.symbol_chunker import CHUNK_VERSION, SemanticChunk
 from embeddings.fake_provider import FakeEmbeddingProvider
 from indexing.embedding_queue import run_embedding_worker
 from indexing.indexer import reindex_index
+from retrieval.index_queries import load_vector_store
 from retrieval.numpy_vector_store import NumpyVectorStore
-from storage.index_store import load_index, load_vector_store
+from storage.index_store import load_index
 
 
 def _chunk(key: str, relative_path: str = "a.ts") -> SemanticChunk:

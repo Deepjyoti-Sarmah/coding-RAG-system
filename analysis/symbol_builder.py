@@ -10,8 +10,8 @@ from analysis.fingerprints import (
 from analysis.signature import extract_signature
 from models.common.source_location import SourceLocation
 from models.entities.documents import Document
-from models.entities.symbols import Symbol
 from models.entities.symbol_kind import SymbolKind
+from models.entities.symbols import Symbol
 
 
 def build_symbol(

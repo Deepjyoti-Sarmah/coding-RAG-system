@@ -1,6 +1,12 @@
 import unittest
 
-from evaluation.metrics import accuracy, mean, recall_at_k, reciprocal_rank, token_reduction
+from evaluation.metrics import (
+    accuracy,
+    mean,
+    recall_at_k,
+    reciprocal_rank,
+    token_reduction,
+)
 
 
 class TestRecallAtK(unittest.TestCase):

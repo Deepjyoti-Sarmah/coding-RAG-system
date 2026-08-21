@@ -11,7 +11,10 @@ class LocalEmbeddingProvider(EmbeddingProvider):
         device: str | None = None,
     ) -> None:
         self._model = SentenceTransformer(model_name, device=device)
-        self._dimension = self._model.get_sentence_embedding_dimension()
+        dimension = self._model.get_embedding_dimension()
+        if dimension is None:
+            raise ValueError(f"Model {model_name!r} did not report an embedding dimension")
+        self._dimension = dimension
 
     @property
     def dimension(self) -> int:

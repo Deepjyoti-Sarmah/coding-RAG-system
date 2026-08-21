@@ -1,5 +1,5 @@
+from analysis.build_result import BuildResult
 from analysis.relationship_builder import build_relationships
-from models.build_result import BuildResult
 
 
 def run_relationship_pass(

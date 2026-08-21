@@ -4,7 +4,7 @@ SUPPORTED_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx")
 
 
 def is_relative_import(module_path: str) -> bool:
-    return module_path.startswith("./") or module_path.startswith("../")
+    return module_path.startswith(("./", "../"))
 
 
 def resolve_module_path(

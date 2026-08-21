@@ -1,6 +1,6 @@
+from analysis.build_result import BuildResult
 from analysis.import_extractor import extract_imports
-from models.build_result import BuildResult
-from models.indexing_context import IndexingContext
+from analysis.indexing_context import IndexingContext
 
 
 def run_import_pass(

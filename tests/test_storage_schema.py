@@ -1,3 +1,4 @@
+import sqlite3
 import unittest
 
 from storage import db, schema
@@ -118,7 +119,7 @@ class TestSchema(unittest.TestCase):
                 VALUES ('sym-1', 'sym-2', 'calls')
                 """
             )
-            with self.assertRaises(Exception):
+            with self.assertRaises(sqlite3.IntegrityError):
                 conn.execute(
                     """
                     INSERT INTO relationships (source_symbol_id, target_symbol_id, kind)

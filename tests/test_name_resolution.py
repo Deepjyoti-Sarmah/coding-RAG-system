@@ -95,7 +95,7 @@ class TestScopeResolution(unittest.TestCase):
                 for s in result.symbols
                 if s.name == "login" and s.relative_path == "a.ts"
             )
-            outer = _symbol_by_name(result, "outer")
+            _symbol_by_name(result, "outer")
 
             resolved = _resolved_for(result, "outer", "login")
 
