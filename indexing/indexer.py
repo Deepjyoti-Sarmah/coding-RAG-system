@@ -20,8 +20,8 @@ from chunking.symbol_chunker import build_semantic_chunks
 from indexing.diff import (
     FileChange,
     ScanResult,
-    interface_fingerprint,
     importers_of,
+    interface_fingerprint,
     scan_files,
 )
 from indexing.embedding_queue import enqueue_embedding_jobs
@@ -101,9 +101,7 @@ def _incremental_rebuild(
     prev_docs_by_path = {d.relative_path: d for d in previous.documents}
     prev_docs_by_id = {d.document_id: d for d in previous.documents}
     prev_symbols_by_path = _group_by_path(previous.symbols, prev_docs_by_id)
-    prev_imports_by_path = _group_by_path(
-        previous.import_references, prev_docs_by_id
-    )
+    prev_imports_by_path = _group_by_path(previous.import_references, prev_docs_by_id)
     prev_exports_by_path = _group_by_path(previous.exports, prev_docs_by_id)
     prev_references_by_path = _group_by_path(previous.references, prev_docs_by_id)
     prev_resolved_refs_by_path = _group_resolved_references(
@@ -125,9 +123,7 @@ def _incremental_rebuild(
     context.document_index.add_many(list(documents_by_path.values()))
 
     rebuild_documents = [
-        documents_by_path[path]
-        for path in rebuild_paths
-        if path in documents_by_path
+        documents_by_path[path] for path in rebuild_paths if path in documents_by_path
     ]
 
     run_parse_pass(
@@ -265,9 +261,7 @@ def _load_previous_states(db_path: str) -> dict[str, FileState]:
     if not Path(db_path).exists():
         return {}
 
-    return {
-        state.relative_path: state for state in load_file_states(db_path)
-    }
+    return {state.relative_path: state for state in load_file_states(db_path)}
 
 
 def _build_documents(
@@ -312,9 +306,7 @@ def _previous_symbols_for_changed(
     }
 
     return [
-        symbol
-        for symbol in previous.symbols
-        if symbol.document_id in changed_doc_ids
+        symbol for symbol in previous.symbols if symbol.document_id in changed_doc_ids
     ]
 
 
@@ -366,14 +358,10 @@ def _interface_changed_paths(
 
         current_fingerprint = interface_fingerprint(
             exports=[
-                export
-                for export in fresh_exports
-                if export.document_id == doc_id
+                export for export in fresh_exports if export.document_id == doc_id
             ],
             symbols=[
-                symbol
-                for symbol in fresh_symbols
-                if symbol.document_id == doc_id
+                symbol for symbol in fresh_symbols if symbol.document_id == doc_id
             ],
         )
         previous_fingerprint = interface_fingerprint(
