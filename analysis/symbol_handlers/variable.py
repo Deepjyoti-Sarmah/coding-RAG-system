@@ -2,8 +2,8 @@ from tree_sitter import Node
 
 from analysis.symbol_builder import build_symbol
 from models.entities.documents import Document
-from models.entities.symbols import Symbol
 from models.entities.symbol_kind import SymbolKind
+from models.entities.symbols import Symbol
 
 
 def handle_variable_declarator(

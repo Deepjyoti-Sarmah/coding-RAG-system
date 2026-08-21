@@ -20,10 +20,7 @@ def should_skip_file(file_path: Path) -> bool:
     if file_path.suffix.lower() not in INCLUDE_EXTENSIONS:
         return True
 
-    if file_path.stat().st_size > MAX_FILE_SIZE_BYTES:
-        return True
-
-    return False
+    return file_path.stat().st_size > MAX_FILE_SIZE_BYTES
 
 
 def iter_repo_files(path: str | Path) -> Iterator[tuple[Path, str]]:
@@ -81,7 +78,7 @@ def load_code_files(path: str) -> list[Document]:
     for file_path, relative_path in iter_repo_files(path):
         try:
             content = file_path.read_text(encoding="utf-8")
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
             print(f"Skipping {file_path}: {e}")
             continue
 

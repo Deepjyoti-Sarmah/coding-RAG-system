@@ -172,6 +172,6 @@ def _fast_path_unchanged(
 def _read_content(file_path: Path) -> str | None:
     try:
         return file_path.read_text(encoding="utf-8")
-    except Exception as e:
+    except (OSError, UnicodeDecodeError) as e:
         print(f"Skipping {file_path}: {e}")
         return None

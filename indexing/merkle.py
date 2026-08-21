@@ -121,7 +121,7 @@ def _build_directory(
 def _hash_file(file_path: Path) -> str:
     try:
         content = file_path.read_text(encoding="utf-8")
-    except Exception as e:
+    except (OSError, UnicodeDecodeError) as e:
         print(f"Skipping {file_path}: {e}")
         return ""
 

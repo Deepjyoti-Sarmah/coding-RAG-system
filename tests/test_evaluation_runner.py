@@ -1,7 +1,13 @@
 import unittest
 
 from embeddings.fake_provider import FakeEmbeddingProvider
-from evaluation.benchmark import BENCHMARK_QUESTIONS, CALLEES, CALLERS, DEFINITION, IMPORTERS
+from evaluation.benchmark import (
+    BENCHMARK_QUESTIONS,
+    CALLEES,
+    CALLERS,
+    DEFINITION,
+    IMPORTERS,
+)
 from evaluation.runner import run_evaluation
 
 

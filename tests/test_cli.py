@@ -119,7 +119,8 @@ class TestCliCommands(unittest.TestCase):
         self.assertEqual(len(imports), 1)
         import_reference, resolved = imports[0]
         self.assertEqual(import_reference.local_name, "login")
-        self.assertIsNotNone(resolved)
+        assert resolved is not None
+        assert resolved.target_symbol is not None
         self.assertEqual(resolved.target_document.relative_path, "auth.ts")
         self.assertEqual(resolved.target_symbol.name, "login")
 

@@ -1,10 +1,10 @@
 import unittest
 from uuid import uuid4
 
-from parsing.registry import PARSER
 from analysis.symbol_extractor import extract_symbols
 from models.entities.documents import Document
 from models.entities.symbol_kind import SymbolKind
+from parsing.registry import PARSER
 
 
 def _make_document(content: str) -> Document:

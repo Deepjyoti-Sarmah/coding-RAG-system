@@ -49,12 +49,11 @@ class TestDatabaseConnection(unittest.TestCase):
         conn = db.connect(":memory:")
         schema.create_schema(conn)
 
-        with self.assertRaises(RuntimeError):
-            with db.transaction(conn):
-                conn.execute(
-                    "INSERT INTO index_metadata (key, value) VALUES ('probe', '1')"
-                )
-                raise RuntimeError("boom")
+        with self.assertRaises(RuntimeError), db.transaction(conn):
+            conn.execute(
+                "INSERT INTO index_metadata (key, value) VALUES ('probe', '1')"
+            )
+            raise RuntimeError("boom")
 
         count = conn.execute(
             "SELECT COUNT(*) FROM index_metadata WHERE key = 'probe'"

@@ -1,7 +1,7 @@
 from models.entities.reference_kind import ReferenceKind
 from models.entities.resolved_reference import ResolutionStatus, ResolvedReference
-from models.relationships.relationships import Relationship
 from models.relationships.relationship_kind import RelationshipKind
+from models.relationships.relationships import Relationship
 
 
 def build_relationships(

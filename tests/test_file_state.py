@@ -3,8 +3,7 @@ import unittest
 from pathlib import Path
 
 from models.file_state import FileState
-from storage import db
-from storage import schema
+from storage import db, schema
 from storage.index_store import load_file_states
 from storage.repositories import file_state_repository
 
