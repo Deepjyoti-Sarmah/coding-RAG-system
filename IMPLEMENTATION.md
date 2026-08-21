@@ -2556,6 +2556,30 @@ Next:
 
 If a task changes architecture, record why.
 
+## 2026-08-21 — Refactor: make `models` a leaf layer
+
+Status: COMPLETE
+
+Files changed:
+
+- models/build_result.py -> analysis/build_result.py
+- models/indexing_context.py -> analysis/indexing_context.py
+- 22 import sites updated
+
+Problem:
+
+- `models/build_result.py` imported `graph.CodeGraph` and `indexing.SymbolIndex`; `models/indexing_context.py` imported three indexes from `indexing`. `# 32` describes `models/` as "semantic data structures", but it depended on two higher layers, which put every package-level cycle in the codebase through it. `BuildResult` had already worked around one of these with a `TYPE_CHECKING` guard for `SemanticChunk`.
+
+Implementation:
+
+- Neither type is a semantic data structure: `BuildResult` is the pipeline accumulator and `IndexingContext` is the shared pass state, both mutated by passes. That is `analysis/`'s responsibility, so both moved there. `models/` now holds only entity dataclasses and imports no other layer.
+- Verified no module-level cycle is introduced: `indexing/{symbol,document,export}_index.py` and `graph/code_graph.py` import only `models.entities` / `models.relationships`, which are leaves.
+
+Result:
+
+- 348 tests pass, unchanged. `models` imports no other layer. Distinct package-level cycles 136 -> 5.
+- The 5 remaining cycles are `analysis <-> chunking` and `analysis <-> indexing`, inherent to `BuildResult` holding `SemanticChunk` and `SymbolIndex` while those packages consume analysis types. Left alone: breaking them means splitting `BuildResult`'s data from its derived indexes, which touches ~35 call sites for no functional gain.
+
 ## 2026-08-21 — Refactor: storage stops depending on retrieval
 
 Status: COMPLETE

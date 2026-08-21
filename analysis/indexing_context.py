@@ -9,8 +9,6 @@ from models.parsed_document import ParsedDocument
 
 @dataclass(slots=True)
 class IndexingContext:
-    # TODO: Extend this context with import/export indexes and file-hash state so
-    # passes can share reusable intermediate results.
     document_index: DocumentIndex = field(default_factory=DocumentIndex)
 
     symbol_index: SymbolIndex = field(default_factory=SymbolIndex)

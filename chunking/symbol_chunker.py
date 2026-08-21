@@ -8,7 +8,7 @@ from models.entities.import_references import ImportReference
 from models.entities.symbols import Symbol
 
 if TYPE_CHECKING:
-    from models.build_result import BuildResult
+    from analysis.build_result import BuildResult
 
 CHUNK_VERSION = "v1"
 

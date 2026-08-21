@@ -4,7 +4,9 @@ from pathlib import Path
 from uuid import uuid4
 
 from analysis.build_graph import build_graph
+from analysis.build_result import BuildResult
 from analysis.fingerprints import compute_content_hash
+from analysis.indexing_context import IndexingContext
 from analysis.pipeline import run_extraction_passes, run_resolution_passes
 from analysis.symbol_matching import match_symbols
 from chunking.symbol_chunker import build_semantic_chunks
@@ -26,10 +28,8 @@ from indexing.rebuild_plan import (
 )
 from indexing.symbol_index import SymbolIndex
 from ingestion.loader import build_document
-from models.build_result import BuildResult
 from models.entities.documents import Document
 from models.file_state import FileState
-from models.indexing_context import IndexingContext
 from storage.index_store import load_file_states, load_index, persist_index
 
 

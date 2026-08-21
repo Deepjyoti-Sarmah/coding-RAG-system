@@ -2,10 +2,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from analysis.build_result import BuildResult
+from analysis.indexing_context import IndexingContext
 from analysis.passes.parse_pass import run_parse_pass
 from ingestion.loader import load_code_files
-from models.build_result import BuildResult
-from models.indexing_context import IndexingContext
 
 
 def _build_for_dir(root: Path) -> tuple[BuildResult, IndexingContext]:

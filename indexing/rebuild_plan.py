@@ -20,8 +20,8 @@ Everything else keeps last run's resolutions.
 from collections import defaultdict
 from dataclasses import dataclass
 
+from analysis.build_result import BuildResult
 from indexing.diff import FileChange, ScanResult, interface_fingerprint
-from models.build_result import BuildResult
 from models.entities.documents import Document
 
 

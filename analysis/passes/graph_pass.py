@@ -1,4 +1,4 @@
-from models.build_result import BuildResult
+from analysis.build_result import BuildResult
 
 
 def run_graph_pass(*, result: BuildResult):

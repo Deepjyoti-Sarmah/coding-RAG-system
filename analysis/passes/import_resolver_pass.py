@@ -1,8 +1,8 @@
+from analysis.build_result import BuildResult
 from analysis.import_resolution_builder import build_resolved_import
+from analysis.indexing_context import IndexingContext
 from analysis.semantic.import_resolver import resolve_import
 from analysis.semantic.import_symbol_resolver import resolve_imported_symbol
-from models.build_result import BuildResult
-from models.indexing_context import IndexingContext
 
 
 def run_import_resolver_pass(

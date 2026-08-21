@@ -1,9 +1,9 @@
 import unittest
 
+from analysis.build_result import BuildResult
+from analysis.indexing_context import IndexingContext
 from analysis.passes.parse_pass import run_parse_pass
-from models.build_result import BuildResult
 from models.entities.documents import Document
-from models.indexing_context import IndexingContext
 
 
 def _make_document(

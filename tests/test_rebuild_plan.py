@@ -8,13 +8,13 @@ of a stale resolution three layers away.
 
 import unittest
 
+from analysis.build_result import BuildResult
 from indexing.diff import FileChange, ScannedFile, ScanResult
 from indexing.rebuild_plan import (
     build_previous_snapshot,
     partition_files,
     plan_rebuild,
 )
-from models.build_result import BuildResult
 from models.common.source_location import SourceLocation
 from models.entities.documents import Document
 from models.entities.exports import Export

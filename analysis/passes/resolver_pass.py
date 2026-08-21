@@ -1,7 +1,7 @@
+from analysis.build_result import BuildResult
+from analysis.indexing_context import IndexingContext
 from analysis.semantic.member_resolver import resolve_member_reference
 from analysis.semantic.name_resolver import resolve_symbol
-from models.build_result import BuildResult
-from models.indexing_context import IndexingContext
 
 
 def run_reference_resolver_pass(
