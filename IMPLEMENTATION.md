@@ -2556,6 +2556,35 @@ Next:
 
 If a task changes architecture, record why.
 
+## 2026-08-21 — Phase 8 Task 8.3 Fix: new files must invalidate importers
+
+Status: COMPLETE
+
+Files changed:
+
+- indexing/indexer.py (`_incremental_rebuild` adds `new_paths` to the invalidation sources)
+- tests/test_incremental_indexer.py (new regression test)
+
+Problem:
+
+- `_incremental_rebuild` built its invalidation set as `interface_changed_paths | deleted_paths`. `interface_changed_paths` is derived only from `FileChange.CHANGED` paths, so `FileChange.NEW` was never an invalidation source. A file whose import previously failed to resolve stayed stale after the missing target was added: the importer is `UNCHANGED`, so it was never re-resolved. Reproduced as `b.ts` importing `./a` before `a.ts` exists — after adding `a.ts` the reference stayed `UNRESOLVED` until `b.ts` was independently edited. This is the ordinary "write the call site, then create the module" editing pattern, so every graph edge into a newly added file was missing for a full edit cycle.
+
+Implementation:
+
+- `new_paths` (the `FileChange.NEW` set) is unioned into `invalidation_sources`, so `_reresolve_paths` pulls the new file's importers out of `untouched_paths` and back into re-resolution. NEW paths are added directly rather than routed through `_interface_changed_paths`, which compares against a previous interface fingerprint and has none for a new file (`prev_docs_by_path[path]` would `KeyError`).
+
+Tests:
+
+- `test_new_file_invalidates_importers_of_previously_missing_module`: index `b.ts` alone and assert `createAuth` is `UNRESOLVED`, add `a.ts`, then assert the change set is `{a.ts: NEW, b.ts: UNCHANGED}` and the reference is `RESOLVED` without touching `b.ts`. Verified to fail before the fix and pass after.
+
+Result:
+
+- 337 tests pass (was 336).
+
+Decision / deviation:
+
+- The existing suite covered `interface_change` and `deleted_file` invalidation — the two cases the implementation actually wired up — which is why the gap survived. The NEW case is the third sibling and is now covered alongside them.
+
 ## 2026-08-19 — Phase 17 Context Builder
 
 Status: COMPLETE

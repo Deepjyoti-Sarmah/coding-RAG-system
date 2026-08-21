@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -20,8 +20,8 @@ from chunking.symbol_chunker import build_semantic_chunks
 from indexing.diff import (
     FileChange,
     ScanResult,
-    interface_fingerprint,
     importers_of,
+    interface_fingerprint,
     scan_files,
 )
 from indexing.embedding_queue import enqueue_embedding_jobs
@@ -183,8 +183,12 @@ def _incremental_rebuild(
         documents_by_id=documents_by_id,
     )
 
+    new_paths = {
+        path for path, change in changes.items() if change == FileChange.NEW
+    }
+
     reresolve_paths = _reresolve_paths(
-        invalidation_sources=interface_changed_paths | deleted_paths,
+        invalidation_sources=interface_changed_paths | deleted_paths | new_paths,
         importers=importers,
         documents_by_id=documents_by_id,
     )
@@ -520,4 +524,4 @@ def _group_resolved_imports(
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()

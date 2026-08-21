@@ -62,7 +62,7 @@ class TestIncrementalIndexer(unittest.TestCase):
     def test_second_run_is_noop(self):
         _write(self.root, AUTH)
 
-        report = reindex_index(self.db_path, str(self.root))
+        reindex_index(self.db_path, str(self.root))
         second = reindex_index(self.db_path, str(self.root))
 
         self.assertEqual(second.changes["a.ts"], FileChange.UNCHANGED)
@@ -129,6 +129,27 @@ class TestIncrementalIndexer(unittest.TestCase):
         self.assertEqual(
             _statuses_for(second, "b.ts")["createAuth"],
             ResolutionStatus.UNRESOLVED,
+        )
+
+    def test_new_file_invalidates_importers_of_previously_missing_module(self):
+        _write(self.root, {"b.ts": AUTH["b.ts"]})
+        reindex_index(self.db_path, str(self.root))
+        first = load_index(self.db_path)
+
+        self.assertEqual(
+            _statuses_for(first, "b.ts")["createAuth"],
+            ResolutionStatus.UNRESOLVED,
+        )
+
+        _write(self.root, {"a.ts": AUTH["a.ts"]})
+        report = reindex_index(self.db_path, str(self.root))
+        second = load_index(self.db_path)
+
+        self.assertEqual(report.changes["a.ts"], FileChange.NEW)
+        self.assertEqual(report.changes["b.ts"], FileChange.UNCHANGED)
+        self.assertEqual(
+            _statuses_for(second, "b.ts")["createAuth"],
+            ResolutionStatus.RESOLVED,
         )
 
     def test_deleted_file_removes_symbols_and_invalidates_importers(self):
