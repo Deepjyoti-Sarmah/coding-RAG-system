@@ -633,25 +633,27 @@ cross-file analysis
 
 The graph stores semantic relationships between entities.
 
-Conceptually:
+Currently emitted:
 
 ```text
 Symbol
-   │
-   ├── CALLS ───────────→ Symbol
-   ├── IMPORTS ─────────→ Document / Symbol
-   ├── EXTENDS ─────────→ Symbol
-   ├── IMPLEMENTS ──────→ Symbol
-   └── USES ────────────→ Symbol
+   └── CALLS ───────────→ Symbol
 ```
 
-The graph should support:
+`CALLS` is the only relationship kind the graph produces today.
+`IMPORTS`, `EXTENDS`, `IMPLEMENTS` and `USES` are part of the intended
+model but are not built yet, so they are not present in
+`RelationshipKind`; see **Not Yet Modelled** under *Current Status*.
+
+Import edges are not stored in the graph. They live in the semantic
+model as `ImportReference` / `ResolvedImportReference` and are queried
+through the index rather than through `CodeGraph`.
+
+`CodeGraph` exposes:
 
 ```text
 callers_of(symbol)
 callees_of(symbol)
-imports_of(document)
-imported_by(document)
 children_of(symbol)
 parents_of(symbol)
 ```
@@ -1151,55 +1153,54 @@ Do not claim a specific token reduction until it is measured.
 - Confidence-based rename / move matching across index runs
 - SQLite persistence (schema, repositories, atomic snapshot persist / load round-trip)
 - Incremental indexing (file-state inventory, hash-based change detection, selective re-resolution with interface-aware dependency invalidation)
+- Export extraction and export resolution
+- Cross-file name resolution (references resolve through imports)
+- Member-expression resolution (access paths, namespace / `this` / class member calls)
+- Merkle / hierarchical hashing
+- Semantic chunking (content-addressed, keyed on each symbol's stable key)
+- Local embedding provider and embedding store
+- SQLite FTS5 lexical retrieval
+- Local vector retrieval
+- Hybrid retrieval (exact + graph + lexical + vector, fused by reciprocal rank)
+- Graph-aware retrieval (budgeted seed neighbourhoods)
+- Heuristic reranking
+- Context builder (hard token budget)
+- Asynchronous / incremental embedding worker
+- Ignore rules (`.gitignore` / `.ckgignore`)
+- Index generations
+- Local CLI — `index`, `status`, `search`, `definition`, `callers`,
+  `callees`, `imports`, `context`, `eval`. Invoked as `python cli.py
+  <command>`; no `ckg` console script is installed yet.
+- MCP / agent integration (`mcp_server.py`)
+- Evaluation suite
+
+`IMPLEMENTATION.md` is the authoritative status document; its per-phase
+`### Implemented` notes record exactly what each phase delivered.
+
+## Not Yet Modelled
+
+These are deliberate gaps, not oversights. They are listed here so the
+semantic model is not mistaken for something broader than it is.
+
+- **Type-level constructs.** `interface` and `type` declarations produce
+  no symbol and no export. The Tree-sitter handlers for
+  `interface_declaration` and `type_alias_declaration` are stubbed out in
+  `analysis/registry.py`. An `import { SomeInterface } from "./types"`
+  therefore resolves to the target *document* but leaves
+  `target_symbol` unset.
+- **Class hierarchy.** `extends` and `implements` produce no
+  relationships. `CALLS` is the only relationship kind the graph emits.
+- **Type analysis.** No inference; member resolution is structural.
 
 ## In Progress
 
-- Resolve imported names to exported symbols
-- Parse each document once using `ParsedDocument`
-- Wire import passes into the main pipeline
+(none)
 
 ## Planned
 
-- Export extraction
-- Export resolution
-- Cross-file symbol resolution
-- Better lexical scope resolution
-- Member-expression resolution
-- Type analysis
-- SQLite persistence
-- Incremental indexing
-- Merkle/hierarchical hashing
-- Semantic chunk generation
-- Local embeddings
-- FTS5
-- Vector index
-- Hybrid retrieval
-- Reranking
-- Context builder
-- Agent integration
-- Evaluation suite
-
----
-
-# Immediate Next Tasks
-
-Implement in this order:
-
-1. Finish `ParsedDocument`
-2. Parse every file once
-3. Add `import_pass`
-4. Run import resolver in the pipeline
-5. Resolve imports to actual exported symbols
-6. Add export extraction
-7. Improve cross-file semantic resolution
-8. Add SQLite persistence
-9. Add incremental indexing
-10. Rebuild semantic chunking on top of the graph
-11. Add local vector indexing
-12. Add hybrid retrieval
-13. Add reranking
-14. Add context building
-15. Integrate with coding agents
+- Type-level symbols (`interface`, `type`) and the resulting import edges
+- `EXTENDS` / `IMPLEMENTS` relationships
+- Incremental persistence (each run currently rewrites the whole snapshot)
 
 ---
 

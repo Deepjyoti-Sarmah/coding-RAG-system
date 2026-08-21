@@ -2556,6 +2556,40 @@ Next:
 
 If a task changes architecture, record why.
 
+## 2026-08-21 — Docs/model accuracy: drop never-emitted enum values, refresh README status
+
+Status: COMPLETE
+
+Files changed:
+
+- models/relationships/relationship_kind.py (`IMPORTS`, `EXTENDS`, `IMPLEMENTS`, `USES` removed)
+- models/entities/symbol_kind.py (`INTERFACE`, `TYPE_ALIAS` removed)
+- models/entities/reference_kind.py (`IMPORT`, `TYPE` removed)
+- README.md (`Current Status`, `Knowledge Graph`)
+
+Problem:
+
+- Eight enum values were declared but never assigned anywhere in the codebase, in any commit in history. Indexing a fixture exercising every construct confirms the emitted vocabulary is exactly `SymbolKind` {FUNCTION, CLASS, METHOD, VARIABLE}, `RelationshipKind` {CALLS}, `ReferenceKind` {CALL, IDENTIFIER, MEMBER_ACCESS}. The unused values advertised a semantic model broader than the one the pipeline builds, which is the same failure mode `# 3. Current Project Rules` warns about for language support.
+- README `Current Status` was roughly fourteen phases stale: it listed sixteen delivered features under `Planned`, and named SQLite persistence and incremental indexing under `Completed` *and* `Planned` simultaneously. `Immediate Next Tasks` prescribed fifteen already-completed steps.
+- README `Knowledge Graph` presented five relationship kinds as the graph model and listed `imports_of(document)` / `imported_by(document)` as supported operations; `CodeGraph` implements only `callers_of`, `callees_of`, `children_of`, `parents_of`.
+
+Implementation:
+
+- Removed the eight unused enum values per `# 1.5` (no abstraction without a concrete use). Verified safe: `git grep` across all refs shows they were never emitted, so no persisted database can contain them and the `Kind(row["kind"])` round-trip in the repositories cannot encounter them. The storage schema stores `kind` as plain `TEXT` with no `CHECK` constraint, so no migration is required.
+- Rewrote README `Current Status` to match this file's `## Completed` checklist, and pointed readers here as the authoritative status document.
+- Added a README `Not Yet Modelled` section recording the three real gaps: type-level constructs (`interface` / `type` produce no symbol and no export, so their imports resolve to a document with `target_symbol` unset), class hierarchy (`extends` / `implements` emit no relationships), and type analysis.
+- Corrected the `Knowledge Graph` section to state that `CALLS` is the only emitted kind, that import edges live in the semantic model rather than the graph, and to list only the four operations `CodeGraph` actually exposes.
+
+Tests:
+
+- No behaviour change; 337 tests pass unchanged, ruff clean.
+
+Decision / deviation:
+
+- Deleted the unused values rather than annotating them as reserved. They are recorded as intended work in README `Planned`, which keeps the intent visible without an enum member that no code can produce.
+- Interface / type-alias extraction was documented as a gap rather than implemented. Adding it requires AST inspection first per `# 1.3`, plus symbol/export/fingerprint handling, and does not belong in a documentation-accuracy change.
+- README now states the CLI is invoked as `python cli.py <command>`; `ckg` is used as shorthand elsewhere in this file but no console script is installed.
+
 ## 2026-08-21 — Phase 8 Task 8.3 Fix: new files must invalidate importers
 
 Status: COMPLETE
