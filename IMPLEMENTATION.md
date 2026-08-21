@@ -2556,6 +2556,35 @@ Next:
 
 If a task changes architecture, record why.
 
+## 2026-08-21 — Refactor: extract the incremental rebuild plan
+
+Status: COMPLETE
+
+Files changed:
+
+- indexing/rebuild_plan.py (new — `FilePartition`, `RebuildPlan`, `PreviousSnapshot`, `partition_files`, `build_previous_snapshot`, `plan_rebuild`, `group_by_path`)
+- indexing/indexer.py (`_incremental_rebuild` 185 -> 105 lines; new `_importers_for`, `_merge_reused_state`; five helpers moved out)
+- tests/test_rebuild_plan.py (new)
+
+Problem:
+
+- `_incremental_rebuild` was a 185-line function doing seven jobs: loading the previous snapshot, grouping seven collections by path, running passes, reconciling identity, computing invalidation, merging reuse, and persisting. `# 1.2` forbids exactly this. The Task 8.3 invalidation bug was a missing term in one set union buried at line 187, and could only be caught by indexing a real repository.
+
+Implementation:
+
+- `FilePartition` buckets every path by change kind; `PreviousSnapshot` replaces seven `prev_*_by_path` locals; `plan_rebuild` returns the `reresolve` / `untouched` decision along with the `invalidation_sources` it derived them from. The invalidation rule is now one readable expression with a comment explaining why new paths bypass the fingerprint comparison.
+- `group_by_path` absorbed `_group_resolved_references` and `_group_resolved_imports` via a `document_id` accessor, replacing three near-identical functions with one.
+- `_merge_reused_state` isolates the reuse folding and returns the carried-in reference count the run report needs.
+
+Tests:
+
+- `test_rebuild_plan.py` (8): partition bucketing; new / deleted / changed-interface / changed-signature files invalidate importers; identical interface does not; `untouched` excludes rebuilt and re-resolved paths.
+- Regression net verified: removing `partition.new` from the invalidation sources fails 4 tests across all three layers (unit, parity, integration).
+
+Result:
+
+- 348 tests pass (was 340). `indexing/indexer.py` 522 -> 404 lines.
+
 ## 2026-08-21 — Refactor: define the pass sequence once
 
 Status: COMPLETE

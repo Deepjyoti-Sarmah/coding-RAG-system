@@ -1,4 +1,3 @@
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -13,11 +12,18 @@ from indexing.diff import (
     FileChange,
     ScanResult,
     importers_of,
-    interface_fingerprint,
     scan_files,
 )
 from indexing.embedding_queue import enqueue_embedding_jobs
 from indexing.export_index import ExportIndex
+from indexing.rebuild_plan import (
+    FilePartition,
+    PreviousSnapshot,
+    RebuildPlan,
+    build_previous_snapshot,
+    partition_files,
+    plan_rebuild,
+)
 from indexing.symbol_index import SymbolIndex
 from ingestion.loader import build_document
 from models.build_result import BuildResult
@@ -74,41 +80,17 @@ def _incremental_rebuild(
     scan: ScanResult,
 ) -> IndexRunReport:
     changes = scan.changes
-    current_paths = set(scan.current)
+    partition = partition_files(scan)
 
-    rebuild_paths = {
-        path
-        for path, change in changes.items()
-        if change in (FileChange.NEW, FileChange.CHANGED)
-    }
-    deleted_paths = {
-        path for path, change in changes.items() if change == FileChange.DELETED
-    }
-
-    if not rebuild_paths and not deleted_paths:
+    if not partition.has_work:
         return IndexRunReport(changes=changes)
 
-    previous = load_index(db_path)
-
-    prev_docs_by_path = {d.relative_path: d for d in previous.documents}
-    prev_docs_by_id = {d.document_id: d for d in previous.documents}
-    prev_symbols_by_path = _group_by_path(previous.symbols, prev_docs_by_id)
-    prev_imports_by_path = _group_by_path(
-        previous.import_references, prev_docs_by_id
-    )
-    prev_exports_by_path = _group_by_path(previous.exports, prev_docs_by_id)
-    prev_references_by_path = _group_by_path(previous.references, prev_docs_by_id)
-    prev_resolved_refs_by_path = _group_resolved_references(
-        previous.resolved_references, prev_docs_by_id
-    )
-    prev_resolved_imports_by_path = _group_resolved_imports(
-        previous.resolved_import_references, prev_docs_by_id
-    )
+    snapshot = build_previous_snapshot(load_index(db_path))
 
     documents_by_path = _build_documents(
         scan=scan,
         changes=changes,
-        previous_docs_by_path=prev_docs_by_path,
+        previous_docs_by_path=snapshot.docs_by_path,
     )
     documents_by_id = {d.document_id: d for d in documents_by_path.values()}
 
@@ -116,97 +98,50 @@ def _incremental_rebuild(
     result = BuildResult()
     context.document_index.add_many(list(documents_by_path.values()))
 
-    rebuild_documents = [
-        documents_by_path[path]
-        for path in rebuild_paths
-        if path in documents_by_path
-    ]
-
     run_extraction_passes(
         context=context,
         result=result,
-        documents=rebuild_documents,
+        documents=[
+            documents_by_path[path]
+            for path in partition.rebuild
+            if path in documents_by_path
+        ],
     )
 
     fresh_reference_count = len(result.references)
 
-    id_map = _reconcile_identity(
-        previous_symbols=_previous_symbols_for_changed(
-            previous=previous,
-            changes=changes,
-            prev_docs_by_path=prev_docs_by_path,
+    _remap_reference_owners(
+        result.references,
+        _reconcile_identity(
+            previous_symbols=_previous_symbols_for_changed(
+                previous=snapshot.result,
+                changes=changes,
+                prev_docs_by_path=snapshot.docs_by_path,
+            ),
+            new_symbols=result.symbols,
         ),
-        new_symbols=result.symbols,
     )
-    _remap_reference_owners(result.references, id_map)
 
-    changed_paths = {
-        path for path, change in changes.items() if change == FileChange.CHANGED
-    }
-
-    interface_changed_paths = _interface_changed_paths(
-        changed_paths=changed_paths,
-        prev_docs_by_path=prev_docs_by_path,
-        prev_exports_by_path=prev_exports_by_path,
-        prev_symbols_by_path=prev_symbols_by_path,
+    plan = plan_rebuild(
+        partition=partition,
+        snapshot=snapshot,
+        importers=_importers_for(
+            partition=partition,
+            snapshot=snapshot,
+            fresh_imports=result.import_references,
+            documents_by_id=documents_by_id,
+        ),
+        documents_by_id=documents_by_id,
         fresh_exports=result.exports,
         fresh_symbols=result.symbols,
     )
 
-    combined_imports = list(result.import_references)
-
-    for path in current_paths - rebuild_paths:
-        combined_imports.extend(prev_imports_by_path.get(path, []))
-
-    importers = importers_of(
-        import_references=combined_imports,
-        documents_by_id=documents_by_id,
+    reused_reference_count = _merge_reused_state(
+        result=result,
+        plan=plan,
+        snapshot=snapshot,
+        documents_by_path=documents_by_path,
     )
-
-    new_paths = {
-        path for path, change in changes.items() if change == FileChange.NEW
-    }
-
-    reresolve_paths = _reresolve_paths(
-        invalidation_sources=interface_changed_paths | deleted_paths | new_paths,
-        importers=importers,
-        documents_by_id=documents_by_id,
-    )
-
-    untouched_paths = current_paths - rebuild_paths - reresolve_paths
-
-    reused_symbols: list = []
-    reused_exports: list = []
-
-    for path in untouched_paths | reresolve_paths:
-        reused_symbols.extend(prev_symbols_by_path.get(path, []))
-        reused_exports.extend(prev_exports_by_path.get(path, []))
-
-    result.symbols = [*reused_symbols, *result.symbols]
-    result.exports = [*reused_exports, *result.exports]
-    result.documents = [documents_by_path[path] for path in current_paths]
-
-    reused_imports_for_reresolve: list = []
-    reused_references_for_reresolve: list = []
-
-    for path in reresolve_paths:
-        reused_imports_for_reresolve.extend(prev_imports_by_path.get(path, []))
-        reused_references_for_reresolve.extend(prev_references_by_path.get(path, []))
-
-    result.import_references = [
-        *reused_imports_for_reresolve,
-        *result.import_references,
-    ]
-    result.references = [
-        *reused_references_for_reresolve,
-        *result.references,
-    ]
-
-    for path in untouched_paths:
-        result.resolved_import_references.extend(
-            prev_resolved_imports_by_path.get(path, [])
-        )
-        result.resolved_references.extend(prev_resolved_refs_by_path.get(path, []))
 
     context.symbol_index = SymbolIndex()
     context.symbol_index.add_many(result.symbols)
@@ -221,9 +156,9 @@ def _incremental_rebuild(
     # passes have run - re-resolving them would duplicate that work. The
     # relationship and graph passes read `resolved_references`, not these
     # lists, so attaching them afterwards is equivalent.
-    for path in untouched_paths:
-        result.import_references.extend(prev_imports_by_path.get(path, []))
-        result.references.extend(prev_references_by_path.get(path, []))
+    for path in plan.untouched:
+        result.import_references.extend(snapshot.imports_by_path.get(path, []))
+        result.references.extend(snapshot.references_by_path.get(path, []))
 
     result.chunks = build_semantic_chunks(result)
 
@@ -240,10 +175,78 @@ def _incremental_rebuild(
 
     return IndexRunReport(
         changes=changes,
-        parsed_files=len(rebuild_paths),
-        resolved_references=fresh_reference_count
-        + len(reused_references_for_reresolve),
+        parsed_files=len(partition.rebuild),
+        resolved_references=fresh_reference_count + reused_reference_count,
     )
+
+
+def _importers_for(
+    *,
+    partition: FilePartition,
+    snapshot: PreviousSnapshot,
+    fresh_imports: list,
+    documents_by_id: dict[str, Document],
+) -> dict[str, set[str]]:
+    """Who imports what, across freshly parsed and carried-over files."""
+    combined = list(fresh_imports)
+
+    for path in partition.current - partition.rebuild:
+        combined.extend(snapshot.imports_by_path.get(path, []))
+
+    return importers_of(
+        import_references=combined,
+        documents_by_id=documents_by_id,
+    )
+
+
+def _merge_reused_state(
+    *,
+    result: BuildResult,
+    plan: RebuildPlan,
+    snapshot: PreviousSnapshot,
+    documents_by_path: dict[str, Document],
+) -> int:
+    """Fold last run's still-valid artifacts into this run's result.
+
+    Symbols and exports come back for every file that was not reparsed.
+    Files being re-resolved also need their raw imports and references
+    back, so the resolver passes can run over them again; files left
+    untouched instead keep their previous *resolutions*. Returns how many
+    references were carried in for re-resolution, which the run report
+    counts as work done.
+    """
+    reused_symbols: list = []
+    reused_exports: list = []
+
+    for path in plan.untouched | plan.reresolve:
+        reused_symbols.extend(snapshot.symbols_by_path.get(path, []))
+        reused_exports.extend(snapshot.exports_by_path.get(path, []))
+
+    result.symbols = [*reused_symbols, *result.symbols]
+    result.exports = [*reused_exports, *result.exports]
+    result.documents = [
+        documents_by_path[path] for path in plan.partition.current
+    ]
+
+    reused_imports: list = []
+    reused_references: list = []
+
+    for path in plan.reresolve:
+        reused_imports.extend(snapshot.imports_by_path.get(path, []))
+        reused_references.extend(snapshot.references_by_path.get(path, []))
+
+    result.import_references = [*reused_imports, *result.import_references]
+    result.references = [*reused_references, *result.references]
+
+    for path in plan.untouched:
+        result.resolved_import_references.extend(
+            snapshot.resolved_imports_by_path.get(path, [])
+        )
+        result.resolved_references.extend(
+            snapshot.resolved_references_by_path.get(path, [])
+        )
+
+    return len(reused_references)
 
 
 def _load_previous_states(db_path: str) -> dict[str, FileState]:
@@ -335,61 +338,6 @@ def _remap_reference_owners(references: list, id_map: dict[str, str]) -> None:
         )
 
 
-def _interface_changed_paths(
-    *,
-    changed_paths: set[str],
-    prev_docs_by_path: dict[str, Document],
-    prev_exports_by_path: dict[str, list],
-    prev_symbols_by_path: dict[str, list],
-    fresh_exports: list,
-    fresh_symbols: list,
-) -> set[str]:
-    changed: set[str] = set()
-
-    for path in changed_paths:
-        doc_id = prev_docs_by_path[path].document_id
-
-        current_fingerprint = interface_fingerprint(
-            exports=[
-                export
-                for export in fresh_exports
-                if export.document_id == doc_id
-            ],
-            symbols=[
-                symbol
-                for symbol in fresh_symbols
-                if symbol.document_id == doc_id
-            ],
-        )
-        previous_fingerprint = interface_fingerprint(
-            exports=prev_exports_by_path.get(path, []),
-            symbols=prev_symbols_by_path.get(path, []),
-        )
-
-        if previous_fingerprint != current_fingerprint:
-            changed.add(path)
-
-    return changed
-
-
-def _reresolve_paths(
-    *,
-    invalidation_sources: set[str],
-    importers: dict[str, set[str]],
-    documents_by_id: dict[str, Document],
-) -> set[str]:
-    paths: set[str] = set()
-
-    for source_path in invalidation_sources:
-        for importer_id in importers.get(source_path, set()):
-            importer_document = documents_by_id.get(importer_id)
-
-            if importer_document is not None:
-                paths.add(importer_document.relative_path)
-
-    return paths
-
-
 def _build_file_states(
     *,
     scan: ScanResult,
@@ -451,57 +399,6 @@ def _content_hash(
 
 def _content_hash_for(content: str) -> str:
     return compute_content_hash(content)
-
-
-def _group_by_path(
-    entities: list,
-    docs_by_id: dict[str, Document],
-) -> dict[str, list]:
-    grouped: dict[str, list] = defaultdict(list)
-
-    for entity in entities:
-        document = docs_by_id.get(entity.document_id)
-
-        if document is None:
-            continue
-
-        grouped[document.relative_path].append(entity)
-
-    return dict(grouped)
-
-
-def _group_resolved_references(
-    resolved_references: list,
-    docs_by_id: dict[str, Document],
-) -> dict[str, list]:
-    grouped: dict[str, list] = defaultdict(list)
-
-    for resolved in resolved_references:
-        document = docs_by_id.get(resolved.reference.document_id)
-
-        if document is None:
-            continue
-
-        grouped[document.relative_path].append(resolved)
-
-    return dict(grouped)
-
-
-def _group_resolved_imports(
-    resolved_imports: list,
-    docs_by_id: dict[str, Document],
-) -> dict[str, list]:
-    grouped: dict[str, list] = defaultdict(list)
-
-    for resolved in resolved_imports:
-        document = docs_by_id.get(resolved.import_reference.document_id)
-
-        if document is None:
-            continue
-
-        grouped[document.relative_path].append(resolved)
-
-    return dict(grouped)
 
 
 def _now() -> str:
