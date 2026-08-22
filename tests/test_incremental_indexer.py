@@ -6,6 +6,7 @@ from pathlib import Path
 
 from indexing.indexer import FileChange, reindex_index
 from models.entities.resolved_reference import ResolutionStatus
+from models.relationships.relationship_kind import RelationshipKind
 from storage.index_store import load_index
 
 
@@ -201,6 +202,46 @@ class TestIncrementalIndexer(unittest.TestCase):
         self.assertEqual(report.changes["a.ts"], FileChange.UNCHANGED)
         self.assertEqual(report.parsed_files, 0)
         self.assertEqual(report.resolved_references, 0)
+
+    def test_extends_edge_survives_base_class_body_edit(self):
+        _write(
+            self.root,
+            {
+                "base.ts": "export class Base { method() { return 1; } }\n",
+                "child.ts": 'import { Base } from "./base";\n'
+                "class Child extends Base {}\n",
+            },
+        )
+        reindex_index(self.db_path, str(self.root))
+        first = load_index(self.db_path)
+        first_edges = [
+            r
+            for r in first.relationships
+            if r.kind == RelationshipKind.EXTENDS
+        ]
+        self.assertEqual(len(first_edges), 1)
+
+        _write(
+            self.root,
+            {"base.ts": "export class Base { method() { return 2; } }\n"},
+        )
+        report = reindex_index(self.db_path, str(self.root))
+
+        second = load_index(self.db_path)
+        second_edges = [
+            (s.name, t.name)
+            for s, t in (
+                (
+                    next(x for x in second.symbols if x.symbol_id == r.source_symbol_id),
+                    next(x for x in second.symbols if x.symbol_id == r.target_symbol_id),
+                )
+                for r in second.relationships
+                if r.kind == RelationshipKind.EXTENDS
+            )
+        ]
+
+        self.assertEqual(report.changes["child.ts"], FileChange.UNCHANGED)
+        self.assertEqual(second_edges, [("Child", "Base")])
 
 
 if __name__ == "__main__":
