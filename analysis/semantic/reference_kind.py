@@ -19,7 +19,16 @@ def determine_reference_kind(node: Node) -> ReferenceKind:
     if is_call_target(node):
         return ReferenceKind.CALL
 
+    if in_extends_clause(node):
+        return ReferenceKind.EXTENDS
+
     return ReferenceKind.IDENTIFIER
+
+
+def in_extends_clause(node: Node) -> bool:
+    parent = node.parent
+
+    return parent is not None and parent.type == "extends_clause"
 
 
 def is_call_target(node: Node) -> bool:

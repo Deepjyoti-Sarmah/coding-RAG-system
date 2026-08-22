@@ -3,6 +3,11 @@ from models.entities.resolved_reference import ResolutionStatus, ResolvedReferen
 from models.relationships.relationship_kind import RelationshipKind
 from models.relationships.relationships import Relationship
 
+_RELATIONSHIP_BY_REFERENCE = {
+    ReferenceKind.CALL: RelationshipKind.CALLS,
+    ReferenceKind.EXTENDS: RelationshipKind.EXTENDS,
+}
+
 
 def build_relationships(
     *,
@@ -12,7 +17,7 @@ def build_relationships(
     relationships: list[Relationship] = []
 
     for resolved in resolved_references:
-        relationship = build_call_relationship(
+        relationship = build_relationship(
             resolved_reference=resolved,
         )
 
@@ -24,14 +29,16 @@ def build_relationships(
     return relationships
 
 
-def build_call_relationship(
+def build_relationship(
     *,
     resolved_reference: ResolvedReference,
 ) -> Relationship | None:
 
     reference = resolved_reference.reference
 
-    if reference.kind != ReferenceKind.CALL:
+    kind = _RELATIONSHIP_BY_REFERENCE.get(reference.kind)
+
+    if kind is None:
         return None
 
     if resolved_reference.status != ResolutionStatus.RESOLVED:
@@ -40,5 +47,5 @@ def build_call_relationship(
     return Relationship(
         source_symbol_id=reference.owner_symbol_id,
         target_symbol_id=resolved_reference.target_symbol.symbol_id,
-        kind=RelationshipKind.CALLS,
+        kind=kind,
     )
