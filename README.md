@@ -456,6 +456,7 @@ Current:
 
 ```text
 CALLS
+EXTENDS
 ```
 
 Planned:
@@ -465,7 +466,6 @@ IMPORTS
 DECLARES
 EXPORTS
 REFERS_TO
-EXTENDS
 IMPLEMENTS
 USES
 OVERRIDES
@@ -638,12 +638,16 @@ Currently emitted:
 ```text
 Symbol
    └── CALLS ───────────→ Symbol
+Symbol
+   └── EXTENDS ──────────→ Symbol (base class)
 ```
 
-`CALLS` is the only relationship kind the graph produces today.
-`IMPORTS`, `EXTENDS`, `IMPLEMENTS` and `USES` are part of the intended
+`CALLS` and `EXTENDS` are the relationship kinds the graph produces today.
+`EXTENDS` is built from resolved heritage references (`class Child extends Base`),
+owned by the subclass; unresolved or ambiguous base names produce no edge.
+`IMPORTS`, `IMPLEMENTS` and `USES` are part of the intended
 model but are not built yet, so they are not present in
-`RelationshipKind`; see **Not Yet Modelled** under *Current Status*.
+`RelationshipKind`; see **Not Yet Modelled** under _Current Status_.
 
 Import edges are not stored in the graph. They live in the semantic
 model as `ImportReference` / `ResolvedImportReference` and are queried
@@ -1143,6 +1147,7 @@ Do not claim a specific token reduction until it is measured.
 - Reference classification
 - Basic name resolution
 - Call relationship building
+- Extends relationship building (resolved `class X extends Y` heritage)
 - In-memory code graph
 - Import extraction
 - Module-level import resolution
@@ -1170,7 +1175,7 @@ Do not claim a specific token reduction until it is measured.
 - Index generations
 - Local CLI — `index`, `status`, `search`, `definition`, `callers`,
   `callees`, `imports`, `context`, `eval`. Invoked as `python cli.py
-  <command>`; no `ckg` console script is installed yet.
+<command>`; no `ckg` console script is installed yet.
 - MCP / agent integration (`mcp_server.py`)
 - Evaluation suite
 
@@ -1186,10 +1191,12 @@ semantic model is not mistaken for something broader than it is.
   no symbol and no export. The Tree-sitter handlers for
   `interface_declaration` and `type_alias_declaration` are stubbed out in
   `analysis/registry.py`. An `import { SomeInterface } from "./types"`
-  therefore resolves to the target *document* but leaves
+  therefore resolves to the target _document_ but leaves
   `target_symbol` unset.
-- **Class hierarchy.** `extends` and `implements` produce no
-  relationships. `CALLS` is the only relationship kind the graph emits.
+- **Class hierarchy.** `implements` produces no relationships (interfaces
+  are not symbols yet, so the target cannot resolve). `extends` emits
+  `EXTENDS` edges; `CALLS` and `EXTENDS` are the only relationship kinds
+  the graph emits.
 - **Type analysis.** No inference; member resolution is structural.
 
 ## In Progress
