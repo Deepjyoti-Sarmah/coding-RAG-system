@@ -21,7 +21,23 @@ AUTH = {
     ),
     "api.ts": (
         'import { login } from "./auth";\n'
-        'export function run() { login("admin"); }\n'
+        "export function run() { login(\"admin\"); }\n"
+    ),
+}
+
+IMPORTERS = {
+    "auth.ts": (
+        "export function login(name: string) { return 1; }\n"
+        "function internalDetail() { return 2; }\n"
+    ),
+    "api.ts": (
+        'import { login } from "./auth";\n'
+        "export function run() { login(\"admin\"); }\n"
+        "function apiPrivate() { return 3; }\n"
+    ),
+    "cli.ts": (
+        'import { login as signIn } from "./auth";\n'
+        "export function prompt() { signIn(\"x\"); }\n"
     ),
 }
 
@@ -211,6 +227,108 @@ class TestHybridRetrieverStubs(unittest.TestCase):
         self.assertIn("helper", expanded)
 
 
+class TestImportersStrategyStubs(unittest.TestCase):
+    def _build(self, files):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name, content in files.items():
+                (root / name).write_text(content, encoding="utf-8")
+            from analysis.build_graph import build_graph
+            return build_graph(str(root))
+
+    def _retriever(self, files):
+        result = self._build(files)
+
+        return HybridRetriever(
+            symbol_index=result.symbol_index,
+            graph=result.graph,
+            fts_search=lambda query, limit: [],
+            vector_store=None,
+            embed=None,
+            resolved_imports=result.resolved_import_references,
+            exports=result.exports,
+        )
+
+    def test_module_mode_returns_exported_surface_of_each_importer(self):
+        retriever = self._retriever(IMPORTERS)
+
+        retrieval = retriever.retrieve("What imports auth.ts?")
+
+        self.assertEqual(retrieval.strategy, "graph_importers")
+        self.assertEqual(retrieval.query, "auth.ts")
+        names = [c.symbol_name for c in retrieval.candidates]
+        self.assertIn("run", names)
+        self.assertIn("prompt", names)
+        self.assertNotIn("internalDetail", names)
+        for candidate in retrieval.candidates:
+            self.assertEqual(candidate.sources, ("graph",))
+            self.assertNotEqual(candidate.relative_path, "auth.ts")
+
+    def test_non_exported_module_symbols_rank_after_exported(self):
+        retriever = self._retriever(IMPORTERS)
+
+        retrieval = retriever.retrieve("importers of auth.ts")
+
+        api_names = [
+            c.symbol_name
+            for c in retrieval.candidates
+            if c.relative_path == "api.ts"
+        ]
+        self.assertEqual(api_names.index("run"), 0)
+        self.assertLess(api_names.index("run"), api_names.index("apiPrivate"))
+
+    def test_importer_documents_are_ordered_by_path(self):
+        retriever = self._retriever(IMPORTERS)
+
+        first = retriever.retrieve("What imports auth.ts?")
+        second = retriever.retrieve("what imports auth.ts")
+
+        first_paths = [c.relative_path for c in first.candidates]
+        second_paths = [c.relative_path for c in second.candidates]
+        self.assertEqual(sorted(set(first_paths)), ["api.ts", "cli.ts"])
+        self.assertEqual(first_paths, second_paths)
+
+    def test_unknown_module_returns_no_candidates(self):
+        retriever = self._retriever(IMPORTERS)
+
+        retrieval = retriever.retrieve("What imports missing.ts?")
+
+        self.assertEqual(retrieval.strategy, "graph_importers")
+        self.assertEqual(retrieval.candidates, [])
+
+    def test_symbol_mode_resolves_importers_by_symbol_name(self):
+        retriever = self._retriever(IMPORTERS)
+
+        retrieval = retriever.retrieve("who imports login")
+
+        self.assertEqual(retrieval.strategy, "graph_importers")
+        paths = {c.relative_path for c in retrieval.candidates}
+        self.assertEqual(paths, {"api.ts", "cli.ts"})
+
+    def test_unknown_symbol_name_returns_no_candidates(self):
+        retriever = self._retriever(IMPORTERS)
+
+        retrieval = retriever.retrieve("who imports nonexistent")
+
+        self.assertEqual(retrieval.candidates, [])
+
+    def test_callee_direction_is_not_routed_to_importers(self):
+        result = self._build(AUTH)
+        login_key = "auth.ts|typescript|login|function"
+
+        retriever = HybridRetriever(
+            symbol_index=result.symbol_index,
+            graph=result.graph,
+            fts_search=lambda query, limit: [_fts_hit(login_key)],
+            vector_store=None,
+            embed=None,
+        )
+
+        retrieval = retriever.retrieve("what does auth import")
+
+        self.assertNotEqual(retrieval.strategy, "graph_importers")
+
+
 class TestHybridRetrieverIntegration(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -292,6 +410,18 @@ class TestHybridRetrieverIntegration(unittest.TestCase):
                 if candidate.symbol_name == "helper"
             )
             self.assertIn("graph", helper.sources)
+
+    def test_what_imports_returns_importing_modules(self):
+        retriever = build_hybrid_retriever(self.db_path)
+
+        retrieval = retriever.retrieve("What imports auth.ts?")
+
+        self.assertEqual(retrieval.strategy, "graph_importers")
+        self.assertNotEqual(retrieval.candidates, [])
+        self.assertEqual(
+            {c.relative_path for c in retrieval.candidates}, {"api.ts"}
+        )
+        self.assertEqual(retrieval.candidates[0].symbol_name, "run")
 
     def test_caller_intent_prioritizes_incoming_edges(self):
         retriever = build_hybrid_retriever(self.db_path, provider=self.provider)
