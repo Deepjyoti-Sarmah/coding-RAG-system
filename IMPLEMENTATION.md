@@ -2180,21 +2180,413 @@ embedding cache hit rate:   0.89
 **What these numbers say:**
 
 - **Compiler correctness is perfect and vector-independent**, as it should be: definition/relationship/import-resolution accuracy are `1.00` in both runs, because those are computed against the semantic index directly (Phases 2-6), never through retrieval. Vector search cannot make the compiler more or less correct, and the results confirm it doesn't.
-- **Vector search substantially improves retrieval quality on natural-language queries.** Without it, all three semantic questions score `0.00` recall — the fixture's source text never literally contains words like "authentication" or "database", so FTS has nothing to match and exact-symbol lookup doesn't apply. With real embeddings, the same three questions score `0.67`-`1.00` recall and `1.00` MRR (the truly relevant symbol is always ranked first when found at all). This is the concrete evidence for "hybrid retrieval has measurable quality" in `# 36. Definition of v1` — it is not asserted, it is measured.
-- **"What imports auth.ts?" is a real, quantified gap** — not a bug, a missing capability. `import_resolution_accuracy` is `1.00` (the compiler correctly resolves `api.ts`'s import of `login` to `auth.ts`), but retrieval recall is `0.00` without vectors and, even with real embeddings, MRR is only `0.20` (the correct answer, `api.ts`, is retrieved but ranked _last_ out of 5 — `HybridRetriever` has no dedicated "importers of X" route, so the query falls through to generic hybrid search, which surfaces symbols _defined in_ `auth.ts` rather than symbols that _import_ it). Recorded here instead of tuned away or hidden behind a favorable fixture. Candidate follow-up: a dedicated `graph_importers` strategy backed by `indexing.diff.importers_of`, mirroring how `graph_callers`/`graph_callees` already work.
+- **Vector search substantially improves retrieval quality on natural-language queries.** Without it, all three semantic questions score `0.00` recall — the fixture's source text never literally contains words like "authentication" or "database", so FTS has nothing to match and exact-symbol lookup doesn't apply. With real embeddings, the same three questions score `0.67`-`1.00` recall and `1.00` MRR (the truly relevant symbol is always ranked first when found at all). This is the concrete evidence for "hybrid retrieval has measurable quality" in `# 38. Definition of v1` — it is not asserted, it is measured.
+- **"What imports auth.ts?" is a real, quantified gap** — not a bug, a missing capability. `import_resolution_accuracy` is `1.00` (the compiler correctly resolves `api.ts`'s import of `login` to `auth.ts`), but retrieval recall is `0.00` without vectors and, even with real embeddings, MRR is only `0.20` (the correct answer, `api.ts`, is retrieved but ranked _last_ out of 5 — `HybridRetriever` has no dedicated "importers of X" route, so the query falls through to generic hybrid search, which surfaces symbols _defined in_ `auth.ts` rather than symbols that _import_ it). Recorded here instead of tuned away or hidden behind a favorable fixture. Candidate follow-up: a dedicated `graph_importers` strategy backed by `indexing.diff.importers_of`, mirroring how `graph_callers`/`graph_callees` already work. *(Resolved by Phase 23 — see "Results after Phase 23" below; the follow-up was implemented against `resolved_import_references` rather than `importers_of`.)*
 - **Token reduction is budget-dependent, not a fixed percentage** — 91.8% without vectors (fewer, more targeted candidates make it into the token-budgeted `ContextPack`) vs. 50.5% with them (more candidates surface, so more of the budget gets used, though absolute context size stays well under the 800-token cap either way). Either number would be misleading quoted alone; both are reported so the tradeoff is visible. This is precisely why `# 28. Phase 22` opens with "do not claim '95% token savings' without measurement" — the honest answer is "it depends on the budget and the query," not a single headline number.
 - **Embedding cache hit rate of 0.89** confirms Phase 18/11's core promise on real chunks: editing one symbol's body in a 9-chunk repo caused exactly 1 chunk to be re-embedded — the other 8 were never even re-enqueued, let alone re-sent to the model.
 - Indexing latency (single-digit milliseconds either way) is not yet meaningful at benchmark-fixture scale; it exists in the suite so a real regression (a change that makes indexing quadratic, say) would show up as an order-of-magnitude jump, not to characterize production-scale latency.
 
+### Results after Phase 23 (captured 2026-08-21)
+
+Same fixture, same commands, after the Phase 23 importers strategy landed.
+
+**Without vector search** (`ckg eval`):
+
+```text
+[structural] PASS recall@k=1.00 mrr=1.00 Where is createAuth defined?
+[structural] PASS recall@k=1.00 mrr=1.00 Who calls login?
+[structural] PASS recall@k=1.00 mrr=1.00 What does login call?
+[structural] PASS recall@k=1.00 mrr=1.00 What imports auth.ts?
+[semantic  ] -    recall@k=0.00 mrr=0.00 How does authentication work?
+[semantic  ] -    recall@k=0.00 mrr=0.00 Where is token validation implemented?
+[semantic  ] -    recall@k=0.00 mrr=0.00 How does a request reach the database?
+
+definition accuracy:        1.00
+relationship accuracy:      1.00
+import resolution accuracy: 1.00
+mean recall@k:              0.57
+mean reciprocal rank:       0.57
+context tokens:             20 (baseline 182, 89.0% reduction)
+initial indexing:           4.4 ms
+incremental indexing:       0.6 ms
+embedding cache hit rate:   0.00
+```
+
+**With vector search** (`ckg eval --embed`):
+
+```text
+[structural] PASS recall@k=1.00 mrr=1.00 What imports auth.ts?  (was mrr=0.20)
+[semantic  ] -    recall@k=0.67 mrr=1.00 How does authentication work?
+[semantic  ] -    recall@k=1.00 mrr=1.00 Where is token validation implemented?
+[semantic  ] -    recall@k=1.00 mrr=1.00 How does a request reach the database?
+
+mean recall@k:              0.95   (unchanged)
+mean reciprocal rank:       1.00   (was 0.89)
+context tokens:             77 (baseline 182, 57.7% reduction)
+embedding cache hit rate:   0.89
+```
+
+- **The "What imports auth.ts?" gap is closed**: recall 0.00 → 1.00 and MRR 0.00 → 1.00 without vectors; with vectors, MRR 0.20 → 1.00 — the importing module (`api.ts`) is now the top-ranked hit instead of the last of five. Mean MRR across all seven questions reached 1.00 with vectors. All other metrics moved within noise (compiler accuracies stay 1.00 and vector-independent).
+
 ### Decision notes
 
-- Semantic questions get a Recall@K/MRR score (against hand-authored `relevant` sets) but never a `correct` boolean: grading whether "How does authentication work?" was _answered well_ needs a human or an LLM judge, which is explicitly out of scope (`# 35. What Not To Build Yet` rules out LLM-based reranking/judging as a v1 dependency). The retrieval-quality score is a legitimate proxy; a correctness verdict would not be.
+- Semantic questions get a Recall@K/MRR score (against hand-authored `relevant` sets) but never a `correct` boolean: grading whether "How does authentication work?" was _answered well_ needs a human or an LLM judge, which is explicitly out of scope (`# 37. What Not To Build Yet` rules out LLM-based reranking/judging as a v1 dependency). The retrieval-quality score is a legitimate proxy; a correctness verdict would not be.
 - No pytest-benchmark or statistical latency analysis: the fixture is tiny by design (fast, deterministic, no flakiness budget needed) and a single wall-clock sample per run is enough to catch a regression order of magnitude, which is what this suite is for. Rigorous perf benchmarking, if ever needed, is a different tool built on top of the same `run_evaluation()` measurements.
 - The unit/integration tests in `tests/test_evaluation_runner.py` use `FakeEmbeddingProvider` (hash-based, not semantically meaningful), so they assert weaker things than the real numbers above — e.g. they check the importers-question recall is merely _not asserted to be nonzero_ rather than pinning `0.20` MRR, and don't assert the semantic questions score well, since a fake provider has no real notion of meaning. The **Results** section above, captured with the real model, is the trustworthy read on retrieval quality; the test suite's job is only to keep the measurement machinery itself correct and fast without a network dependency.
 
 ---
 
-# 29. Regression Test Policy
+# 29. Phase 23 — Importers Retrieval Strategy
+
+Status: COMPLETE
+
+Goal:
+
+> "What imports auth.ts?" must retrieve the importing module's symbols as
+> top-ranked results through a dedicated strategy, instead of falling
+> through to generic hybrid search.
+
+This is the measured gap from Phase 22 (`# 28` Results): the question
+scores `recall@k = 0.00` without vectors and `MRR = 0.20` with them,
+because no routing regex matches import intent, so the query lands in
+generic hybrid search which surfaces symbols _defined in_ `auth.ts`
+rather than symbols that _import_ it.
+
+## Task 23.1 — Intent Pattern and Routing
+
+File:
+
+```text
+retrieval/hybrid_retriever.py
+```
+
+Add alongside the three existing patterns (lines 19–23):
+
+```python
+WHAT_IMPORTS_PATTERN = re.compile(
+    r"(?:what|who|which)\s+(?:file|module)?s?\s+imports\s+([A-Za-z_][\w.]*)"
+    r"|importers of\s+([A-Za-z_][\w.]*)",
+    re.IGNORECASE,
+)
+```
+
+Notes:
+
+- The capture group allows dots so `auth.ts` captures as a full module
+  reference, unlike the symbol-name captures of the existing patterns.
+- Routing order in `retrieve()`: after `WHERE_IS_PATTERN`, before the
+  generic `_hybrid_search` fallback. There is no overlap with
+  `WHAT_CALLS_PATTERN` ("what does X call") or `WHO_CALLS_PATTERN`.
+- The captured target is resolved in one of two modes:
+  1. **Module mode** — target contains a dot (e.g. `auth.ts`). Match
+     against `Document.relative_path` by exact match on relative path,
+     falling back to basename equality.
+  2. **Symbol mode** — target is a bare identifier (e.g. `login`).
+     Resolve via `self.symbol_index.lookup_by_name(target)`; process
+     **all** distinct resulting symbols (same loop discipline as
+     `_graph_callers`; ambiguity is not an error here because every
+     same-named symbol legitimately has importers).
+
+### Tests
+
+- Pattern matches: `what imports auth.ts?`, `who imports auth`,
+  `which files imports x` (grammar variants are acceptable collateral),
+  `importers of auth.ts`. Does **not** match `what does auth import`
+  (callee direction) and does not alter existing routings.
+- Module mode and symbol mode each produce candidates; unknown module
+  and unknown symbol both return `candidates=[]` with
+  `strategy="graph_importers"` (no guessing, Gate E).
+
+---
+
+## Task 23.2 — Importer Candidate Selection
+
+File:
+
+```text
+retrieval/hybrid_retriever.py
+```
+
+New private method `_graph_importers(target_text)` returning
+`HybridRetrieval(strategy="graph_importers", query=target_text, ...)`.
+
+Importer discovery uses only `self.resolved_imports` (already injected;
+no new constructor parameter — `ResolvedImportReference.target_document`
+carries the target document):
+
+```text
+module mode:  ri.target_document matched against target per Task 23.1
+symbol mode:  ri.target_symbol.symbol_id ∈ seed symbol ids
+```
+
+Candidate emission per distinct importing document
+(`ri.import_reference.document_id`), deterministic order:
+
+1. Module-scope symbols of the importing document whose names appear in
+   that document's `Export` rows (`self.exports`), sorted by
+   `qualified_name`.
+2. Then remaining module-scope symbols (`parent_symbol_id is None`),
+   sorted by `qualified_name`.
+
+Every candidate is built via the existing `_from_symbol(symbol,
+sources=("graph",))`. Documents with zero module-scope symbols are
+skipped. Duplicates across multiple seeds/imports collapse by
+`stable_key` (first wins).
+
+Rationale for emitting the importer's module surface rather than one
+symbol: chunk identity is per-symbol, but the question targets a
+_file_; the exported module scope is its semantic surface, consistent
+with how Phase 15 treats document-scoped imports/exports.
+
+### Tests
+
+Stub-driven (`tests/test_hybrid_retrieval.py`):
+
+- Module mode: two documents import `auth.ts`; both documents'
+  exported module-scope symbols come back tagged `("graph",)`;
+  `auth.ts`'s own symbols do not appear.
+- Symbol mode: querying a function name returns importers of the
+  defining file; ambiguous name processes all seeds; unknown name → empty.
+- Ordering is deterministic across two calls.
+- A document importing a module it gets nothing resolvable from
+  (`target_symbol=None`, unresolved module) contributes nothing in
+  symbol mode.
+
+Integration (`tests/test_hybrid_retrieval.py`, via
+`reindex_index` → `build_hybrid_retriever`, mirroring the existing
+caller-intent integration test):
+
+- Fixture equivalent to the benchmark repo: `retrieve("What imports
+  auth.ts?")` returns candidates whose `relative_path == "api.ts"` at
+  rank 1, strategy `"graph_importers"`.
+
+### Done when
+
+- All tests pass; existing router/retriever tests unchanged.
+- Re-run `ckg eval` and `ckg eval --embed`; record actual numbers in
+  `# 28` Results next to the old ones. Required direction: importers
+  question improves over recall 0.00 / MRR 0.20. Do not tune weights to
+  chase a number; the dedicated route either works or it doesn't.
+
+## Implemented
+
+- `retrieval/hybrid_retriever.py` — `WHAT_IMPORTS_PATTERN`
+  (`(?:what|who|which)\s+(?:files?|modules?)?\s*imports\s+([A-Za-z_][\w.]*)` |
+  `importers of\s+([A-Za-z_][\w.]*)`, case-insensitive) routed in
+  `retrieve()` after `WHERE_IS_PATTERN`, before the hybrid fallback; the
+  capture allows dots so `auth.ts` captures whole, and
+  `what does auth import` still routes to generic hybrid.
+- `_graph_importers(target)` resolves importers via
+  `_resolved_importers`: module mode (dot in target → distinct
+  `ResolvedImportReference.target_document`s matching exact
+  `relative_path` or basename) or symbol mode (all distinct symbols from
+  `lookup_by_name`, matched by `target_symbol.symbol_id`). No new
+  constructor parameters — uses the Phase 15 injected
+  `resolved_imports`/`exports`.
+- Candidate emission: per importing document, exported module-scope
+  symbols first, then remaining module-scope symbols (each group sorted
+  by `qualified_name`), documents ordered by path; all tagged
+  `("graph",)` via `_from_symbol`; deduplicated by `stable_key`;
+  documents without module-scope symbols skipped. Unknown targets →
+  empty candidates (Gate E).
+
+### Tests
+
+- `tests/test_hybrid_retrieval.py::TestImportersStrategyStubs` (7):
+  module-mode surface per importer excluding the imported file's own
+  symbols; exported-before-private ordering within a document;
+  deterministic document ordering across calls and phrasings; unknown
+  module → empty; symbol mode resolves both importers; unknown symbol →
+  empty; callee-direction query not routed here.
+- Integration (+1): via `reindex_index` → `build_hybrid_retriever`,
+  `"What imports auth.ts?"` returns only `api.ts` candidates with
+  `run` ranked first.
+
+### Result
+
+All 367 tests pass (was 359). Eval re-measured (`# 28`, post-Phase-23
+addendum): the importers question went from recall 0.00 / MRR 0.00 to
+**1.00 / 1.00** without vectors, and MRR 0.20 → **1.00** with vectors.
+
+---
+
+# 30. Phase 24 — Type-Level Symbols + IMPLEMENTS
+
+Status: PLANNED
+
+Goal:
+
+> `interface` and `type alias` declarations become first-class symbols
+> and exports; imported type names resolve to symbols; `class X
+> implements Y` emits IMPLEMENTS edges.
+
+This removes the "Type-level constructs" bullet from README **Not Yet
+Modelled** and unblocks the IMPLEMENTS relationship deferred during the
+EXTENDS work (its targets could not resolve without type symbols).
+
+Constraints inherited from earlier phases:
+
+- Gate E: unresolved/ambiguous type references never produce edges.
+- Rule 1.5: no chunk/embedding-text change in this phase (extends/
+  implements facts stay out of chunks until retrieval evidence justifies
+  a full re-embed).
+- No schema migration: kinds persist as enum `.value` TEXT.
+
+---
+
+## Task 24.1 — AST Inspection
+
+Fixtures (print ASTs before writing any handler, rule 1.3):
+
+```ts
+interface Shape { area(): number }
+interface Named extends Shape { name: string }
+export interface Point { x: number; y: number }
+type Id = string
+type Callback<T> = (value: T) => void
+export type Status = "active" | "inactive"
+class Impl implements Shape {}
+```
+
+Record: node types (`interface_declaration`, `type_alias_declaration`
+expected), name node types, heritage clause shape under interfaces,
+member structure of interface bodies, and how `export interface` /
+`export type` wrap these nodes. Do not proceed until recorded.
+
+---
+
+## Task 24.2 — Symbol Kinds and Extraction
+
+Files:
+
+```text
+models/entities/symbol_kind.py          (+ INTERFACE, + TYPE_ALIAS)
+analysis/symbol_handlers/interface.py   (new, mirrors classes.py)
+analysis/symbol_handlers/type_alias.py  (new)
+analysis/registry.py                    (replace the two stub comments)
+```
+
+- `qualified_name`, `stable_key`, `content_hash` flow through the
+  existing `build_symbol` chain unchanged.
+- Interface members become child symbols only if they extract cleanly
+  as METHOD/VARIABLE via existing handlers; if member extraction needs
+  new node handling, keep members inside the interface signature
+  instead and note it — do not half-extract.
+
+---
+
+## Task 24.3 — Signatures
+
+File:
+
+```text
+analysis/signature.py
+```
+
+- INTERFACE: name-independent, body-free shape including public member
+  surface, e.g. `interface[:{extends text}]{sorted "memberName:shape"}`
+  — member names are part of the public interface (unlike parameter
+  names), so they must invalidate importers when changed.
+- TYPE_ALIAS: `type:<RHS source text>` (full right-hand side).
+- Adjust shapes to what Task 24.1 actually shows (Gate A); update the
+  Task 6.2 signature documentation when done.
+
+---
+
+## Task 24.4 — Exports
+
+File:
+
+```text
+analysis/export_handlers/declaration.py
+```
+
+Handle `export interface` / `export type Alias =` per the Task 24.1
+AST findings, producing `Export` rows identical in shape to function
+exports. After this task, `import { Shape } from "./shapes"` resolves
+to a symbol through the existing export table + module-scope lookup
+with **zero resolver changes expected** — verify, don't assume; if a
+kind filter blocks it, fix the filter, not the resolver.
+
+---
+
+## Task 24.5 — IMPLEMENTS Relationship
+
+Files:
+
+```text
+models/entities/reference_kind.py            (+ IMPLEMENTS)
+models/relationships/relationship_kind.py    (+ IMPLEMENTS = "implements")
+analysis/reference_extractor.py              (+ implements_clause handling)
+analysis/relationship_builder.py             (mapping += IMPLEMENTS)
+```
+
+Extractor rule: a `type_identifier` whose parent is an
+`implements_clause` is extracted with `ReferenceKind.IMPLEMENTS`.
+Type identifiers anywhere else stay unextracted (this is what kept
+`implements` unextracted during the EXTENDS work). Multiple
+implements targets yield one reference per target.
+
+Resolution reuses the standard climb (scope → module → imports);
+the builder emits `(subclass → resolved target, IMPLEMENTS)` exactly
+like EXTENDS. Unresolved/ambiguous targets emit nothing (Gate E).
+
+---
+
+## Task 24.6 — Incremental Invalidation
+
+Test in the `tests/test_incremental_indexer.py` style:
+
+- Editing an implemented interface's member set changes its
+  `interface_fingerprint` entry (via `signature_hash`) → implementers
+  re-resolve and their IMPLEMENTS edges follow the edit.
+- Editing an interface's non-exported trivia (comment/formatting) does
+  not invalidate implementers.
+
+---
+
+## Task 24.7 — Test Inventory
+
+`tests/test_interface_symbols.py` (new):
+
+- interface + type alias extracted with correct kind/qualified name
+- nested interface ownership; generic alias (`Callback<T>`)
+- `export interface` / `export type` produce Export rows
+- cross-file `import { Shape }` resolves to the interface symbol
+- missing type export stays UNRESOLVED, no edge
+- signature determinism across two builds; member rename changes
+  `signature_hash`, formatting-only edit does not
+
+`tests/test_implements_relationship.py` (new):
+
+- resolved implements → edge, source = subclass
+- `implements A, B` → two edges
+- extends + implements combined fixture → both edge kinds
+- unresolved/ambiguous target → status recorded, no edge
+
+Existing suites (`test_extends_relationship.py`,
+`test_incremental_indexer.py`, `test_pipeline_parity.py`) must pass
+unchanged except where this phase intentionally adds coverage.
+
+---
+
+## Task 24.8 — Documentation
+
+- README: remove the type-level bullet from **Not Yet Modelled**
+  (keep the type-analysis bullet); Relationship Pass current list adds
+  IMPLEMENTS; Completed list gains type-level symbols.
+- This file: convert Tasks 24.1–24.7 to `### Implemented` notes per
+  rule 1.8, plus an Update Log entry.
+
+### Done when
+
+Full suite passes; README type gap removed; `ckg eval` output recorded
+unchanged or improved (chunk texts untouched, so embeddings are not
+invalidated).
+
+---
+
+# 31. Regression Test Policy
 
 Every bug found in production or during development becomes a fixture.
 
@@ -2216,7 +2608,7 @@ The fixture becomes permanent.
 
 ---
 
-# 30. Decision Gates
+# 32. Decision Gates
 
 An implementation agent must stop and reassess if any of these happen.
 
@@ -2298,7 +2690,7 @@ False edges are worse than missing edges for code intelligence.
 
 ---
 
-# 31. Coding Style
+# 33. Coding Style
 
 Match the existing style.
 
@@ -2332,7 +2724,7 @@ Avoid:
 
 ---
 
-# 32. Module Responsibilities
+# 34. Module Responsibilities
 
 ```text
 ingestion/
@@ -2373,7 +2765,7 @@ Do not move a module across layers merely to make an import path look shorter.
 
 ---
 
-# 33. Current Tasks
+# 35. Current Tasks
 
 Update this section as work progresses.
 
@@ -2393,6 +2785,7 @@ Update this section as work progresses.
 - [x] Local variable extraction / shadowing
 - [x] Resolution status (resolved / unresolved / ambiguous)
 - [x] CALL relationship builder
+- [x] EXTENDS relationship builder (resolved `class X extends Y` heritage; implements deferred until type-level symbols exist)
 - [x] In-memory CodeGraph
 - [x] Import pass (produces `import_references` in the pipeline)
 - [x] Import module resolver (relative paths, ../, extensions, index.ts)
@@ -2428,11 +2821,25 @@ Update this section as work progresses.
 
 ## Next
 
-(none — v1 scope from `# 34. Immediate Execution Order` is complete; see `# 36. Definition of v1` for the outstanding "hybrid retrieval has measurable quality" bar, which `ckg eval` now measures but has not been judged against yet)
+Execute exactly this order unless a decision gate requires a change:
+
+1. **Phase 24** (`# 30`) — type-level symbols + IMPLEMENTS.
+
+~~Phase 23 (`# 29`) — importers retrieval strategy~~ — COMPLETE
+(2026-08-21); the importers question now scores recall 1.00 / MRR 1.00
+with and without vectors.
+
+Deferred (no scheduled phase): re-export resolution
+(`export { x } from` / `export * from`), incremental persistence
+(snapshot-replace is sufficient at current scale; revisit under Gate D),
+`ckg` console-script packaging, background embedding worker. The
+"hybrid retrieval has measurable quality" bar in `# 38. Definition of
+v1` remains unjudged until `ckg eval` numbers are reviewed after
+Phase 23.
 
 ---
 
-# 34. Immediate Execution Order
+# 36. Immediate Execution Order
 
 The implementation agent should execute exactly this order unless a decision gate requires a change:
 
@@ -2474,11 +2881,13 @@ The implementation agent should execute exactly this order unless a decision gat
 35. Add CLI
 36. Add MCP/agent integration
 37. Add evaluation suite
+38. Add importers retrieval strategy (Phase 23)
+39. Add type-level symbols + IMPLEMENTS relationship (Phase 24)
 ```
 
 ---
 
-# 35. What Not To Build Yet
+# 37. What Not To Build Yet
 
 Do not add these before the required phases are stable:
 
@@ -2500,7 +2909,7 @@ They are not prerequisites for a correct local-first CKG.
 
 ---
 
-# 36. Definition of v1
+# 38. Definition of v1
 
 v1 is complete when:
 
@@ -2520,7 +2929,7 @@ v1 is complete when:
 
 ---
 
-# 37. Update Log
+# 39. Update Log
 
 After each task, append:
 
@@ -2555,6 +2964,100 @@ Next:
 ```
 
 If a task changes architecture, record why.
+
+## 2026-08-21 — Phase 23 Importers Retrieval Strategy
+
+Status: COMPLETE
+
+Files changed:
+
+- retrieval/hybrid_retriever.py (`WHAT_IMPORTS_PATTERN`, routing, `_graph_importers` / `_resolved_importers` / `_target_documents` / `_importer_surface_symbols`)
+- tests/test_hybrid_retrieval.py (`TestImportersStrategyStubs`, 7 stub tests; 1 integration test; `IMPORTERS` fixture)
+- IMPLEMENTATION.md (`# 29` Implemented notes, `# 28` post-Phase-23 results, `# 35` Next)
+
+Implementation:
+
+- As specified in `# 29`: intent regex routed before the hybrid fallback; module mode matches `target_document.relative_path` exactly or by basename; symbol mode matches all distinct same-named symbols via `target_symbol.symbol_id`; candidates are each importer's exported module-scope symbols (then remaining module scope), ordered exported-first within a document and by document path across documents; deduplicated by `stable_key`; tagged `("graph",)`. No constructor changes — reuses Phase 15's injected `resolved_imports`/`exports`.
+
+Tests:
+
+- 8 new tests (7 stub + 1 integration); full suite 367 passing (was 359).
+
+Result:
+
+- Eval: importers question recall 0.00 → 1.00 and MRR 0.00 → 1.00 without vectors; MRR 0.20 → 1.00 with vectors; mean MRR with vectors now 1.00. Numbers recorded in `# 28` Results after Phase 23.
+
+Decision / deviation:
+
+- Used the injected `resolved_import_references` directly instead of the spec's original `importers_of` suggestion: `importers_of(import_references, documents_by_id)` maps module paths to importer ids but would need a document-id → path map the retriever does not hold, while `ResolvedImportReference.target_document` already carries everything needed. Same semantics, one less dependency.
+- "which files imports X" grammar oddity accepted per spec; the canonical phrasings all match.
+
+Next:
+
+- Phase 24 type-level symbols + IMPLEMENTS (`# 30`).
+
+## 2026-08-21 — Plan authored: Phase 23 + Phase 24
+
+Status: SPEC AUTHORED (no code change)
+
+Files changed:
+
+- IMPLEMENTATION.md only (`# 29` Phase 23, `# 30` Phase 24; sections
+  formerly numbered 29–37 renumbered to 31–39 with all cross-references
+  updated; `# 35` Next and `# 36` execution order extended)
+
+Content:
+
+- Phase 23 specifies the importers retrieval strategy against the
+  measured gap in `# 28` Results (importers question: recall 0.00
+  without vectors, MRR 0.20 with). Routing regex, module-mode vs
+  symbol-mode target resolution, candidate selection from the importer's
+  exported module scope, and the required eval re-measurement are all
+  fixed in the spec.
+- Phase 24 specifies type-level symbols (`INTERFACE`, `TYPE_ALIAS`),
+  their exports and signatures, and the IMPLEMENTS relationship deferred
+  from the EXTENDS work. AST inspection (Task 24.1) is a mandatory
+  predecessor per rule 1.3; chunk texts are explicitly out of scope.
+
+Decision / deviation:
+
+- Phases are ordered retrieval-fix-first (Phase 23 before the larger
+  Phase 24) because its payoff is already quantified, not because of
+  dependency — neither phase depends on the other.
+
+## 2026-08-21 — EXTENDS relationship
+
+Status: COMPLETE
+
+Files changed:
+
+- models/entities/reference_kind.py (`EXTENDS` added)
+- models/relationships/relationship_kind.py (`EXTENDS` added)
+- analysis/semantic/reference_kind.py (`in_extends_clause`; heritage identifiers classified as `ReferenceKind.EXTENDS`)
+- analysis/relationship_builder.py (kind-mapped `build_relationship`; emits `CALLS` and `EXTENDS`)
+- tests/test_extends_relationship.py (new)
+- tests/test_incremental_indexer.py (extends-edge survival across base-class body edit)
+- README.md (Knowledge Graph, Relationship Pass, Current Status)
+
+Implementation:
+
+- AST inspection first (rule 1.3): `class_heritage` contains an `extends_clause` whose value is a plain `identifier`, so the existing reference walk already extracted heritage names — they were only misclassified as generic `IDENTIFIER`. `determine_reference_kind` now returns `EXTENDS` when the node's parent is an `extends_clause`.
+- `implements_clause` children are `type_identifier`s, which the extractor does not handle; they stay unextracted. IMPLEMENTS is deferred until type-level symbols exist — until then its targets cannot resolve, and emitting machinery with no resolvable targets would be speculative (rule 1.5).
+- Resolution needed no change: single-path references resolve kind-agnostically through scope → module → imports. Gate E applies unchanged: unknown base → UNRESOLVED, ambiguous base → AMBIGUOUS, neither produces an edge.
+- `relationship_builder.build_call_relationship` became kind-mapped `build_relationship` (`CALL → CALLS`, `EXTENDS → EXTENDS`); source is always the reference owner (the subclass), target the resolved symbol. Graph deduplication by `(source, target, kind)` is unchanged. Persistence needs no migration: relationship kinds round-trip as enum `.value` TEXT.
+
+Tests:
+
+- `test_extends_relationship.py` (11): heritage extraction + classification; no-heritage class extracts nothing; implements stays unextracted; same-file edge; cross-file imported-base edge; two subclasses → two distinct edges; CALLS unchanged; unknown/ambiguous base → no edge; module-scope shadowing of an imported base resolves locally.
+- `test_incremental_indexer.py` (+1): editing the base class body keeps the EXTENDS edge without re-resolving the untouched subclass (signature excludes bodies, so no interface invalidation fires).
+
+Result:
+
+- 359 tests pass (was 348). The graph now emits `CALLS` and `EXTENDS`.
+
+Decision / deviation:
+
+- Semantic chunks deliberately do not embed extends facts: it would change every chunk's `content_hash` and force a full re-embed for unproven retrieval value (rule 1.5). Revisit when retrieval evidence justifies it.
 
 ## 2026-08-21 — Refactor: make `models` a leaf layer
 
@@ -2593,7 +3096,7 @@ Files changed:
 
 Problem:
 
-- `storage/index_store.py` imported `retrieval.context_builder`, `retrieval.hybrid_retriever` and `retrieval.numpy_vector_store`, so the persistence layer depended on the retrieval layer, inverting `# 32. Module Responsibilities`. Three of its eleven functions were retrieval wiring rather than persistence.
+- `storage/index_store.py` imported `retrieval.context_builder`, `retrieval.hybrid_retriever` and `retrieval.numpy_vector_store`, so the persistence layer depended on the retrieval layer, inverting `# 34. Module Responsibilities`. Three of its eleven functions were retrieval wiring rather than persistence.
 
 Implementation:
 
