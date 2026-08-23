@@ -1,4 +1,5 @@
 import re
+import posixpath
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -20,6 +21,11 @@ WHO_CALLS_PATTERN = re.compile(r"who calls\s+([A-Za-z_]\w*)", re.IGNORECASE)
 WHAT_CALLS_PATTERN = re.compile(r"what does\s+([A-Za-z_]\w*)\s+call", re.IGNORECASE)
 WHERE_IS_PATTERN = re.compile(
     r"where is\s+([A-Za-z_]\w*)\s+(?:defined|implemented)", re.IGNORECASE
+)
+WHAT_IMPORTS_PATTERN = re.compile(
+    r"(?:what|who|which)\s+(?:files?|modules?)?\s*imports\s+([A-Za-z_][\w.]*)"
+    r"|importers of\s+([A-Za-z_][\w.]*)",
+    re.IGNORECASE,
 )
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_]\w*")
@@ -68,6 +74,11 @@ class HybridRetriever:
         if where_is:
             return self._exact_definition(where_is.group(1))
 
+        what_imports = WHAT_IMPORTS_PATTERN.search(query)
+        if what_imports:
+            target = what_imports.group(1) or what_imports.group(2)
+            return self._graph_importers(target)
+
         return self._hybrid_search(query, top_k)
 
     def _graph_callers(self, target_name: str) -> HybridRetrieval:
@@ -101,6 +112,121 @@ class HybridRetriever:
         return HybridRetrieval(
             strategy="exact_symbol", query=symbol_name, candidates=candidates
         )
+
+    def _graph_importers(self, target_text: str) -> HybridRetrieval:
+        surfaces: dict[str, list[Symbol]] = {}
+
+        for resolved_import in self._resolved_importers(target_text):
+            document_id = resolved_import.import_reference.document_id
+
+            if document_id in surfaces:
+                continue
+
+            symbols = self._importer_surface_symbols(document_id)
+
+            if symbols:
+                surfaces[document_id] = symbols
+
+        candidates: list[HybridCandidate] = []
+        seen: set[str] = set()
+
+        for symbols in sorted(
+            surfaces.values(), key=lambda group: group[0].relative_path
+        ):
+            for symbol in symbols:
+                if symbol.stable_key in seen:
+                    continue
+
+                seen.add(symbol.stable_key)
+                candidates.append(self._from_symbol(symbol, sources=("graph",)))
+
+        return HybridRetrieval(
+            strategy="graph_importers",
+            query=target_text,
+            candidates=candidates,
+        )
+
+    def _resolved_importers(
+        self, target_text: str
+    ) -> list[ResolvedImportReference]:
+        resolved_imports = self.resolved_imports or []
+
+        if "." in target_text:
+            target_document_ids = {
+                document.document_id
+                for document in self._target_documents(
+                    target_text,
+                    resolved_imports,
+                )
+            }
+
+            return [
+                resolved_import
+                for resolved_import in resolved_imports
+                if resolved_import.target_document.document_id
+                in target_document_ids
+            ]
+
+        seed_ids = {
+            symbol.symbol_id
+            for symbol in self.symbol_index.lookup_by_name(target_text)
+        }
+
+        return [
+            resolved_import
+            for resolved_import in resolved_imports
+            if resolved_import.target_symbol is not None
+            and resolved_import.target_symbol.symbol_id in seed_ids
+        ]
+
+    def _target_documents(
+        self,
+        target_text: str,
+        resolved_imports: list[ResolvedImportReference],
+    ) -> list:
+        matched: list = []
+        seen: set[str] = set()
+
+        for resolved_import in resolved_imports:
+            document = resolved_import.target_document
+
+            if document.document_id in seen:
+                continue
+
+            is_exact_match = document.relative_path == target_text
+            is_basename_match = (
+                posixpath.basename(document.relative_path) == target_text
+            )
+
+            if is_exact_match or is_basename_match:
+                seen.add(document.document_id)
+                matched.append(document)
+
+        return matched
+
+    def _importer_surface_symbols(self, document_id: str) -> list[Symbol]:
+        module_symbols = [
+            symbol
+            for symbol in self.symbol_index.lookup_children(None)
+            if symbol.document_id == document_id
+        ]
+
+        exported_names = {
+            export.symbol_name
+            for export in self.exports or []
+            if export.document_id == document_id
+        }
+
+        primary = sorted(
+            (s for s in module_symbols if s.name in exported_names),
+            key=lambda s: s.qualified_name,
+        )
+        secondary = sorted(
+            (s for s in module_symbols if s.name not in exported_names),
+            key=lambda s: s.qualified_name,
+        )
+
+        return primary + secondary
 
     def _hybrid_search(self, query: str, top_k: int) -> HybridRetrieval:
         ranked: list[list[str]] = []
