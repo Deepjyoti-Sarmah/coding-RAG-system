@@ -11,7 +11,30 @@ def connect(db_path: str) -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     conn.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_MS}")
+    load_vec_extension(conn)
     return conn
+
+
+def load_vec_extension(conn: sqlite3.Connection) -> bool:
+    """Load sqlite-vec into this connection.
+
+    Returns False when the extension is unavailable (not installed, or the
+    Python build refuses loadable extensions) so callers can fall back to
+    the in-memory numpy store.
+    """
+    try:
+        import sqlite_vec
+    except ImportError:
+        return False
+
+    try:
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+        conn.enable_load_extension(False)
+    except (AttributeError, RuntimeError):
+        return False
+
+    return True
 
 
 @contextmanager

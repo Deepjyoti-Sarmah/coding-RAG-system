@@ -10,6 +10,7 @@ from storage.repositories import (
     chunk_repository,
     embedding_job_repository,
     embedding_repository,
+    vec_index_repository,
 )
 
 
@@ -105,6 +106,17 @@ def run_embedding_worker(
         with db.transaction(conn):
             if embeddings_by_key:
                 embedding_repository.upsert(conn, embeddings_by_key)
+                vec_index_repository.upsert(
+                    conn,
+                    [
+                        (
+                            chunk_key,
+                            vector,
+                            chunks_by_key[chunk_key].relative_path,
+                        )
+                        for chunk_key, vector in embeddings_by_key.items()
+                    ],
+                )
 
             for chunk in embeddable:
                 embedding_job_repository.mark_done(conn, chunk.chunk_key)
