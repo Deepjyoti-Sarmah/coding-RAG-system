@@ -6,6 +6,7 @@ from models.relationships.relationships import Relationship
 _RELATIONSHIP_BY_REFERENCE = {
     ReferenceKind.CALL: RelationshipKind.CALLS,
     ReferenceKind.EXTENDS: RelationshipKind.EXTENDS,
+    ReferenceKind.IMPLEMENTS: RelationshipKind.IMPLEMENTS,
 }
 
 

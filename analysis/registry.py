@@ -1,6 +1,8 @@
 from analysis.symbol_handlers.classes import handle_class
 from analysis.symbol_handlers.function import handle_function
+from analysis.symbol_handlers.interface import handle_interface
 from analysis.symbol_handlers.method import handle_method
+from analysis.symbol_handlers.type_alias import handle_type_alias
 from analysis.symbol_handlers.variable import handle_variable_declarator
 
 NODE_HANDLERS = {
@@ -8,6 +10,6 @@ NODE_HANDLERS = {
     "class_declaration": handle_class,
     "method_definition": handle_method,
     "variable_declarator": handle_variable_declarator,
-    # "interface_declaration": handle_interface,
-    # "type_alias_declaration": handle_type_alias,
+    "interface_declaration": handle_interface,
+    "type_alias_declaration": handle_type_alias,
 }

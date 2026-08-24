@@ -6,3 +6,5 @@ class SymbolKind(Enum):
     CLASS = "class"
     METHOD = "method"
     VARIABLE = "variable"
+    INTERFACE = "interface"
+    TYPE_ALIAS = "type_alias"

@@ -11,6 +11,8 @@ DECLARATION_NODE_TYPES = {
     "class_expression",
     "lexical_declaration",
     "identifier",
+    "interface_declaration",
+    "type_alias_declaration",
 }
 
 
@@ -84,7 +86,12 @@ def _declaration_child(node: Node) -> Node | None:
 
 
 def _declaration_names(node: Node) -> list[str]:
-    if node.type in ("function_declaration", "class_declaration"):
+    if node.type in (
+        "function_declaration",
+        "class_declaration",
+        "interface_declaration",
+        "type_alias_declaration",
+    ):
         return _name_from_field(node)
 
     if node.type in ("function_expression", "class_expression"):

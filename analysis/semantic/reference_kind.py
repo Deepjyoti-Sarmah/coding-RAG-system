@@ -22,13 +22,27 @@ def determine_reference_kind(node: Node) -> ReferenceKind:
     if in_extends_clause(node):
         return ReferenceKind.EXTENDS
 
+    if in_implements_clause(node):
+        return ReferenceKind.IMPLEMENTS
+
     return ReferenceKind.IDENTIFIER
 
 
 def in_extends_clause(node: Node) -> bool:
     parent = node.parent
 
-    return parent is not None and parent.type == "extends_clause"
+    # `class X extends Y` is an extends_clause; `interface X extends Y`
+    # is an extends_type_clause.
+    return parent is not None and parent.type in (
+        "extends_clause",
+        "extends_type_clause",
+    )
+
+
+def in_implements_clause(node: Node) -> bool:
+    parent = node.parent
+
+    return parent is not None and parent.type == "implements_clause"
 
 
 def is_call_target(node: Node) -> bool:

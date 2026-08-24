@@ -3,7 +3,11 @@ from tree_sitter import Node
 from analysis.reference_builder import build_reference
 from analysis.semantic.create_symbol import creates_symbol
 from analysis.semantic.is_declaration_name import is_declaration_name
-from analysis.semantic.reference_kind import determine_reference_kind
+from analysis.semantic.reference_kind import (
+    determine_reference_kind,
+    in_extends_clause,
+    in_implements_clause,
+)
 from models.entities.references import Reference
 from models.entities.symbols import Symbol
 
@@ -75,7 +79,15 @@ def visit(
             owner_symbol=owner_symbol,
         )
 
-    if node.type not in ("identifier", "property_identifier"):
+    # A type_identifier is extracted only in a heritage clause. Type
+    # positions elsewhere (annotations, generics) have no resolvable
+    # target yet, and extracting them would flood the resolver with
+    # references it can only mark unresolved.
+    if node.type == "type_identifier":
+        if not in_heritage_clause(node):
+            return None
+
+    elif node.type not in ("identifier", "property_identifier"):
         return None
 
     # Object/property parts of member expressions are covered by the
@@ -96,6 +108,10 @@ def visit(
         kind=kind,
         owner_symbol=owner_symbol,
     )
+
+
+def in_heritage_clause(node: Node) -> bool:
+    return in_extends_clause(node) or in_implements_clause(node)
 
 
 def build_member_path(node: Node) -> tuple[str, ...]:

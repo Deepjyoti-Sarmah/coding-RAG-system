@@ -6,3 +6,4 @@ class ReferenceKind(Enum):
     IDENTIFIER = "identifier"
     MEMBER_ACCESS = "member_access"
     EXTENDS = "extends"
+    IMPLEMENTS = "implements"

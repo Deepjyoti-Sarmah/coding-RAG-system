@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Iterable
+from collections.abc import Iterable
 
 from models.entities.symbols import Symbol
 from models.relationships.relationship_kind import RelationshipKind
@@ -67,11 +67,9 @@ class CodeGraph:
         kind: RelationshipKind,
     ) -> list[Symbol]:
         return self._resolve(
-            (
-                relationship.source_symbol_id
-                for relationship in self._incoming.get(symbol_id, [])
-                if relationship.kind == kind
-            )
+            relationship.source_symbol_id
+            for relationship in self._incoming.get(symbol_id, [])
+            if relationship.kind == kind
         )
 
     def _targets_of(
@@ -80,11 +78,9 @@ class CodeGraph:
         kind: RelationshipKind,
     ) -> list[Symbol]:
         return self._resolve(
-            (
-                relationship.target_symbol_id
-                for relationship in self._outgoing.get(symbol_id, [])
-                if relationship.kind == kind
-            )
+            relationship.target_symbol_id
+            for relationship in self._outgoing.get(symbol_id, [])
+            if relationship.kind == kind
         )
 
     def _resolve(self, symbol_ids: Iterable[str]) -> list[Symbol]:

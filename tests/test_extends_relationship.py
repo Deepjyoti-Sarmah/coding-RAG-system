@@ -56,20 +56,59 @@ class TestExtendsExtraction(unittest.TestCase):
         for symbol in result.symbols:
             self.assertEqual(_heritage_references(result, symbol.name), [])
 
-    def test_implements_clause_stays_unextracted(self):
+    def test_type_identifier_outside_a_heritage_clause_stays_unextracted(self):
         result = _build(
             files={
-                "a.ts": "interface Shape {}\nclass Child implements Shape {}\n"
+                "a.ts": "interface Shape {}\n"
+                "function area(s: Shape): Shape { return s }\n"
             }
         )
+
+        area = _symbol_by_name(result, "area")
 
         shape_refs = [
             r
             for r in result.resolved_references
             if r.reference.name == "Shape"
+            and r.reference.owner_symbol_id == area.symbol_id
         ]
 
         self.assertEqual(shape_refs, [])
+
+    def test_interface_heritage_is_extracted_as_extends_reference(self):
+        result = _build(
+            files={"a.ts": "interface Base {}\ninterface Child extends Base {}\n"}
+        )
+
+        refs = _heritage_references(result, "Child")
+
+        self.assertEqual(len(refs), 1)
+        self.assertEqual(refs[0].reference.path, ("Base",))
+
+
+class TestInterfaceExtends(unittest.TestCase):
+    def test_interface_extends_emits_edge(self):
+        result = _build(
+            files={"a.ts": "interface Base {}\ninterface Child extends Base {}\n"}
+        )
+
+        self.assertEqual(
+            _edges_of_kind(result, RelationshipKind.EXTENDS),
+            {("Child", "Base")},
+        )
+
+    def test_interface_extending_two_interfaces_emits_two_edges(self):
+        result = _build(
+            files={
+                "a.ts": "interface A {}\ninterface B {}\n"
+                "interface C extends A, B {}\n"
+            }
+        )
+
+        self.assertEqual(
+            _edges_of_kind(result, RelationshipKind.EXTENDS),
+            {("C", "A"), ("C", "B")},
+        )
 
 
 class TestExtendsRelationship(unittest.TestCase):

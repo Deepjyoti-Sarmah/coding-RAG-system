@@ -244,5 +244,75 @@ class TestIncrementalIndexer(unittest.TestCase):
         self.assertEqual(second_edges, [("Child", "Base")])
 
 
+IMPLEMENTS = {
+    "shapes.ts": "export interface Shape { area(): number }\n",
+    "impl.ts": 'import { Shape } from "./shapes";\n'
+    "class Impl implements Shape {}\n",
+}
+
+
+class TestImplementsIncrementalInvalidation(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.db_path = str(self.root / "index.sqlite")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _implements_edges(self) -> list[tuple[str, str]]:
+        result = load_index(self.db_path)
+        names = {s.symbol_id: s.name for s in result.symbols}
+
+        return sorted(
+            (names[r.source_symbol_id], names[r.target_symbol_id])
+            for r in result.relationships
+            if r.kind == RelationshipKind.IMPLEMENTS
+        )
+
+    def test_member_set_edit_invalidates_implementers(self):
+        _write(self.root, IMPLEMENTS)
+        reindex_index(self.db_path, str(self.root))
+
+        self.assertEqual(self._implements_edges(), [("Impl", "Shape")])
+
+        # Renaming a member moves the interface's signature_hash, so the
+        # interface fingerprint changes and implementers must re-resolve.
+        _write(
+            self.root,
+            {"shapes.ts": "export interface Shape { size(): number }\n"},
+        )
+        report = reindex_index(self.db_path, str(self.root))
+
+        self.assertGreater(report.resolved_references, 0)
+        self.assertEqual(self._implements_edges(), [("Impl", "Shape")])
+
+    def test_formatting_only_edit_does_not_invalidate_implementers(self):
+        _write(self.root, IMPLEMENTS)
+        reindex_index(self.db_path, str(self.root))
+
+        _write(
+            self.root,
+            {
+                "shapes.ts": "// the shape contract\n"
+                "export interface Shape {\n  area(): number\n}\n"
+            },
+        )
+        report = reindex_index(self.db_path, str(self.root))
+
+        self.assertEqual(report.resolved_references, 0)
+        self.assertEqual(report.changes["impl.ts"], FileChange.UNCHANGED)
+        self.assertEqual(self._implements_edges(), [("Impl", "Shape")])
+
+    def test_removing_the_interface_export_drops_the_edge(self):
+        _write(self.root, IMPLEMENTS)
+        reindex_index(self.db_path, str(self.root))
+
+        _write(self.root, {"shapes.ts": "interface Shape { area(): number }\n"})
+        reindex_index(self.db_path, str(self.root))
+
+        self.assertEqual(self._implements_edges(), [])
+
+
 if __name__ == "__main__":
     unittest.main()
