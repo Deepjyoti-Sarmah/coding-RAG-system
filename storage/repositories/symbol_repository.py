@@ -6,7 +6,7 @@ from storage._rows import location_columns, source_location_from_row
 def insert_many(conn, symbols: list[Symbol]) -> None:
     conn.executemany(
         """
-        INSERT INTO symbols (
+        INSERT OR REPLACE INTO symbols (
             symbol_id, document_id, name, kind, relative_path,
             start_line, end_line, start_byte, end_byte, content,
             parent_symbol_id, qualified_name, content_hash, signature_hash, stable_key

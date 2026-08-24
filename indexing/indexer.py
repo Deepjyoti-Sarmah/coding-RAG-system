@@ -170,6 +170,7 @@ def _incremental_rebuild(
             changes=changes,
             previous_states=previous_states,
         ),
+        removed_paths=partition.rebuild | partition.deleted,
     )
     enqueue_embedding_jobs(db_path, result.chunks)
 
@@ -269,8 +270,13 @@ def _build_documents(
     for path, scanned in scan.current.items():
         previous_doc = previous_docs_by_path.get(path)
 
-        if changes[path] == FileChange.UNCHANGED:
+        if changes[path] == FileChange.UNCHANGED and previous_doc is not None:
             documents_by_path[path] = previous_doc
+            continue
+
+        content = scanned.content
+
+        if content is None:
             continue
 
         document_id = (
@@ -280,7 +286,7 @@ def _build_documents(
         documents_by_path[path] = build_document(
             file_path=scanned.file_path,
             relative_path=path,
-            content=scanned.content,
+            content=content,
             document_id=document_id,
         )
 

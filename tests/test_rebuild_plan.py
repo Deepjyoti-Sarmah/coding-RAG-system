@@ -7,6 +7,7 @@ of a stale resolution three layers away.
 """
 
 import unittest
+from pathlib import Path
 
 from analysis.build_result import BuildResult
 from indexing.diff import FileChange, ScannedFile, ScanResult
@@ -67,7 +68,7 @@ def _export(path: str, name: str) -> Export:
 def _scan(changes: dict[str, FileChange]) -> ScanResult:
     current = {
         path: ScannedFile(
-            file_path=None,
+            file_path=Path(path),
             relative_path=path,
             size_bytes=1,
             mtime_ns=1,

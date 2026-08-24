@@ -23,7 +23,9 @@ def match_symbols(
     new_symbols: list[Symbol],
 ) -> list[SymbolMatch]:
     old_by_key: dict[str, list[Symbol]] = defaultdict(list)
-    old_by_scope_signature: dict[tuple[str, str], list[Symbol]] = defaultdict(list)
+    old_by_scope_signature: dict[tuple[str, str, str], list[Symbol]] = defaultdict(
+        list
+    )
     old_by_content: dict[str, list[Symbol]] = defaultdict(list)
 
     for symbol in old_symbols:

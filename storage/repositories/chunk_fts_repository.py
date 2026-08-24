@@ -1,5 +1,6 @@
 from chunking.symbol_chunker import SemanticChunk
 from models.entities.fts_hit import FtsHit
+from models.entities.symbols import Symbol
 
 
 def build_fts_query(query: str) -> str:
@@ -11,7 +12,7 @@ def build_fts_query(query: str) -> str:
     return " AND ".join(terms)
 
 
-def insert_many(conn, chunks: list[SemanticChunk], symbols_by_id: dict[str, object]) -> None:
+def insert_many(conn, chunks: list[SemanticChunk], symbols_by_id: dict[str, Symbol]) -> None:
     rows = []
 
     for chunk in chunks:

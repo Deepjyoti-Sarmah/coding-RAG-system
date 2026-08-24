@@ -5,7 +5,7 @@ from models.entities.documents import Document
 def insert_many(conn, documents: list[Document]) -> None:
     conn.executemany(
         """
-        INSERT INTO documents (
+        INSERT OR REPLACE INTO documents (
             document_id, absolute_path, relative_path, file_name,
             extension, language, size_bytes, line_count, content, file_hash
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

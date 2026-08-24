@@ -8,7 +8,7 @@ from storage._rows import location_columns, source_location_from_row
 def insert_many(conn, references: list[Reference]) -> None:
     conn.executemany(
         """
-        INSERT INTO "references" (
+        INSERT OR REPLACE INTO "references" (
             reference_id, document_id, name, kind, owner_symbol_id, path_json,
             start_line, end_line, start_byte, end_byte
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

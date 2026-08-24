@@ -4,7 +4,7 @@ from chunking.symbol_chunker import CHUNK_VERSION, SemanticChunk
 def insert_many(conn, chunks: list[SemanticChunk]) -> None:
     conn.executemany(
         """
-        INSERT INTO chunks (
+        INSERT OR REPLACE INTO chunks (
             chunk_id, symbol_id, relative_path, embedding_text,
             display_text, content_hash, chunk_version
         ) VALUES (?, ?, ?, ?, ?, ?, ?)

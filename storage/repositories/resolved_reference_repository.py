@@ -6,7 +6,7 @@ from models.entities.symbols import Symbol
 def insert_many(conn, resolved_references: list[ResolvedReference]) -> None:
     conn.executemany(
         """
-        INSERT INTO resolved_references (reference_id, status, target_symbol_id)
+        INSERT OR REPLACE INTO resolved_references (reference_id, status, target_symbol_id)
         VALUES (?, ?, ?)
         """,
         [

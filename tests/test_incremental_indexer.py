@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 import time
 import unittest
@@ -7,7 +8,16 @@ from pathlib import Path
 from indexing.indexer import FileChange, reindex_index
 from models.entities.resolved_reference import ResolutionStatus
 from models.relationships.relationship_kind import RelationshipKind
+from storage import db
 from storage.index_store import load_index
+
+_UUID_PATTERN = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+)
+_TIMESTAMP_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?\+00:00")
+_TMPDIR_PATTERN = re.compile(r"/tmp/tmp[A-Za-z0-9_]+")
+_MTIME_PATTERN = re.compile(r"\b1[0-9]{18}\b")
+_GENERATION_PATTERN = re.compile(r"\('generation', '[0-9]+'\)")
 
 
 def _write(root: Path, files: dict[str, str]) -> None:
@@ -17,9 +27,7 @@ def _write(root: Path, files: dict[str, str]) -> None:
 
 def _symbols_by_path(result, relative_path: str):
     return [
-        symbol
-        for symbol in result.symbols
-        if symbol.relative_path == relative_path
+        symbol for symbol in result.symbols if symbol.relative_path == relative_path
     ]
 
 
@@ -45,10 +53,144 @@ def _statuses_for(result, relative_path: str) -> dict[str, ResolutionStatus]:
 AUTH = {
     "a.ts": "export function createAuth() { return 1; }\n",
     "b.ts": (
-        'import { createAuth } from "./a";\n'
-        "export function run() { createAuth(); }\n"
+        'import { createAuth } from "./a";\nexport function run() { createAuth(); }\n'
     ),
 }
+
+
+def _scalar(db_path: str, sql: str, parameters=()) -> int:
+    conn = db.connect(db_path)
+    try:
+        return conn.execute(sql, parameters).fetchone()[0]
+    finally:
+        conn.close()
+
+
+class TestDeltaPersistence(unittest.TestCase):
+    """Incremental runs must leave the store identical to a full rebuild,
+    while preserving the embedding cache for untouched chunks."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.db_path = str(self.root / "index.sqlite")
+        _write(self.root, AUTH)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_incremental_matches_full_rebuild(self):
+        edited = "export function createAuth() { return 2; }\n"
+        reindex_index(self.db_path, str(self.root))
+        _write(self.root, {"a.ts": edited})
+        reindex_index(self.db_path, str(self.root))
+
+        full_tmp = tempfile.TemporaryDirectory()
+        try:
+            full_root = Path(full_tmp.name)
+            _write(full_root, {"a.ts": edited, **{"b.ts": AUTH["b.ts"]}})
+            full_db = str(full_root / "index.sqlite")
+            reindex_index(full_db, str(full_root))
+
+            incremental_tables = self._snapshot(self.db_path)
+            full_tables = self._snapshot(full_db)
+
+            self.assertEqual(incremental_tables.keys(), full_tables.keys())
+            for table, rows in incremental_tables.items():
+                self.assertEqual(rows, full_tables[table], table)
+        finally:
+            full_tmp.cleanup()
+
+    def test_editing_one_file_preserves_other_embeddings(self):
+        from embeddings.fake_provider import FakeEmbeddingProvider
+
+        provider = FakeEmbeddingProvider(dimension=8)
+        reindex_index(self.db_path, str(self.root))
+
+        import indexing.embedding_queue as queue
+
+        queue.run_embedding_worker(self.db_path, provider)
+        embeddings_before = _scalar(self.db_path, "SELECT COUNT(*) FROM embeddings")
+        self.assertGreater(embeddings_before, 0)
+
+        _write(self.root, {"a.ts": "export function createAuth() { return 3; }\n"})
+        reindex_index(self.db_path, str(self.root))
+        queue.run_embedding_worker(self.db_path, provider)
+
+        # b.ts chunks kept their vectors without re-embedding.
+        untouched_vectors = _scalar(
+            self.db_path,
+            """
+            SELECT COUNT(DISTINCT e.chunk_id) FROM embeddings e
+            JOIN chunks c ON c.chunk_id = e.chunk_id
+            WHERE c.relative_path = 'b.ts'
+            """,
+        )
+        self.assertGreater(untouched_vectors, 0)
+        self.assertEqual(
+            _scalar(self.db_path, "SELECT COUNT(*) FROM embeddings"),
+            _scalar(self.db_path, "SELECT COUNT(*) FROM chunks"),
+        )
+
+    def test_deleted_file_leaves_no_rows_behind(self):
+        gone = "gone.ts"
+        _write(self.root, {gone: "export function vanish() { return 1; }\n"})
+        reindex_index(self.db_path, str(self.root))
+        (self.root / gone).unlink()
+
+        report = reindex_index(self.db_path, str(self.root))
+
+        self.assertEqual(report.changes[gone], FileChange.DELETED)
+        for sql in (
+            "SELECT COUNT(*) FROM documents WHERE relative_path = ?",
+            "SELECT COUNT(*) FROM symbols WHERE relative_path = ?",
+            "SELECT COUNT(*) FROM chunks WHERE relative_path = ?",
+            "SELECT COUNT(*) FROM file_state WHERE relative_path = ?",
+        ):
+            self.assertEqual(_scalar(self.db_path, sql, (gone,)), 0, sql)
+
+    def _snapshot(self, db_path: str) -> dict[str, list]:
+        """Comparable per-table state.
+
+        Random UUIDs (document/symbol/import ids) and wall-clock
+        timestamps differ between any two indexing runs, so they are
+        masked before comparison. Autoincrement-id tables are skipped.
+        """
+        conn = db.connect(db_path)
+        try:
+            tables = [
+                row["name"]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                    " AND name NOT LIKE 'sqlite_%'"
+                    " ORDER BY name"
+                )
+            ]
+
+            def normalized(row) -> str:
+                text = repr(tuple(row))
+                text = _UUID_PATTERN.sub("<uuid>", text)
+                text = _TIMESTAMP_PATTERN.sub("<ts>", text)
+                text = _TMPDIR_PATTERN.sub("<root>", text)
+                text = _MTIME_PATTERN.sub("<mtime>", text)
+                return _GENERATION_PATTERN.sub("('generation', <gen>)", text)
+
+            return {
+                name: sorted(
+                    normalized(row) for row in conn.execute(f'SELECT * FROM "{name}"')
+                )
+                for name in tables
+                if name
+                not in (
+                    "imports",
+                    "exports",
+                    "relationships",
+                    "resolved_imports",
+                )
+                and not name.startswith("chunks_fts")
+            }
+        finally:
+            conn.close()
 
 
 class TestIncrementalIndexer(unittest.TestCase):
@@ -215,9 +357,7 @@ class TestIncrementalIndexer(unittest.TestCase):
         reindex_index(self.db_path, str(self.root))
         first = load_index(self.db_path)
         first_edges = [
-            r
-            for r in first.relationships
-            if r.kind == RelationshipKind.EXTENDS
+            r for r in first.relationships if r.kind == RelationshipKind.EXTENDS
         ]
         self.assertEqual(len(first_edges), 1)
 
@@ -232,8 +372,12 @@ class TestIncrementalIndexer(unittest.TestCase):
             (s.name, t.name)
             for s, t in (
                 (
-                    next(x for x in second.symbols if x.symbol_id == r.source_symbol_id),
-                    next(x for x in second.symbols if x.symbol_id == r.target_symbol_id),
+                    next(
+                        x for x in second.symbols if x.symbol_id == r.source_symbol_id
+                    ),
+                    next(
+                        x for x in second.symbols if x.symbol_id == r.target_symbol_id
+                    ),
                 )
                 for r in second.relationships
                 if r.kind == RelationshipKind.EXTENDS
@@ -246,8 +390,7 @@ class TestIncrementalIndexer(unittest.TestCase):
 
 IMPLEMENTS = {
     "shapes.ts": "export interface Shape { area(): number }\n",
-    "impl.ts": 'import { Shape } from "./shapes";\n'
-    "class Impl implements Shape {}\n",
+    "impl.ts": 'import { Shape } from "./shapes";\nclass Impl implements Shape {}\n',
 }
 
 
