@@ -154,5 +154,42 @@ class TestRelationshipDeduplication(unittest.TestCase):
         self.assertEqual(len(graph.relationships()), 1)
 
 
+class TestRelationshipKindIsolation(unittest.TestCase):
+    """An EXTENDS edge must never be reported as a call in either direction."""
+
+    def setUp(self):
+        self.graph = CodeGraph()
+        self.base = _symbol(symbol_id="base", name="Base")
+        self.child = _symbol(symbol_id="child", name="Child")
+        self.graph.add_symbols([self.base, self.child])
+        self.graph.add_relationships(
+            [
+                Relationship(
+                    source_symbol_id="child",
+                    target_symbol_id="base",
+                    kind=RelationshipKind.EXTENDS,
+                ),
+            ]
+        )
+
+    def test_extends_edge_is_not_a_caller(self):
+        self.assertEqual(self.graph.callers_of("base"), [])
+
+    def test_extends_edge_is_not_a_callee(self):
+        self.assertEqual(self.graph.callees_of("child"), [])
+
+    def test_base_types_of_returns_the_extends_target(self):
+        self.assertEqual(
+            [s.symbol_id for s in self.graph.base_types_of("child")],
+            ["base"],
+        )
+
+    def test_subtypes_of_returns_the_extends_source(self):
+        self.assertEqual(
+            [s.symbol_id for s in self.graph.subtypes_of("base")],
+            ["child"],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

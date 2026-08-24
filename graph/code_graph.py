@@ -1,6 +1,8 @@
 from collections import defaultdict
+from typing import Iterable
 
 from models.entities.symbols import Symbol
+from models.relationships.relationship_kind import RelationshipKind
 from models.relationships.relationships import Relationship
 
 
@@ -48,34 +50,52 @@ class CodeGraph:
         return [parent] if parent is not None else []
 
     def callers_of(self, symbol_id: str) -> list[Symbol]:
-        incoming_relationships = self._incoming.get(symbol_id, [])
-
-        callers: list[Symbol] = []
-
-        for relationship in incoming_relationships:
-            caller_id = relationship.source_symbol_id
-
-            caller_symbol = self._symbols_by_id.get(caller_id)
-
-            if caller_symbol is None:
-                continue
-
-            callers.append(caller_symbol)
-
-        return callers
+        return self._sources_of(symbol_id, RelationshipKind.CALLS)
 
     def callees_of(self, symbol_id: str) -> list[Symbol]:
-        outgoing_relationships = self._outgoing.get(symbol_id, [])
+        return self._targets_of(symbol_id, RelationshipKind.CALLS)
 
-        callees: list[Symbol] = []
+    def base_types_of(self, symbol_id: str) -> list[Symbol]:
+        return self._targets_of(symbol_id, RelationshipKind.EXTENDS)
 
-        for relationship in outgoing_relationships:
-            callees_id = relationship.target_symbol_id
-            callees_symbol = self._symbols_by_id.get(callees_id)
+    def subtypes_of(self, symbol_id: str) -> list[Symbol]:
+        return self._sources_of(symbol_id, RelationshipKind.EXTENDS)
 
-            if callees_symbol is None:
+    def _sources_of(
+        self,
+        symbol_id: str,
+        kind: RelationshipKind,
+    ) -> list[Symbol]:
+        return self._resolve(
+            (
+                relationship.source_symbol_id
+                for relationship in self._incoming.get(symbol_id, [])
+                if relationship.kind == kind
+            )
+        )
+
+    def _targets_of(
+        self,
+        symbol_id: str,
+        kind: RelationshipKind,
+    ) -> list[Symbol]:
+        return self._resolve(
+            (
+                relationship.target_symbol_id
+                for relationship in self._outgoing.get(symbol_id, [])
+                if relationship.kind == kind
+            )
+        )
+
+    def _resolve(self, symbol_ids: Iterable[str]) -> list[Symbol]:
+        symbols: list[Symbol] = []
+
+        for symbol_id in symbol_ids:
+            symbol = self._symbols_by_id.get(symbol_id)
+
+            if symbol is None:
                 continue
 
-            callees.append(callees_symbol)
+            symbols.append(symbol)
 
-        return callees
+        return symbols
