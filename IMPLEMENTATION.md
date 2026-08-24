@@ -1907,7 +1907,7 @@ Do not re-embed chunks with unchanged content hashes.
 
 # 25. Phase 19 — Secure Local Indexing
 
-Status: IN PROGRESS (ignore rules complete; derived-state boundary and content-addressed cache are pre-existing/covered by earlier phases, not revisited here)
+Status: COMPLETE (ignore rules delivered here; derived-state boundary and content-addressed cache are pre-existing/covered by earlier phases, not revisited here)
 
 Adopt local-safe ideas from production code indexing systems.
 
@@ -2412,7 +2412,7 @@ addendum): the importers question went from recall 0.00 / MRR 0.00 to
 
 # 30. Phase 24 — Type-Level Symbols + IMPLEMENTS
 
-Status: PLANNED
+Status: COMPLETE (2026-08-24)
 
 Goal:
 
@@ -2453,6 +2453,34 @@ expected), name node types, heritage clause shape under interfaces,
 member structure of interface bodies, and how `export interface` /
 `export type` wrap these nodes. Do not proceed until recorded.
 
+### Implemented
+
+Recorded against `tree_sitter_typescript.language_typescript()`:
+
+| Construct | Actual AST |
+|---|---|
+| `interface Shape {...}` | `interface_declaration`; `name` field is a `type_identifier`; `body` field is `interface_body` |
+| `type Id = string` | `type_alias_declaration`; `name` field `type_identifier`; **`value` field** holds the RHS; optional `type_parameters` |
+| interface members | `property_signature` (fields `name`, `type`) and `method_signature` (fields `name`, `parameters`, `return_type`) |
+| `interface Named extends Shape` | `extends_type_clause` — **not** `extends_clause` — with one `type_identifier` per base |
+| `class Impl implements Shape` | `class_heritage` → `implements_clause` → one `type_identifier` per target |
+| `class Both extends Base implements Shape, Named` | `class_heritage` holds `extends_clause` (child is a plain `identifier`) and `implements_clause` side by side |
+| `export interface` / `export type` | `export_statement` wrapping the declaration, identical in shape to `export class` |
+
+**Three deviations from this section's assumptions (Gate A):**
+
+1. **Interface members do not extract cleanly.** `property_signature` /
+   `method_signature` are unknown to `handle_variable_declarator` /
+   `handle_method`. Per Task 24.2's own rule, members stay inside the
+   interface signature rather than becoming half-extracted child symbols.
+2. **`extends_type_clause`.** `in_extends_clause` matched only
+   `extends_clause`, so `interface A extends B` would have emitted
+   nothing even once interfaces became symbols. Handled — see Task 24.9.
+3. **`type_identifier` was never extracted at all.** `reference_extractor.visit`
+   handled only `identifier` / `property_identifier` / `member_expression`.
+   This — not the missing symbols — is the mechanical reason `implements`
+   stayed silent. Task 24.5 admits the node type narrowly.
+
 ---
 
 ## Task 24.2 — Symbol Kinds and Extraction
@@ -2473,6 +2501,33 @@ analysis/registry.py                    (replace the two stub comments)
   new node handling, keep members inside the interface signature
   instead and note it — do not half-extract.
 
+### Implemented
+
+- `models/entities/symbol_kind.py` — `INTERFACE = "interface"`,
+  `TYPE_ALIAS = "type_alias"`.
+- `analysis/symbol_handlers/interface.py` and `.../type_alias.py` mirror
+  `classes.py`; both declarations expose a `name` field, so no special
+  casing was needed and `build_symbol` carries `qualified_name`,
+  `stable_key`, `content_hash` and `signature_hash` through unchanged.
+- `analysis/registry.py` — the two stub comments became real entries.
+- Interface members are **not** child symbols (Task 24.1 deviation 1).
+- Registering the node types also flipped `creates_symbol` and
+  `is_declaration_name`, so interfaces now stop the reference walk and
+  their own names are suppressed. `test_pipeline_parity.py` and
+  `test_name_resolution.py` pass unchanged.
+
+### Fixed while testing
+
+Interface member names are `property_identifier` nodes whose parent
+(`property_signature` / `method_signature`) is not in `NODE_HANDLERS`, so
+`is_declaration_name` returned `False` and every member name was
+extracted as an identifier reference that could never resolve. Beyond the
+noise, this broke incremental correctness: any edit to an interface
+re-resolved its importers, because the file always carried unresolved
+references. `analysis/semantic/is_declaration_name.py` now treats those
+two node types as declaration sites alongside `NODE_HANDLERS`. Pinned by
+`test_interface_member_names_are_not_extracted_as_references`.
+
 ---
 
 ## Task 24.3 — Signatures
@@ -2491,6 +2546,28 @@ analysis/signature.py
 - Adjust shapes to what Task 24.1 actually shows (Gate A); update the
   Task 6.2 signature documentation when done.
 
+### Implemented
+
+`analysis/signature.py` gained `_interface_signature` and
+`_type_alias_signature`, dispatched from `extract_signature`:
+
+```text
+INTERFACE   interface[:{comma-joined bases}]{sorted "member:shape"}
+TYPE_ALIAS  type:<value field source text>
+```
+
+Member shapes reuse the existing helpers: a `method_signature` already
+carries `parameters` / `return_type` fields, so `_callable_signature`
+applies to it directly; a `property_signature` uses `_annotation_text`.
+Members are sorted, so declaration order does not move the hash, but
+member *names* are included — unlike parameter names — because they are
+part of an interface's public surface and must invalidate importers.
+
+Verified by `tests/test_interface_symbols.py::TestTypeLevelSignatures`:
+determinism across builds, member rename and member type change both move
+the hash, formatting-only edits and member reordering do not, and
+heritage participates.
+
 ---
 
 ## Task 24.4 — Exports
@@ -2507,6 +2584,21 @@ exports. After this task, `import { Shape } from "./shapes"` resolves
 to a symbol through the existing export table + module-scope lookup
 with **zero resolver changes expected** — verify, don't assume; if a
 kind filter blocks it, fix the filter, not the resolver.
+
+### Implemented
+
+`analysis/export_handlers/declaration.py` — `interface_declaration` and
+`type_alias_declaration` added to `DECLARATION_NODE_TYPES` and routed to
+`_name_from_field`, which works because both expose a `name` field.
+
+**The zero-resolver-changes prediction held, and was verified rather than
+assumed.** `import { Shape } from "./shapes"` resolves to the interface
+symbol with no change to the export table or the resolver, because
+neither filters on `SymbolKind` — the only kind checks in the codebase
+are in `analysis/signature.py` (dispatch) and
+`analysis/semantic/member_resolver.py` (`SymbolKind.CLASS`, member
+access). Covered by
+`TestTypeLevelImportResolution::test_imported_interface_resolves_to_the_interface_symbol`.
 
 ---
 
@@ -2531,6 +2623,25 @@ Resolution reuses the standard climb (scope → module → imports);
 the builder emits `(subclass → resolved target, IMPLEMENTS)` exactly
 like EXTENDS. Unresolved/ambiguous targets emit nothing (Gate E).
 
+### Implemented
+
+- `models/entities/reference_kind.py` — `+ IMPLEMENTS`.
+- `models/relationships/relationship_kind.py` — `+ IMPLEMENTS = "implements"`.
+- `analysis/semantic/reference_kind.py` — new `in_implements_clause`,
+  checked next to `in_extends_clause` in `determine_reference_kind`.
+- `analysis/reference_extractor.py` — `visit` admits `type_identifier`
+  **only** under a heritage clause, via the new `in_heritage_clause`.
+  Type positions elsewhere (annotations, generic arguments) stay
+  unextracted: they have no resolvable target yet, and extracting them
+  would flood the resolver with permanently-unresolved references.
+- `analysis/relationship_builder.py` — one entry in
+  `_RELATIONSHIP_BY_REFERENCE`.
+
+Resolution and the builder needed no other change: `build_relationship`
+already drops non-`RESOLVED` references, so Gate E holds for free, and
+`implements A, B` yields two references because the clause carries one
+`type_identifier` per target.
+
 ---
 
 ## Task 24.6 — Incremental Invalidation
@@ -2542,6 +2653,20 @@ Test in the `tests/test_incremental_indexer.py` style:
   re-resolve and their IMPLEMENTS edges follow the edit.
 - Editing an interface's non-exported trivia (comment/formatting) does
   not invalidate implementers.
+
+### Implemented
+
+`tests/test_incremental_indexer.py::TestImplementsIncrementalInvalidation`
+— three cases, all passing without any change to `indexing/`:
+
+- member rename → `signature_hash` moves → `interface_fingerprint`
+  changes → implementers re-resolve and the IMPLEMENTS edge follows;
+- comment/formatting edit → `resolved_references == 0`, the implementer
+  file stays `UNCHANGED`, and the edge survives;
+- removing the interface's `export` → the edge disappears (Gate E).
+
+The middle case is what surfaced the member-name reference bug recorded
+under Task 24.2 — it failed with `1 != 0` until that was fixed.
 
 ---
 
@@ -2568,6 +2693,41 @@ Existing suites (`test_extends_relationship.py`,
 `test_incremental_indexer.py`, `test_pipeline_parity.py`) must pass
 unchanged except where this phase intentionally adds coverage.
 
+### Implemented
+
+- `tests/test_interface_symbols.py` — 17 tests across extraction,
+  exports, import resolution and signatures.
+- `tests/test_implements_relationship.py` — 7 tests, including
+  cross-file imported interfaces and the "IMPLEMENTS is not a call"
+  guard.
+- `tests/test_extends_relationship.py` — one existing test intentionally
+  replaced: `test_implements_clause_stays_unextracted` pinned the very
+  limitation this phase removes. It is superseded by
+  `test_type_identifier_outside_a_heritage_clause_stays_unextracted`,
+  which pins the narrowness that still matters (annotations and return
+  types produce no reference), plus a new `TestInterfaceExtends` class.
+
+Full suite: **401 passing** (was 367). No other existing test changed.
+
+---
+
+## Task 24.9 — Interface Heritage (added: Task 24.1 deviation 2)
+
+`interface A extends B` uses `extends_type_clause`, which this section
+did not anticipate. Left alone, interfaces would have become symbols
+whose own hierarchy was invisible — a half-finished type model.
+
+### Implemented
+
+- `analysis/semantic/reference_kind.py` — `in_extends_clause` matches
+  both `extends_clause` (classes) and `extends_type_clause` (interfaces).
+- `analysis/reference_extractor.py` — covered by `in_heritage_clause`.
+- `analysis/signature.py` — `_interface_extends_text` feeds the interface
+  signature, so a heritage change invalidates importers.
+
+`interface C extends A, B` emits two EXTENDS edges. Covered by
+`tests/test_extends_relationship.py::TestInterfaceExtends`.
+
 ---
 
 ## Task 24.8 — Documentation
@@ -2583,6 +2743,27 @@ unchanged except where this phase intentionally adds coverage.
 Full suite passes; README type gap removed; `ckg eval` output recorded
 unchanged or improved (chunk texts untouched, so embeddings are not
 invalidated).
+
+### Implemented
+
+- README: Symbol Pass gains INTERFACE/TYPE_ALIAS; Relationship Pass and
+  the Knowledge Graph diagram gain IMPLEMENTS and note that EXTENDS now
+  covers interface heritage; `CodeGraph` accessor list gains
+  `base_types_of`/`subtypes_of` with the CALLS-only caveat; Completed
+  gains the type-level entries; the "Type-level constructs" and "Class
+  hierarchy" bullets leave **Not Yet Modelled**, replaced by an honest
+  "Interface members" bullet and a widened "Type analysis" bullet.
+- README *Planned* also corrected: it still listed `EXTENDS`, shipped
+  before this phase.
+- `# 25` Phase 19's status label corrected — it read `IN PROGRESS` while
+  its own qualifier said the work was complete.
+
+### Result
+
+`ckg eval` and `ckg eval --embed` reproduce the post-Phase-23 numbers
+**exactly**, including `embedding cache hit rate: 0.89`. That equality is
+the evidence for Rule 1.5: new interface/alias symbols add new chunks,
+but no existing chunk's `content_hash` moved, so nothing was re-embedded.
 
 ---
 
@@ -2785,7 +2966,9 @@ Update this section as work progresses.
 - [x] Local variable extraction / shadowing
 - [x] Resolution status (resolved / unresolved / ambiguous)
 - [x] CALL relationship builder
-- [x] EXTENDS relationship builder (resolved `class X extends Y` heritage; implements deferred until type-level symbols exist)
+- [x] Type-level symbols (Phase 24: `INTERFACE` / `TYPE_ALIAS` declarations, their signatures and exports; imported type names resolve to symbols)
+- [x] EXTENDS relationship builder (resolved `class X extends Y` and `interface X extends Y` heritage)
+- [x] IMPLEMENTS relationship builder (Phase 24: resolved `class X implements Y`, one edge per implemented interface)
 - [x] In-memory CodeGraph
 - [x] Import pass (produces `import_references` in the pipeline)
 - [x] Import module resolver (relative paths, ../, extensions, index.ts)
@@ -2821,21 +3004,35 @@ Update this section as work progresses.
 
 ## Next
 
-Execute exactly this order unless a decision gate requires a change:
-
-1. **Phase 24** (`# 30`) — type-level symbols + IMPLEMENTS.
+No phase is scheduled. **Every item in `# 38. Definition of v1` is now
+met**, including "hybrid retrieval has measurable quality", which the
+post-Phase-23 `ckg eval` numbers in `# 28` settle: mean recall 0.95,
+mean MRR 1.00 with vectors, measured rather than asserted.
 
 ~~Phase 23 (`# 29`) — importers retrieval strategy~~ — COMPLETE
 (2026-08-21); the importers question now scores recall 1.00 / MRR 1.00
 with and without vectors.
 
-Deferred (no scheduled phase): re-export resolution
-(`export { x } from` / `export * from`), incremental persistence
-(snapshot-replace is sufficient at current scale; revisit under Gate D),
-`ckg` console-script packaging, background embedding worker. The
-"hybrid retrieval has measurable quality" bar in `# 38. Definition of
-v1` remains unjudged until `ckg eval` numbers are reviewed after
-Phase 23.
+~~Phase 24 (`# 30`) — type-level symbols + IMPLEMENTS~~ — COMPLETE
+(2026-08-24); interfaces and type aliases are symbols and exports,
+type-only imports resolve, and IMPLEMENTS / interface-EXTENDS edges are
+emitted. Eval unchanged, so no embeddings were invalidated.
+
+Candidates for the next phase, none scheduled, in rough order of the
+evidence behind them:
+
+1. **Benchmark on a real repository.** The eval fixture is 4 files and
+   9 chunks. Every latency number and the token-reduction percentage are
+   honestly labelled as not yet meaningful at that scale, and the
+   "Interface members" and reranker-weight decisions have no real-repo
+   evidence behind them. This is the gap most likely to be hiding
+   something.
+2. **Re-export resolution** (`export { x } from` / `export * from`) —
+   deferred since Phase 2; currently produces no export rows at all, so
+   barrel-file repositories under-resolve silently.
+3. **Incremental persistence** — each run rewrites the whole snapshot.
+   Gate D applies: measure before optimizing.
+4. `ckg` console-script packaging; background embedding worker.
 
 ---
 
@@ -2884,6 +3081,9 @@ The implementation agent should execute exactly this order unless a decision gat
 38. Add importers retrieval strategy (Phase 23)
 39. Add type-level symbols + IMPLEMENTS relationship (Phase 24)
 ```
+
+All 39 steps are complete as of 2026-08-24. See `# 35. Next` for
+unscheduled candidates.
 
 ---
 
@@ -2964,6 +3164,77 @@ Next:
 ```
 
 If a task changes architecture, record why.
+
+## 2026-08-24 — Phase 24 Type-Level Symbols + IMPLEMENTS
+
+Status: COMPLETE
+
+Files changed:
+
+- `models/entities/symbol_kind.py` (+INTERFACE, +TYPE_ALIAS),
+  `models/entities/reference_kind.py` (+IMPLEMENTS),
+  `models/relationships/relationship_kind.py` (+IMPLEMENTS)
+- `analysis/symbol_handlers/interface.py`, `.../type_alias.py` (new),
+  `analysis/registry.py`, `analysis/signature.py`,
+  `analysis/export_handlers/declaration.py`,
+  `analysis/reference_extractor.py`,
+  `analysis/semantic/reference_kind.py`,
+  `analysis/semantic/is_declaration_name.py`,
+  `analysis/relationship_builder.py`
+- `graph/code_graph.py` (prerequisite fix, separate commit)
+- `tests/test_interface_symbols.py`, `tests/test_implements_relationship.py`
+  (new); `tests/test_extends_relationship.py`,
+  `tests/test_incremental_indexer.py`, `tests/test_code_graph.py`
+- `README.md`, `IMPLEMENTATION.md`
+
+Implementation:
+
+- As specified in `# 30`, with three Gate A deviations recorded under
+  Task 24.1 and one added task (24.9, interface heritage).
+- Exports and import resolution needed no resolver change, as the spec
+  predicted — verified, not assumed.
+
+Tests:
+
+- 34 new tests; full suite 401 passing (was 367).
+
+Result:
+
+- `ckg eval` and `ckg eval --embed` reproduce the post-Phase-23 numbers
+  exactly, cache hit rate included. Rule 1.5 held: new symbols added new
+  chunks, no existing chunk text moved.
+- End-to-end spot check on a scratch TS repo: `Shape (interface)` and
+  `ShapeId (type_alias)` are searchable symbols, `Circle --implements-->
+  Shape/Named` and `Named --extends--> Shape` round-trip through SQLite,
+  and both type-only imports resolve to interface symbols.
+
+Decision / deviation:
+
+- **Prerequisite fix, committed separately.** `callers_of`/`callees_of`
+  did not filter on relationship kind, so since EXTENDS landed they had
+  been reporting subclasses as callers — leaking into the CLI, the MCP
+  tools, graph expansion, reranking, and chunk embedding text. IMPLEMENTS
+  would have compounded it. Both now filter to CALLS, with
+  `base_types_of`/`subtypes_of` added for hierarchy queries. This changes
+  the chunk text of any class involved in an `extends`, so those chunks
+  re-embed once; the eval fixture has no classes, which is also why the
+  benchmark never caught the bug.
+- **One existing test intentionally replaced.**
+  `test_implements_clause_stays_unextracted` pinned the exact limitation
+  this phase removes. Replaced by a test pinning the narrowness that
+  still matters: a `type_identifier` outside a heritage clause produces
+  no reference.
+- **Interface members are not child symbols** (Task 24.1 deviation 1),
+  per Task 24.2's own "do not half-extract" rule. Recorded in README
+  **Not Yet Modelled** rather than papered over.
+- **A bug found while testing became a fixture** (`# 31`): interface
+  member names were extracted as unresolvable identifier references,
+  which silently invalidated importers on every interface edit.
+
+Next:
+
+- No phase scheduled; v1 is complete. See `# 35. Next` for candidates —
+  benchmarking on a real repository is the most valuable.
 
 ## 2026-08-21 — Phase 23 Importers Retrieval Strategy
 

@@ -322,13 +322,13 @@ FUNCTION
 CLASS
 METHOD
 VARIABLE
+INTERFACE
+TYPE_ALIAS
 ```
 
 Planned:
 
 ```text
-INTERFACE
-TYPE_ALIAS
 ENUM
 NAMESPACE
 ```
@@ -457,6 +457,7 @@ Current:
 ```text
 CALLS
 EXTENDS
+IMPLEMENTS
 ```
 
 Planned:
@@ -466,7 +467,6 @@ IMPORTS
 DECLARES
 EXPORTS
 REFERS_TO
-IMPLEMENTS
 USES
 OVERRIDES
 HAS_TYPE
@@ -639,15 +639,20 @@ Currently emitted:
 Symbol
    └── CALLS ───────────→ Symbol
 Symbol
-   └── EXTENDS ──────────→ Symbol (base class)
+   └── EXTENDS ──────────→ Symbol (base class or base interface)
+Symbol
+   └── IMPLEMENTS ──────→ Symbol (implemented interface)
 ```
 
-`CALLS` and `EXTENDS` are the relationship kinds the graph produces today.
-`EXTENDS` is built from resolved heritage references (`class Child extends Base`),
-owned by the subclass; unresolved or ambiguous base names produce no edge.
-`IMPORTS`, `IMPLEMENTS` and `USES` are part of the intended
-model but are not built yet, so they are not present in
-`RelationshipKind`; see **Not Yet Modelled** under _Current Status_.
+`CALLS`, `EXTENDS` and `IMPLEMENTS` are the relationship kinds the graph
+produces today. Both heritage kinds are built from resolved heritage
+references and owned by the declaring symbol — `EXTENDS` from
+`class Child extends Base` and `interface Child extends Base`,
+`IMPLEMENTS` from `class Impl implements Shape` (one edge per implemented
+interface). Unresolved or ambiguous heritage names produce no edge.
+`IMPORTS` and `USES` are part of the intended model but are not built
+yet, so they are not present in `RelationshipKind`; see
+**Not Yet Modelled** under _Current Status_.
 
 Import edges are not stored in the graph. They live in the semantic
 model as `ImportReference` / `ResolvedImportReference` and are queried
@@ -660,7 +665,12 @@ callers_of(symbol)
 callees_of(symbol)
 children_of(symbol)
 parents_of(symbol)
+base_types_of(symbol)
+subtypes_of(symbol)
 ```
+
+`callers_of` / `callees_of` report `CALLS` edges only; heritage is queried
+through `base_types_of` / `subtypes_of`.
 
 The graph is primarily an **exact structural index**.
 
@@ -1147,7 +1157,11 @@ Do not claim a specific token reduction until it is measured.
 - Reference classification
 - Basic name resolution
 - Call relationship building
-- Extends relationship building (resolved `class X extends Y` heritage)
+- Type-level symbols (`interface`, `type` alias) with exports, signatures,
+  and resolution of imported type names
+- Extends relationship building (resolved `class X extends Y` and
+  `interface X extends Y` heritage)
+- Implements relationship building (resolved `class X implements Y`)
 - In-memory code graph
 - Import extraction
 - Module-level import resolution
@@ -1187,17 +1201,16 @@ Do not claim a specific token reduction until it is measured.
 These are deliberate gaps, not oversights. They are listed here so the
 semantic model is not mistaken for something broader than it is.
 
-- **Type-level constructs.** `interface` and `type` declarations produce
-  no symbol and no export. The Tree-sitter handlers for
-  `interface_declaration` and `type_alias_declaration` are stubbed out in
-  `analysis/registry.py`. An `import { SomeInterface } from "./types"`
-  therefore resolves to the target _document_ but leaves
-  `target_symbol` unset.
-- **Class hierarchy.** `implements` produces no relationships (interfaces
-  are not symbols yet, so the target cannot resolve). `extends` emits
-  `EXTENDS` edges; `CALLS` and `EXTENDS` are the only relationship kinds
-  the graph emits.
-- **Type analysis.** No inference; member resolution is structural.
+- **Interface members.** An interface's `property_signature` /
+  `method_signature` members do not become child symbols — no existing
+  handler understands those nodes, and half-extracting them would be
+  worse than not extracting them. They are captured in the interface's
+  signature instead, so a member change still invalidates importers.
+- **Type analysis.** No inference; member resolution is structural. A
+  `type_identifier` outside a heritage clause (an annotation, a generic
+  argument) produces no reference, so `HAS_TYPE` / `RETURNS` edges do not
+  exist. `CALLS`, `EXTENDS` and `IMPLEMENTS` are the only relationship
+  kinds the graph emits.
 
 ## In Progress
 
@@ -1205,8 +1218,7 @@ semantic model is not mistaken for something broader than it is.
 
 ## Planned
 
-- Type-level symbols (`interface`, `type`) and the resulting import edges
-- `EXTENDS` / `IMPLEMENTS` relationships
+- Re-export resolution (`export { x } from` / `export * from`)
 - Incremental persistence (each run currently rewrites the whole snapshot)
 
 ---
