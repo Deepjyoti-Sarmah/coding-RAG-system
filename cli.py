@@ -14,11 +14,7 @@ from retrieval.index_queries import (
     build_context_pack_from_index,
     build_hybrid_retriever,
 )
-from storage.index_store import (
-    current_generation,
-    load_embedding_cache,
-    load_index,
-)
+from storage.index_store import count_rows, current_generation
 
 DEFAULT_DB_DIRNAME = ".ckg"
 DEFAULT_DB_FILENAME = "index.sqlite"
@@ -29,7 +25,7 @@ def default_db_path(root: str) -> str:
 
 
 def has_embeddings(db_path: str) -> bool:
-    return len(load_embedding_cache(db_path)) > 0
+    return count_rows(db_path)["embeddings"] > 0
 
 
 # ---- commands (pure, testable independently of argument parsing) ----
@@ -51,15 +47,17 @@ def cmd_index(
     return report
 
 
-def cmd_status(db_path: str) -> dict:
-    result = load_index(db_path)
+def cmd_status(db_path: str) -> dict[str, object]:
+    from storage.index_store import count_rows
+
+    counts = count_rows(db_path)
 
     return {
         "generation": current_generation(db_path),
-        "documents": len(result.documents),
-        "symbols": len(result.symbols),
-        "chunks": len(result.chunks),
-        "embeddings": len(load_embedding_cache(db_path)),
+        "documents": counts["documents"],
+        "symbols": counts["symbols"],
+        "chunks": counts["chunks"],
+        "embeddings": counts["embeddings"],
         "embedding_jobs": queue_status(db_path),
     }
 
@@ -94,26 +92,9 @@ def cmd_imports(
     db_path: str,
     relative_path: str,
 ) -> list[tuple[ImportReference, ResolvedImportReference | None]]:
-    result = load_index(db_path)
+    from storage.index_store import load_imports_for_path
 
-    document = next(
-        (d for d in result.documents if d.relative_path == relative_path),
-        None,
-    )
-
-    if document is None:
-        return []
-
-    resolved_by_import_id = {
-        id(resolved.import_reference): resolved
-        for resolved in result.resolved_import_references
-    }
-
-    return [
-        (import_reference, resolved_by_import_id.get(id(import_reference)))
-        for import_reference in result.import_references
-        if import_reference.document_id == document.document_id
-    ]
+    return load_imports_for_path(db_path, relative_path)
 
 
 def cmd_context(
@@ -137,6 +118,24 @@ def cmd_eval(
     *, provider: EmbeddingProvider | None = None, top_k: int = 5
 ) -> EvaluationReport:
     return run_evaluation(provider=provider, top_k=top_k)
+
+
+def cmd_watch(
+    root: str,
+    db_path: str,
+    *,
+    provider: EmbeddingProvider | None = None,
+    debounce_seconds: float = 0.5,
+) -> None:
+    from indexing.watcher import watch_repository
+
+    watch_repository(
+        root,
+        db_path,
+        provider=provider,
+        debounce_seconds=debounce_seconds,
+        on_report=lambda report: _print_index_report(report, db_path),
+    )
 
 
 def resolve_provider(db_path: str, *, use_vector: bool) -> EmbeddingProvider | None:
@@ -331,6 +330,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     eval_parser.add_argument("--top-k", type=int, default=5)
 
+    watch_parser = subparsers.add_parser(
+        "watch", help="keep the index fresh by watching for file changes"
+    )
+    watch_parser.add_argument("path")
+    watch_parser.add_argument(
+        "--embed",
+        action="store_true",
+        help="also run the embedding worker after each reindex",
+    )
+    watch_parser.add_argument(
+        "--debounce",
+        type=float,
+        default=0.5,
+        help="seconds of edit quiet before reindexing (default 0.5)",
+    )
+
     return parser
 
 
@@ -362,6 +377,24 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     db_path = args.db or default_db_path(args.path)
+
+    if args.command == "watch":
+        provider = None
+
+        if args.embed:
+            from embeddings.local_provider import LocalEmbeddingProvider
+
+            provider = LocalEmbeddingProvider()
+
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        print(f"Watching {args.path} (index: {db_path})")
+        cmd_watch(
+            args.path,
+            db_path,
+            provider=provider,
+            debounce_seconds=args.debounce,
+        )
+        return 0
 
     if not Path(db_path).exists():
         print(f"No index found at {db_path}. Run `ckg index {args.path}` first.")
