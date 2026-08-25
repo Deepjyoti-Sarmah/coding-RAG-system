@@ -4,6 +4,7 @@ from analysis.symbol_builder import build_symbol
 from models.entities.documents import Document
 from models.entities.symbol_kind import SymbolKind
 from models.entities.symbols import Symbol
+from parsing.node_text import node_text
 
 
 def handle_variable_declarator(
@@ -32,7 +33,7 @@ def handle_variable_declarator(
     else:
         kind = SymbolKind.VARIABLE
 
-    name: str = name_node.text.decode("utf-8")
+    name: str = node_text(name_node)
 
     return build_symbol(
         node=node,

@@ -1,6 +1,7 @@
 from tree_sitter import Node
 
 from models.entities.symbol_kind import SymbolKind
+from parsing.node_text import node_text
 
 _CALLABLE_KINDS = {
     SymbolKind.FUNCTION,
@@ -70,7 +71,7 @@ def _parameter_type(parameter: Node) -> str:
 
 
 def _annotation_text(type_annotation: Node) -> str:
-    return type_annotation.text.decode("utf-8").lstrip(":").strip()
+    return node_text(type_annotation).lstrip(":").strip()
 
 
 def _class_signature(node: Node) -> str:
@@ -98,7 +99,7 @@ def _class_signature(node: Node) -> str:
     if extends_clause is None:
         return "class"
 
-    extends_text = extends_clause.text.decode("utf-8").replace(
+    extends_text = node_text(extends_clause).replace(
         "extends", ""
     ).strip()
 
@@ -134,7 +135,7 @@ def _interface_extends_text(node: Node) -> str:
         return ""
 
     return ",".join(
-        child.text.decode("utf-8")
+        node_text(child)
         for child in heritage.children
         if child.type == "type_identifier"
     )
@@ -158,7 +159,7 @@ def _interface_members(node: Node) -> list[str]:
             continue
 
         members.append(
-            f"{name.text.decode('utf-8')}:{_member_shape(child)}"
+            f"{node_text(name)}:{_member_shape(child)}"
         )
 
     return sorted(members)
@@ -182,7 +183,7 @@ def _type_alias_signature(node: Node) -> str:
     if value is None:
         return "type"
 
-    return f"type:{value.text.decode('utf-8')}"
+    return f"type:{node_text(value)}"
 
 
 def _variable_signature(node: Node) -> str:

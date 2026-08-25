@@ -5,6 +5,7 @@ from analysis.import_utils import get_module_path
 from models.common.source_location import SourceLocation
 from models.entities.documents import Document
 from models.entities.import_references import ImportReference
+from parsing.node_text import node_text
 
 
 def handle_default_import(
@@ -35,7 +36,7 @@ def handle_default_import(
         document=document,
         module_path=module_path,
         imported_name="default",
-        local_name=identifier.text.decode("utf-8"),
+        local_name=node_text(identifier),
         location=SourceLocation(
             start_line=identifier.start_point.row + 1,
             end_line=identifier.end_point.row + 1,

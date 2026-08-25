@@ -1,4 +1,5 @@
 from tree_sitter import Node
+from parsing.node_text import node_text
 
 
 def get_module_path(node: Node) -> str | None:
@@ -21,10 +22,10 @@ def get_module_path(node: Node) -> str | None:
     fragment = string_node.child_by_field_name("fragment")
 
     if fragment is not None:
-        return fragment.text.decode("utf-8")
+        return node_text(fragment)
 
     for child in string_node.children:
         if child.type == "string_fragment":
-            return child.text.decode("utf-8")
+            return node_text(child)
 
     return None

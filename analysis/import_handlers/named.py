@@ -5,6 +5,7 @@ from analysis.import_utils import get_module_path
 from models.common.source_location import SourceLocation
 from models.entities.documents import Document
 from models.entities.import_references import ImportReference
+from parsing.node_text import node_text
 
 
 def handle_import_specifier(
@@ -21,11 +22,11 @@ def handle_import_specifier(
     identifiers = [child for child in node.children if child.type == "identifier"]
 
     if len(identifiers) == 1:
-        imported_name = identifiers[0].text.decode("utf-8")
+        imported_name = node_text(identifiers[0])
         local_name = imported_name
     elif len(identifiers) == 2:
-        imported_name = identifiers[0].text.decode("utf-8")
-        local_name = identifiers[1].text.decode("utf-8")
+        imported_name = node_text(identifiers[0])
+        local_name = node_text(identifiers[1])
     else:
         return None
 

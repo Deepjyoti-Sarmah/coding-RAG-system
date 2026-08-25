@@ -45,8 +45,13 @@ def build_relationship(
     if resolved_reference.status != ResolutionStatus.RESOLVED:
         return None
 
+    target_symbol = resolved_reference.target_symbol
+
+    if target_symbol is None:
+        return None
+
     return Relationship(
         source_symbol_id=reference.owner_symbol_id,
-        target_symbol_id=resolved_reference.target_symbol.symbol_id,
+        target_symbol_id=target_symbol.symbol_id,
         kind=kind,
     )

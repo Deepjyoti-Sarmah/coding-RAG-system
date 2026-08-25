@@ -3,6 +3,7 @@ from tree_sitter import Node
 from analysis.export_builder import build_export
 from models.entities.documents import Document
 from models.entities.exports import Export
+from parsing.node_text import node_text
 
 DECLARATION_NODE_TYPES = {
     "function_declaration",
@@ -101,7 +102,7 @@ def _declaration_names(node: Node) -> list[str]:
         return _lexical_declaration_names(node)
 
     if node.type == "identifier":
-        return [node.text.decode("utf-8")]
+        return [node_text(node)]
 
     return []
 
@@ -112,7 +113,7 @@ def _name_from_field(node: Node) -> list[str]:
     if name is None:
         return []
 
-    return [name.text.decode("utf-8")]
+    return [node_text(name)]
 
 
 def _lexical_declaration_names(node: Node) -> list[str]:
@@ -125,6 +126,6 @@ def _lexical_declaration_names(node: Node) -> list[str]:
         name = declarator.child_by_field_name("name")
 
         if name is not None and name.type == "identifier":
-            names.append(name.text.decode("utf-8"))
+            names.append(node_text(name))
 
     return names

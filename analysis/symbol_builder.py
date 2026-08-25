@@ -12,6 +12,7 @@ from models.common.source_location import SourceLocation
 from models.entities.documents import Document
 from models.entities.symbol_kind import SymbolKind
 from models.entities.symbols import Symbol
+from parsing.node_text import node_text
 
 
 def build_symbol(
@@ -23,7 +24,7 @@ def build_symbol(
     owner: Symbol | None = None,
 ) -> Symbol:
 
-    content = node.text.decode("utf-8")
+    content = node_text(node)
 
     qualified_name = (
         f"{owner.qualified_name}.{name}" if owner is not None else name

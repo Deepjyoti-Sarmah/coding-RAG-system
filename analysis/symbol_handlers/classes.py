@@ -4,6 +4,7 @@ from analysis.symbol_builder import build_symbol
 from models.entities.documents import Document
 from models.entities.symbol_kind import SymbolKind
 from models.entities.symbols import Symbol
+from parsing.node_text import node_text
 
 
 def handle_class(
@@ -20,7 +21,7 @@ def handle_class(
 
     return build_symbol(
         node=node,
-        name=name.text.decode(),
+        name=node_text(name),
         kind=SymbolKind.CLASS,
         document=document,
         owner=owner,
