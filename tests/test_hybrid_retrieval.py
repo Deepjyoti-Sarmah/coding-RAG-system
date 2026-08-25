@@ -8,7 +8,7 @@ from embeddings.fake_provider import FakeEmbeddingProvider
 from indexing.embedding_queue import run_embedding_worker
 from indexing.indexer import reindex_index
 from models.entities.fts_hit import FtsHit
-from retrieval.hybrid_retriever import HybridRetriever
+from retrieval.hybrid_retriever import HybridRetriever, detect_intent
 from retrieval.index_queries import build_hybrid_retriever
 from retrieval.ranking import reciprocal_rank_fusion
 from retrieval.vector_store import VectorSearchHit, VectorStore
@@ -288,13 +288,14 @@ class TestImportersStrategyStubs(unittest.TestCase):
         self.assertEqual(sorted(set(first_paths)), ["api.ts", "cli.ts"])
         self.assertEqual(first_paths, second_paths)
 
-    def test_unknown_module_returns_no_candidates(self):
+    def test_unknown_module_falls_back_to_hybrid(self):
         retriever = self._retriever(IMPORTERS)
 
         retrieval = retriever.retrieve("What imports missing.ts?")
 
-        self.assertEqual(retrieval.strategy, "graph_importers")
-        self.assertEqual(retrieval.candidates, [])
+        # No importer data for the unknown module: rather than an empty
+        # structural answer, the query degrades to hybrid search.
+        self.assertNotEqual(retrieval.strategy, "graph_importers")
 
     def test_symbol_mode_resolves_importers_by_symbol_name(self):
         retriever = self._retriever(IMPORTERS)
@@ -423,12 +424,12 @@ class TestHybridRetrieverIntegration(unittest.TestCase):
         )
         self.assertEqual(retrieval.candidates[0].symbol_name, "run")
 
-    def test_caller_intent_prioritizes_incoming_edges(self):
+    def test_caller_intent_routes_to_graph(self):
         retriever = build_hybrid_retriever(self.db_path, provider=self.provider)
 
         retrieval = retriever.retrieve("callers of login")
 
-        self.assertEqual(retrieval.strategy, "hybrid")
+        self.assertEqual(retrieval.strategy, "graph_callers")
         self.assertEqual(retrieval.candidates[0].symbol_name, "run")
 
     def test_empty_index_returns_no_candidates(self):
@@ -442,6 +443,63 @@ class TestHybridRetrieverIntegration(unittest.TestCase):
             retrieval = retriever.retrieve("nothing matches this")
 
             self.assertEqual(retrieval.candidates, [])
+
+
+class TestIntentDetection(unittest.TestCase):
+    def test_caller_phrasings(self):
+        for query in (
+            "who calls login",
+            "callers of login",
+            "find callers of parseQuery",
+            "who invokes submitForm",
+        ):
+            self.assertEqual(detect_intent(query), ("callers", query.split()[-1].rstrip("?")), query)
+
+    def test_callee_phrasings(self):
+        self.assertEqual(detect_intent("what does run call"), ("callees", "run"))
+        self.assertEqual(detect_intent("callees of handleAuth"), ("callees", "handleAuth"))
+
+    def test_definition_phrasings(self):
+        self.assertEqual(
+            detect_intent("where is login defined"), ("definition", "login")
+        )
+        self.assertEqual(
+            detect_intent("definition of createAuth"), ("definition", "createAuth")
+        )
+
+    def test_importer_phrasings(self):
+        self.assertEqual(detect_intent("what imports auth.ts"), ("importers", "auth.ts"))
+        self.assertEqual(detect_intent("which files use login"), ("importers", "login"))
+        self.assertEqual(detect_intent("importers of auth.ts"), ("importers", "auth.ts"))
+
+    def test_plain_query_has_no_intent(self):
+        self.assertIsNone(detect_intent("how does authentication flow work"))
+        self.assertIsNone(detect_intent("orchestrate"))
+
+
+class TestEmptyIntentFallsBackToHybrid(unittest.TestCase):
+    def test_unknown_symbol_falls_through_to_hybrid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name, content in AUTH.items():
+                (root / name).write_text(content, encoding="utf-8")
+            from analysis.build_graph import build_graph
+            result = build_graph(str(root))
+
+            retriever = HybridRetriever(
+                symbol_index=result.symbol_index,
+                graph=result.graph,
+                fts_search=lambda query, limit: [
+                    _fts_hit("auth.ts|typescript|login|function")
+                ],
+                vector_store=None,
+                embed=None,
+            )
+
+            retrieval = retriever.retrieve("who calls totallyUnknownThing")
+
+            self.assertEqual(retrieval.strategy, "hybrid")
+            self.assertNotEqual(retrieval.candidates, [])
 
 
 if __name__ == "__main__":

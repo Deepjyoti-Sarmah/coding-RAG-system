@@ -3,15 +3,14 @@ from dataclasses import dataclass
 from graph.code_graph import CodeGraph
 from models.entities.symbols import Symbol
 from retrieval.candidate import HybridCandidate
-
-TOKENS_PER_CHAR = 4
+from retrieval.tokenizer import count_tokens
 
 ROLE_PRIMARY = "primary"
 ROLE_SUPPORTING = "supporting"
 
 
 def estimate_tokens(text: str) -> int:
-    return max(1, len(text) // TOKENS_PER_CHAR)
+    return count_tokens(text)
 
 
 @dataclass(slots=True)

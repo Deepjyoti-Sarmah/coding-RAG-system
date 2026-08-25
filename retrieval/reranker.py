@@ -201,7 +201,7 @@ def _is_neighbor(a: Symbol, b: Symbol, graph: CodeGraph) -> bool:
     return any(neighbor.symbol_id == b.symbol_id for neighbor in _neighbors(a, graph))
 
 
-def _matches(query: str, patterns: tuple[re.Pattern, ...]) -> bool:
+def _matches(query: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
     return any(pattern.search(query) for pattern in patterns)
 
 

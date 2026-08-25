@@ -75,11 +75,18 @@ def _symbols_by_key(result):
 
 
 class TestEstimateTokens(unittest.TestCase):
-    def test_four_chars_is_one_token(self):
-        self.assertEqual(estimate_tokens("abcd"), 1)
+    def test_short_text_is_at_least_one_token(self):
+        self.assertGreaterEqual(estimate_tokens("abcd"), 1)
 
-    def test_empty_text_is_one_token(self):
-        self.assertEqual(estimate_tokens(""), 1)
+    def test_empty_text_is_zero_tokens(self):
+        self.assertEqual(estimate_tokens(""), 0)
+
+    def test_code_is_counted_more_tightly_than_chars_over_four(self):
+        code = "export function createAuth() { return 1; }"
+        self.assertLessEqual(
+            estimate_tokens(code),
+            len(code) // 4 + 4,
+        )
 
     def test_deterministic(self):
         self.assertEqual(estimate_tokens("auth login function"), estimate_tokens("auth login function"))

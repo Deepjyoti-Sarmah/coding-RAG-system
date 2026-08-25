@@ -1,5 +1,5 @@
-import re
 import posixpath
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -7,6 +7,7 @@ import numpy as np
 
 from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
+from models.entities.documents import Document
 from models.entities.exports import Export
 from models.entities.fts_hit import FtsHit
 from models.entities.resolved_import_reference import ResolvedImportReference
@@ -17,21 +18,58 @@ from retrieval.ranking import reciprocal_rank_fusion
 from retrieval.reranker import detect_preference, rerank_candidates
 from retrieval.vector_store import VectorStore
 
-WHO_CALLS_PATTERN = re.compile(r"who calls\s+([A-Za-z_]\w*)", re.IGNORECASE)
-WHAT_CALLS_PATTERN = re.compile(r"what does\s+([A-Za-z_]\w*)\s+call", re.IGNORECASE)
-WHERE_IS_PATTERN = re.compile(
-    r"where is\s+([A-Za-z_]\w*)\s+(?:defined|implemented)", re.IGNORECASE
-)
-WHAT_IMPORTS_PATTERN = re.compile(
-    r"(?:what|who|which)\s+(?:files?|modules?)?\s*imports\s+([A-Za-z_][\w.]*)"
-    r"|importers of\s+([A-Za-z_][\w.]*)",
+WHO_CALLS_PATTERN = re.compile(
+    r"(?:who\s+(?:calls|invokes)|callers?\s+of|find\s+callers?\s+of)"
+    r"\s+([A-Za-z_]\w*)",
     re.IGNORECASE,
 )
+WHAT_CALLS_PATTERN = re.compile(
+    r"(?:what\s+does\s+([A-Za-z_]\w*)\s+call(?:s|\s+into)?|callees?\s+of\s+([A-Za-z_]\w*))",
+    re.IGNORECASE,
+)
+WHERE_IS_PATTERN = re.compile(
+    r"(?:where\s+is\s+([A-Za-z_]\w*)\s+(?:defined|implemented|declared)"
+    r"|definition\s+of\s+([A-Za-z_]\w*))",
+    re.IGNORECASE,
+)
+WHAT_IMPORTS_PATTERN = re.compile(
+    r"(?:(?:what|who|which)\s+(?:files?|modules?)?\s*(?:imports?|uses?)\s+"
+    r"([A-Za-z_][\w.]*)|importers?\s+of\s+([A-Za-z_][\w.]*))",
+    re.IGNORECASE,
+)
+
+# Ordered: first match wins. Callers/callees/definitions are unambiguous
+# structural intents; importer phrasings overlap with plain English ("what
+# uses X"), so they run last.
+_INTENT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("callers", WHO_CALLS_PATTERN),
+    ("callees", WHAT_CALLS_PATTERN),
+    ("definition", WHERE_IS_PATTERN),
+    ("importers", WHAT_IMPORTS_PATTERN),
+]
+
+Intent = tuple[str, str]
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_]\w*")
 
 FtsSearch = Callable[[str, int], list[FtsHit]]
 Embed = Callable[[str], np.ndarray]
+
+
+def detect_intent(query: str) -> Intent | None:
+    """Extract a structural question from natural language, if present."""
+    for name, pattern in _INTENT_PATTERNS:
+        match = pattern.search(query)
+
+        if match is None:
+            continue
+
+        target = next((group for group in match.groups() if group), None)
+
+        if target is not None:
+            return name, target
+
+    return None
 
 
 @dataclass(slots=True)
@@ -62,24 +100,28 @@ class HybridRetriever:
         self.exports = exports
 
     def retrieve(self, query: str, top_k: int = 5) -> HybridRetrieval:
-        who_calls = WHO_CALLS_PATTERN.search(query)
-        if who_calls:
-            return self._graph_callers(who_calls.group(1))
+        intent = detect_intent(query)
 
-        what_calls = WHAT_CALLS_PATTERN.search(query)
-        if what_calls:
-            return self._graph_callees(what_calls.group(1))
+        if intent is not None:
+            result = self._run_intent(intent)
 
-        where_is = WHERE_IS_PATTERN.search(query)
-        if where_is:
-            return self._exact_definition(where_is.group(1))
-
-        what_imports = WHAT_IMPORTS_PATTERN.search(query)
-        if what_imports:
-            target = what_imports.group(1) or what_imports.group(2)
-            return self._graph_importers(target)
+            # A structural lookup with no hits (unknown symbol, unresolved
+            # imports) falls through - a hybrid search beats an empty answer.
+            if result.candidates:
+                return result
 
         return self._hybrid_search(query, top_k)
+
+    def _run_intent(self, intent: Intent) -> HybridRetrieval:
+        kind, target = intent
+
+        if kind == "callers":
+            return self._graph_callers(target)
+        if kind == "callees":
+            return self._graph_callees(target)
+        if kind == "definition":
+            return self._exact_definition(target)
+        return self._graph_importers(target)
 
     def _graph_callers(self, target_name: str) -> HybridRetrieval:
         candidates: list[HybridCandidate] = []
@@ -146,9 +188,7 @@ class HybridRetriever:
             candidates=candidates,
         )
 
-    def _resolved_importers(
-        self, target_text: str
-    ) -> list[ResolvedImportReference]:
+    def _resolved_importers(self, target_text: str) -> list[ResolvedImportReference]:
         resolved_imports = self.resolved_imports or []
 
         if "." in target_text:
@@ -163,13 +203,11 @@ class HybridRetriever:
             return [
                 resolved_import
                 for resolved_import in resolved_imports
-                if resolved_import.target_document.document_id
-                in target_document_ids
+                if resolved_import.target_document.document_id in target_document_ids
             ]
 
         seed_ids = {
-            symbol.symbol_id
-            for symbol in self.symbol_index.lookup_by_name(target_text)
+            symbol.symbol_id for symbol in self.symbol_index.lookup_by_name(target_text)
         }
 
         return [
@@ -183,8 +221,8 @@ class HybridRetriever:
         self,
         target_text: str,
         resolved_imports: list[ResolvedImportReference],
-    ) -> list:
-        matched: list = []
+    ) -> list[Document]:
+        matched: list[Document] = []
         seen: set[str] = set()
 
         for resolved_import in resolved_imports:
