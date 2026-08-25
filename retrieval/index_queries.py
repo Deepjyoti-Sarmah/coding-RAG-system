@@ -6,29 +6,36 @@ knows how to read and write rows, and this module knows how to turn
 those rows into a retriever.
 """
 
-from chunking.symbol_chunker import SemanticChunk
+from analysis.build_result import BuildResult
 from embeddings.provider import EmbeddingProvider
 from retrieval.context_builder import ContextPack, build_context_pack
 from retrieval.hybrid_retriever import HybridRetriever
+from retrieval.index_cache import load_index_cached
 from retrieval.numpy_vector_store import NumpyVectorStore
+from retrieval.sqlite_vec_store import SqliteVecVectorStore, sqlite_vec_available
+from retrieval.vector_store import VectorStore
 from storage.index_store import (
     load_chunk_vectors,
-    load_index,
     search_lexical,
 )
 
 
-def load_vector_store(db_path: str) -> NumpyVectorStore:
-    entries: list[tuple[SemanticChunk, object]] = load_chunk_vectors(db_path)
+def load_vector_store(db_path: str) -> VectorStore:
+    """sqlite-vec when the extension is usable, in-memory numpy otherwise."""
+    if sqlite_vec_available(db_path):
+        return SqliteVecVectorStore(db_path)
 
-    return NumpyVectorStore(entries)
+    return NumpyVectorStore(load_chunk_vectors(db_path))
 
 
 def build_hybrid_retriever(
     db_path: str,
     provider: EmbeddingProvider | None = None,
+    *,
+    result: BuildResult | None = None,
 ) -> HybridRetriever:
-    result = load_index(db_path)
+    if result is None:
+        result = load_index_cached(db_path)
 
     vector_store = load_vector_store(db_path) if provider is not None else None
     embed = provider.embed_query if provider is not None else None
@@ -54,8 +61,9 @@ def build_context_pack_from_index(
     provider: EmbeddingProvider | None = None,
     top_k: int = 5,
 ) -> ContextPack:
-    result = load_index(db_path)
-    retriever = build_hybrid_retriever(db_path, provider=provider)
+    # One materialization serves both the retriever and the context pack.
+    result = load_index_cached(db_path)
+    retriever = build_hybrid_retriever(db_path, provider=provider, result=result)
 
     retrieval = retriever.retrieve(query, top_k=top_k)
 
