@@ -225,6 +225,29 @@ class TestCliInit(unittest.TestCase):
         self.assertEqual(data["mcpServers"]["ckg"]["command"], "ckg-mcp")
         self.assertEqual(results[str(mcp_path)], "written")
 
+    def test_init_refuses_to_overwrite_malformed_json(self):
+        mcp_path = self.root / ".mcp.json"
+        original = '{"mcpServers": {"other": {"command": "other-server"},}'
+        mcp_path.write_text(original, encoding="utf-8")
+
+        with self.assertRaises(ValueError):
+            cmd_init(str(self.root))
+
+        self.assertEqual(mcp_path.read_text(encoding="utf-8"), original)
+
+        exit_code = main(["init", str(self.root)])
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(mcp_path.read_text(encoding="utf-8"), original)
+
+    def test_init_refuses_to_overwrite_non_object_json(self):
+        mcp_path = self.root / ".mcp.json"
+        mcp_path.write_text("[]", encoding="utf-8")
+
+        with self.assertRaises(ValueError):
+            cmd_init(str(self.root))
+
+        self.assertEqual(mcp_path.read_text(encoding="utf-8"), "[]")
+
     def test_init_idempotent_second_run_reports_already_configured(self):
         mcp_path = self.root / ".mcp.json"
 

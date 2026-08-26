@@ -156,13 +156,18 @@ def resolve_provider(db_path: str, *, use_vector: bool) -> EmbeddingProvider | N
 def _ensure_mcp_entry(path: Path, container_key: str) -> str:
     entry: dict[str, object] = {"command": "ckg-mcp"}
     if path.exists():
+        # An unreadable or non-object config is the user's file, not ours to
+        # replace: rewriting it would silently discard whatever they had.
+        text = path.read_text(encoding="utf-8")
+
         try:
-            text = path.read_text(encoding="utf-8")
             data: dict = json.loads(text) if text.strip() else {}
-            if not isinstance(data, dict):
-                data = {}
-        except (json.JSONDecodeError, OSError):
-            data = {}
+        except json.JSONDecodeError as error:
+            raise ValueError(f"{path} is not valid JSON: {error}") from error
+
+        if not isinstance(data, dict):
+            raise ValueError(f"{path} must contain a JSON object")
+
         # check if already configured under any common container
         for key in (container_key, "mcpServers", "servers", "mcp"):
             container = data.get(key)
@@ -554,7 +559,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "init":
-        results = cmd_init(args.path)
+        try:
+            results = cmd_init(args.path)
+        except (ValueError, OSError) as error:
+            print(f"Could not configure MCP: {error}")
+            return 1
+
         for file_path, status in results.items():
             if status == "already configured":
                 print(f"already configured: {file_path}")

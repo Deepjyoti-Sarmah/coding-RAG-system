@@ -16,6 +16,26 @@ jobs:
           enable-cache: true
       - run: uv run ruff check .
 
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv build
+      # Installing the built wheel from outside the checkout is what proves the
+      # packaging config is right: running from the repo root would let the
+      # working directory satisfy imports that the wheel does not ship.
+      - name: Install the wheel and run it from another directory
+        run: |
+          uv tool install --force dist/*.whl
+          cd "$RUNNER_TEMP"
+          ckg --help
+          ckg init
+          test -f .mcp.json
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:

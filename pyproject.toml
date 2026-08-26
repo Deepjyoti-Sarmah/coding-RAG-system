@@ -68,9 +68,6 @@ exclude = [
 [tool.ruff]
 exclude = ["code-context-engine", "tests/fixtures", ".venv"]
 
-[tool.ruff.lint]
-ignore = ["TC004"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = ["code-context-engine", ".venv", "test_repo"]
