@@ -1,6 +1,9 @@
 import argparse
 import json
+import os
+import subprocess
 import sys
+import time
 from pathlib import Path
 
 from embeddings.provider import EmbeddingProvider
@@ -127,6 +130,7 @@ def cmd_watch(
     *,
     provider: EmbeddingProvider | None = None,
     debounce_seconds: float = 0.5,
+    embed_limit: int | None = 200,
 ) -> None:
     from indexing.watcher import watch_repository
 
@@ -135,6 +139,7 @@ def cmd_watch(
         db_path,
         provider=provider,
         debounce_seconds=debounce_seconds,
+        embed_limit=embed_limit,
         on_report=lambda report: _print_index_report(report, db_path),
     )
 
@@ -198,6 +203,93 @@ def cmd_init(root: str = ".") -> dict[str, str]:
     return results
 
 
+def cmd_embed(
+    db_path: str,
+    *,
+    provider: EmbeddingProvider | None = None,
+    limit: int | None = None,
+):
+    if provider is None:
+        from embeddings.local_provider import LocalEmbeddingProvider
+
+        provider = LocalEmbeddingProvider()
+    return run_embedding_worker(db_path, provider, limit=limit)
+
+
+def _background_lock_path(db_path: str) -> Path:
+    return Path(db_path).parent / f".{Path(db_path).name}.embed.lock"
+
+
+def _try_acquire_embed_lock(db_path: str, lease: int = 300) -> bool:
+    lock = _background_lock_path(db_path)
+    now = time.time()
+    if lock.exists():
+        try:
+            mtime = lock.stat().st_mtime
+            if now - mtime < lease:
+                return False
+            lock.unlink()
+        except OSError:
+            return False
+    try:
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        return True
+    except FileExistsError:
+        return False
+    except OSError:
+        return False
+
+
+def _maybe_spawn_background_embed(db_path: str) -> None:
+    # skip when queue empty (common after first run due to hash reuse)
+    try:
+        counts = queue_status(db_path)
+        pending = counts.get("PENDING", 0)
+        failed = counts.get("FAILED", 0)
+        exhausted = counts.get("exhausted", 0)
+        runnable = pending + max(0, failed - exhausted)
+        if runnable == 0:
+            return
+    except Exception:  # noqa: BLE001
+        return
+    if not _try_acquire_embed_lock(db_path):
+        return
+    code = (
+        "import sys\n"
+        "from pathlib import Path\n"
+        "db_path=sys.argv[1]\n"
+        "lock=Path(db_path).parent / f'.{Path(db_path).name}.embed.lock'\n"
+        "try:\n"
+        "    from embeddings.local_provider import LocalEmbeddingProvider\n"
+        "    from indexing.embedding_queue import run_embedding_worker\n"
+        "    provider=LocalEmbeddingProvider()\n"
+        "    run_embedding_worker(db_path, provider)\n"
+        "except Exception:\n"
+        "    pass\n"
+        "finally:\n"
+        "    try:\n"
+        "        lock.unlink()\n"
+        "    except Exception:\n"
+        "        pass\n"
+    )
+    try:
+        subprocess.Popen(
+            [sys.executable, "-c", code, db_path],
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
+        )
+    except Exception:  # noqa: BLE001
+        try:
+            _background_lock_path(db_path).unlink()
+        except Exception:  # noqa: BLE001, S110
+            pass
+
+
 # ---- output formatting ----
 
 
@@ -219,12 +311,28 @@ def _print_status(status: dict) -> None:
     print(f"documents:  {status['documents']}")
     print(f"symbols:    {status['symbols']}")
     print(f"chunks:     {status['chunks']}")
-    print(f"embeddings: {status['embeddings']}")
+    chunks = status["chunks"]
+    embeddings = status["embeddings"]
+    if chunks:
+        pct = (embeddings / chunks * 100) if chunks else 0
+        if embeddings < chunks:
+            print(f"embeddings: {embeddings}/{chunks} ({pct:.0f}%) — run `ckg embed` to enable vector search")
+        else:
+            print(f"embeddings: {embeddings}/{chunks} ({pct:.0f}%)")
+    else:
+        print(f"embeddings: {embeddings}")
 
     jobs = status["embedding_jobs"]
     if jobs:
         job_summary = ", ".join(f"{k}={v}" for k, v in sorted(jobs.items()))
         print(f"embedding queue: {job_summary}")
+        pending = jobs.get("PENDING", 0) + jobs.get("FAILED", 0) - jobs.get("exhausted", 0)
+        if pending > 0 and embeddings < chunks:
+            print(f"vector search degraded: {pending} chunks pending embedding — run `ckg embed`")
+
+
+def _print_embed_report(report) -> None:
+    print(f"embeddings: claimed={report.claimed} done={report.done} reused={report.reused} stale={report.stale} failed={report.failed}")
 
 
 def _print_candidates(retrieval: HybridRetrieval) -> None:
@@ -334,6 +442,11 @@ def build_parser() -> argparse.ArgumentParser:
     index_parser.add_argument(
         "--embed", action="store_true", help="also run the embedding worker"
     )
+    index_parser.add_argument(
+        "--no-background",
+        action="store_true",
+        help="disable background embedding drain",
+    )
 
     status_parser = subparsers.add_parser(
         "status", help="show index generation and counts"
@@ -386,9 +499,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     watch_parser.add_argument("path")
     watch_parser.add_argument(
-        "--embed",
+        "--no-embed",
         action="store_true",
-        help="also run the embedding worker after each reindex",
+        help="disable embedding worker after each reindex",
     )
     watch_parser.add_argument(
         "--debounce",
@@ -401,6 +514,12 @@ def build_parser() -> argparse.ArgumentParser:
         "init", help="configure MCP for this project"
     )
     init_parser.add_argument("path", nargs="?", default=".")
+
+    embed_parser = subparsers.add_parser(
+        "embed", help="drain the embedding queue"
+    )
+    embed_parser.add_argument("path", nargs="?", default=".")
+    embed_parser.add_argument("--limit", type=int, default=None)
 
     return parser
 
@@ -419,6 +538,8 @@ def main(argv: list[str] | None = None) -> int:
 
         report = cmd_index(args.path, db_path, provider=provider)
         _print_index_report(report, db_path)
+        if not args.no_background and not args.embed:
+            _maybe_spawn_background_embed(db_path)
         return 0
 
     if args.command == "eval":
@@ -444,9 +565,9 @@ def main(argv: list[str] | None = None) -> int:
     db_path = args.db or default_db_path(args.path)
 
     if args.command == "watch":
-        provider = None
-
-        if args.embed:
+        if args.no_embed:
+            provider = None
+        else:
             from embeddings.local_provider import LocalEmbeddingProvider
 
             provider = LocalEmbeddingProvider()
@@ -458,6 +579,7 @@ def main(argv: list[str] | None = None) -> int:
             db_path,
             provider=provider,
             debounce_seconds=args.debounce,
+            embed_limit=200,
         )
         return 0
 
@@ -465,10 +587,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"No index found at {db_path}. Run `ckg index {args.path}` first.")
         return 1
 
-    if args.command == "status":
+    if args.command == "embed":
+        report = cmd_embed(db_path, limit=args.limit)
+        _print_embed_report(report)
+    elif args.command == "status":
         _print_status(cmd_status(db_path))
     elif args.command == "search":
         provider = resolve_provider(db_path, use_vector=not args.no_vector)
+        if provider is None:
+            try:
+                qs = queue_status(db_path)
+                pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+                if pending > 0:
+                    print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
+            except Exception:  # noqa: BLE001, S110
+                pass
         _print_candidates(
             cmd_search(db_path, args.query, provider=provider, top_k=args.top_k)
         )
@@ -482,6 +615,14 @@ def main(argv: list[str] | None = None) -> int:
         _print_imports(cmd_imports(db_path, args.file))
     elif args.command == "context":
         provider = resolve_provider(db_path, use_vector=not args.no_vector)
+        if provider is None:
+            try:
+                qs = queue_status(db_path)
+                pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+                if pending > 0:
+                    print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
+            except Exception:  # noqa: BLE001, S110
+                pass
         _print_context_pack(
             cmd_context(
                 db_path,
