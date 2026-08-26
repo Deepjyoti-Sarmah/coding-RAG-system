@@ -95,7 +95,8 @@ TABLES = [
         relationship_id  INTEGER PRIMARY KEY AUTOINCREMENT,
         source_symbol_id TEXT NOT NULL REFERENCES symbols(symbol_id) ON DELETE CASCADE,
         target_symbol_id TEXT NOT NULL REFERENCES symbols(symbol_id) ON DELETE CASCADE,
-        kind             TEXT NOT NULL
+        kind             TEXT NOT NULL,
+        count            INTEGER NOT NULL DEFAULT 1
     )
     """,
     """
@@ -164,7 +165,9 @@ def create_schema(conn) -> None:
     existing = schema_version(conn)
 
     if 0 < existing < SCHEMA_VERSION:
-        # disposable derived state: drop and rebuild
+        # The index is disposable derived state: rather than migrate, drop it
+        # and let the next run rebuild from source. Source files are never
+        # touched.
         drop_schema(conn)
 
     for statement in [*TABLES, *INDEXES]:
@@ -173,6 +176,11 @@ def create_schema(conn) -> None:
 
 
 def table_names() -> list[str]:
+    """The tables this schema declares, in declaration order.
+
+    Names may be quoted in the DDL - `references` is a SQL keyword - so the
+    quotes are stripped here and re-applied at the point of use.
+    """
     names = []
     for statement in TABLES:
         match = re.search(
@@ -181,14 +189,28 @@ def table_names() -> list[str]:
         )
         if match is not None:
             names.append(match.group(1))
+
     if len(names) != len(TABLES):
         raise AssertionError("every TABLES statement must yield a table name")
+
     return names
 
 
 def drop_schema(conn) -> None:
+    """Drop the tables this index owns.
+
+    Deliberately not driven by a `sqlite_master` sweep: that also returns the
+    shadow tables backing `chunks_fts` and `chunk_vecs`, which must never be
+    dropped directly - dropping the virtual table takes its shadows with it.
+    Reverse declaration order so a child goes before the parent it references.
+    """
+    # Imported here only for the table name; schema owns no repository.
     from storage.repositories.vec_index_repository import _VEC_TABLE
 
+    # `chunk_vecs` is a vec0 table, so it cannot be dropped on a connection
+    # without sqlite-vec loaded (the macOS fallback path). Nothing else here
+    # is allowed to fail quietly - a swallowed error leaves stale rows behind
+    # and the rebuild then reads a half-dropped index as if it were current.
     try:
         conn.execute(f'DROP TABLE IF EXISTS "{_VEC_TABLE}"')
     except sqlite3.OperationalError:
