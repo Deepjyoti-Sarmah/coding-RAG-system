@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Vendored comparison project (untracked nested git repo)
+code-context-engine/
