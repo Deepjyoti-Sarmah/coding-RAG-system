@@ -8,4 +8,5 @@ def run_relationship_pass(
 ):
     result.relationships = build_relationships(
         resolved_references=result.resolved_references,
+        symbols=result.symbols,
     )

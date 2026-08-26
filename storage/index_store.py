@@ -283,6 +283,11 @@ def load_index(db_path: str) -> BuildResult:
         result.symbol_index.add_many(symbols)
         result.graph.add_symbols(symbols)
         result.graph.add_relationships(relationships)
+        result.graph.add_document_edges(
+            resolved_imports=resolved_imports,
+            exports=exports,
+            symbol_index=result.symbol_index,
+        )
 
         return result
     finally:

@@ -7,15 +7,17 @@ from models.relationships.relationships import Relationship
 def insert_many(conn, relationships: Sequence[Relationship]) -> None:
     conn.executemany(
         """
-        INSERT INTO relationships (source_symbol_id, target_symbol_id, kind)
-        VALUES (?, ?, ?)
-        ON CONFLICT(source_symbol_id, target_symbol_id, kind) DO NOTHING
+        INSERT INTO relationships (source_symbol_id, target_symbol_id, kind, count)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(source_symbol_id, target_symbol_id, kind)
+        DO UPDATE SET count = count + excluded.count
         """,
         [
             (
                 relationship.source_symbol_id,
                 relationship.target_symbol_id,
                 relationship.kind.value,
+                relationship.count,
             )
             for relationship in relationships
         ],
@@ -25,7 +27,7 @@ def insert_many(conn, relationships: Sequence[Relationship]) -> None:
 def fetch_all(conn) -> list[Relationship]:
     rows = conn.execute(
         """
-        SELECT source_symbol_id, target_symbol_id, kind
+        SELECT source_symbol_id, target_symbol_id, kind, count
         FROM relationships
         """
     ).fetchall()
@@ -35,6 +37,7 @@ def fetch_all(conn) -> list[Relationship]:
             source_symbol_id=row["source_symbol_id"],
             target_symbol_id=row["target_symbol_id"],
             kind=RelationshipKind(row["kind"]),
+            count=row["count"],
         )
         for row in rows
     ]

@@ -1,5 +1,6 @@
 from models.entities.reference_kind import ReferenceKind
 from models.entities.resolved_reference import ResolutionStatus, ResolvedReference
+from models.entities.symbols import Symbol
 from models.relationships.relationship_kind import RelationshipKind
 from models.relationships.relationships import Relationship
 
@@ -13,9 +14,16 @@ _RELATIONSHIP_BY_REFERENCE = {
 def build_relationships(
     *,
     resolved_references: list[ResolvedReference],
+    symbols: list[Symbol] | None = None,
 ) -> list[Relationship]:
+    """Fold resolved references and symbol ownership into deduped edges.
 
-    relationships: list[Relationship] = []
+    Duplicates are folded here rather than left for `CodeGraph` to drop, so
+    that `BuildResult.relationships` carries correct counts before it reaches
+    either the graph or the store.
+    """
+
+    relationships: dict[tuple[str, str, RelationshipKind], Relationship] = {}
 
     for resolved in resolved_references:
         relationship = build_relationship(
@@ -25,9 +33,46 @@ def build_relationships(
         if relationship is None:
             continue
 
-        relationships.append(relationship)
+        _accumulate(relationships, relationship)
 
-    return relationships
+    for relationship in build_declares_relationships(symbols=symbols or []):
+        _accumulate(relationships, relationship)
+
+    return list(relationships.values())
+
+
+def _accumulate(
+    relationships: dict[tuple[str, str, RelationshipKind], Relationship],
+    relationship: Relationship,
+) -> None:
+    existing = relationships.get(relationship.key)
+
+    if existing is None:
+        relationships[relationship.key] = relationship
+        return
+
+    existing.count += relationship.count
+
+
+def build_declares_relationships(*, symbols: list[Symbol]) -> list[Relationship]:
+    """Materialise parent/child ownership as DECLARES edges.
+
+    Only emitted when the parent is part of the same symbol set: the
+    incremental path builds one batch at a time, and an edge pointing at a
+    symbol outside the batch would dangle.
+    """
+    symbol_ids = {symbol.symbol_id for symbol in symbols}
+
+    return [
+        Relationship(
+            source_symbol_id=symbol.parent_symbol_id,
+            target_symbol_id=symbol.symbol_id,
+            kind=RelationshipKind.DECLARES,
+        )
+        for symbol in symbols
+        if symbol.parent_symbol_id is not None
+        and symbol.parent_symbol_id in symbol_ids
+    ]
 
 
 def build_relationship(
