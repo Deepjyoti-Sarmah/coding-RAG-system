@@ -1,9 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "rag-pipeline"
+name = "code-knowledge-graph"
 version = "0.1.0"
-description = "Add your description here"
+description = "Local-first code intelligence engine with hybrid retrieval and MCP server"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "mcp>=2.0.0",
     "numpy>=2.0",
@@ -18,7 +22,55 @@ dependencies = [
     "watchdog>=6.0",
 ]
 
+[project.scripts]
+ckg = "cli:main"
+ckg-mcp = "mcp_server:main"
+
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
 ]
+
+[tool.hatch.build]
+force-include = { "cli.py" = "cli.py", "mcp_server.py" = "mcp_server.py", "config.py" = "config.py" }
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "analysis",
+    "chunking",
+    "embeddings",
+    "evaluation",
+    "graph",
+    "indexing",
+    "ingestion",
+    "models",
+    "parsing",
+    "retrieval",
+    "storage",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    ".opencode",
+    ".claude",
+    ".venv",
+    ".ruff_cache",
+    "build",
+    "dist",
+    "code-context-engine",
+    "tests",
+    "test_repo",
+    "specs",
+    "benchmarks",
+    "docs",
+]
+
+[tool.ruff]
+exclude = ["code-context-engine", "tests/fixtures", ".venv"]
+
+[tool.ruff.lint]
+ignore = ["TC004"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["code-context-engine", ".venv", "test_repo"]
