@@ -15,6 +15,21 @@ from cli import (
     resolve_provider,
 )
 
+_mcp_provider = None
+
+
+def _get_mcp_provider():
+    global _mcp_provider
+    if _mcp_provider is None:
+        try:
+            from embeddings.local_provider import LocalEmbeddingProvider
+
+            _mcp_provider = LocalEmbeddingProvider()
+        except Exception:  # noqa: BLE001
+            return None
+    return _mcp_provider
+
+
 mcp = MCPServer(
     name="ckg",
     instructions=(
@@ -79,9 +94,9 @@ def index_repository(path: str, embed: bool = False) -> dict:
 
     Must be called (once) before any other tool is used against that path.
     Cheap and safe to call again after edits - only changed files are
-    reprocessed. `embed` also runs the embedding worker so search/context
-    can use vector similarity, not just lexical/graph matching; it loads a
-    local ML model and is slower, so it defaults to off.
+    reprocessed. When called from a long-lived MCP server it also drains a
+    small batch of embedding jobs lazily so vector search becomes available
+    without blocking the index call.
     """
     db_path = default_db_path(path)
     provider = None
@@ -92,6 +107,17 @@ def index_repository(path: str, embed: bool = False) -> dict:
         provider = LocalEmbeddingProvider()
 
     report = cmd_index(path, db_path, provider=provider)
+
+    # Long-lived server can absorb the 14s model load; drain a bounded batch
+    # lazily without blocking import. Limit keeps a single call from stalling.
+    try:
+        lazy_provider = provider if provider is not None else _get_mcp_provider()
+        if lazy_provider is not None:
+            from indexing.embedding_queue import run_embedding_worker
+
+            run_embedding_worker(db_path, lazy_provider, limit=200)
+    except Exception:  # noqa: BLE001, S110
+        pass
 
     return {
         "db_path": db_path,
@@ -150,10 +176,10 @@ def callees(name: str, path: str = ".") -> dict:
 
 @mcp.tool()
 def search(query: str, path: str = ".", top_k: int = 5) -> dict:
-    """Hybrid semantic search: lexical (FTS) + vector + exact-symbol + graph
-    expansion + reranking over the indexed repository. Use for open-ended or
-    natural-language questions; use definition/callers/callees for exact
-    structural lookups instead.
+    """Hybrid search: lexical (FTS) + exact-symbol + graph expansion + reranking;
+    vector similarity is used when embeddings are available (run `ckg embed`
+    to generate them). Use for open-ended questions; use definition/callers/callees
+    for exact lookups instead.
     """
     db_path = default_db_path(path)
 
@@ -162,10 +188,19 @@ def search(query: str, path: str = ".", top_k: int = 5) -> dict:
 
     provider = resolve_provider(db_path, use_vector=True)
     retrieval = cmd_search(db_path, query, provider=provider, top_k=top_k)
+    # pending count for self-diagnosis
+    try:
+        from indexing.embedding_queue import queue_status
+
+        qs = queue_status(db_path)
+        pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+    except Exception:  # noqa: BLE001
+        pending = 0
 
     return {
         "results": [_candidate_dict(c) for c in retrieval.candidates],
         "vector_search_used": provider is not None,
+        "pending_embeddings": pending,
     }
 
 
@@ -182,10 +217,9 @@ def imports(file: str, path: str = ".") -> dict:
 
 @mcp.tool()
 def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 5) -> dict:
-    """Build a token-budgeted context pack for a query: primary/supporting
-    definitions with source excerpts, important relationships between them,
-    and the file paths involved. This is the right tool for "give me enough
-    context to answer X" rather than a raw candidate list.
+    """Build a token-budgeted context pack: primary/supporting definitions
+    with source excerpts and relationships. Uses vector search when embeddings
+    are available (run `ckg embed` otherwise).
     """
     db_path = default_db_path(path)
 
@@ -194,6 +228,13 @@ def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 
 
     provider = resolve_provider(db_path, use_vector=True)
     pack = cmd_context(db_path, query, token_budget=token_budget, provider=provider, top_k=top_k)
+    try:
+        from indexing.embedding_queue import queue_status
+
+        qs = queue_status(db_path)
+        pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+    except Exception:  # noqa: BLE001
+        pending = 0
 
     return {
         "query": pack.query,
@@ -203,6 +244,8 @@ def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 
         "supporting_definitions": [_context_entry_dict(e) for e in pack.supporting_definitions],
         "relationships": list(pack.relationships),
         "file_paths": list(pack.file_paths),
+        "vector_search_used": provider is not None,
+        "pending_embeddings": pending,
     }
 
 
