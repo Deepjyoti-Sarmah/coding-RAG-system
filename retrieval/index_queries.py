@@ -48,8 +48,6 @@ def build_hybrid_retriever(
         ),
         vector_store=vector_store,
         embed=embed,
-        resolved_imports=result.resolved_import_references,
-        exports=result.exports,
     )
 
 

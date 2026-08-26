@@ -1,4 +1,3 @@
-import posixpath
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -7,10 +6,7 @@ import numpy as np
 
 from graph.code_graph import CodeGraph
 from indexing.symbol_index import SymbolIndex
-from models.entities.documents import Document
-from models.entities.exports import Export
 from models.entities.fts_hit import FtsHit
-from models.entities.resolved_import_reference import ResolvedImportReference
 from models.entities.symbols import Symbol
 from retrieval.candidate import HybridCandidate
 from retrieval.neighborhood import expand_neighborhood
@@ -88,16 +84,12 @@ class HybridRetriever:
         fts_search: FtsSearch,
         vector_store: VectorStore | None = None,
         embed: Embed | None = None,
-        resolved_imports: list[ResolvedImportReference] | None = None,
-        exports: list[Export] | None = None,
     ) -> None:
         self.symbol_index = symbol_index
         self.graph = graph
         self.fts_search = fts_search
         self.vector_store = vector_store
         self.embed = embed
-        self.resolved_imports = resolved_imports
-        self.exports = exports
 
     def retrieve(self, query: str, top_k: int = 5) -> HybridRetrieval:
         intent = detect_intent(query)
@@ -156,25 +148,17 @@ class HybridRetriever:
         )
 
     def _graph_importers(self, target_text: str) -> HybridRetrieval:
-        surfaces: dict[str, list[Symbol]] = {}
-
-        for resolved_import in self._resolved_importers(target_text):
-            document_id = resolved_import.import_reference.document_id
-
-            if document_id in surfaces:
-                continue
-
-            symbols = self._importer_surface_symbols(document_id)
-
-            if symbols:
-                surfaces[document_id] = symbols
-
         candidates: list[HybridCandidate] = []
         seen: set[str] = set()
 
-        for symbols in sorted(
-            surfaces.values(), key=lambda group: group[0].relative_path
-        ):
+        surfaces = [
+            symbols
+            for document_id in self._importer_document_ids(target_text)
+            for symbols in [self._importer_surface_symbols(document_id)]
+            if symbols
+        ]
+
+        for symbols in sorted(surfaces, key=lambda group: group[0].relative_path):
             for symbol in symbols:
                 if symbol.stable_key in seen:
                     continue
@@ -188,59 +172,32 @@ class HybridRetriever:
             candidates=candidates,
         )
 
-    def _resolved_importers(self, target_text: str) -> list[ResolvedImportReference]:
-        resolved_imports = self.resolved_imports or []
+    def _importer_document_ids(self, target_text: str) -> list[str]:
+        """Files importing `target_text`, read as a path or as a symbol name.
+
+        A dot means the caller named a file ("auth.ts", "pkg/auth.go"), so we
+        match importers of that document. Otherwise it is a symbol name, and
+        we match only importers that resolved to that exact symbol.
+        """
+        importer_ids: list[str] = []
 
         if "." in target_text:
-            target_document_ids = {
-                document.document_id
-                for document in self._target_documents(
-                    target_text,
-                    resolved_imports,
-                )
-            }
-
-            return [
-                resolved_import
-                for resolved_import in resolved_imports
-                if resolved_import.target_document.document_id in target_document_ids
+            sources = [
+                self.graph.importers_of_document(document_id)
+                for document_id in self.graph.document_ids_for_path(target_text)
+            ]
+        else:
+            sources = [
+                self.graph.importers_of_symbol(symbol.symbol_id)
+                for symbol in self.symbol_index.lookup_by_name(target_text)
             ]
 
-        seed_ids = {
-            symbol.symbol_id for symbol in self.symbol_index.lookup_by_name(target_text)
-        }
+        for document_ids in sources:
+            for document_id in document_ids:
+                if document_id not in importer_ids:
+                    importer_ids.append(document_id)
 
-        return [
-            resolved_import
-            for resolved_import in resolved_imports
-            if resolved_import.target_symbol is not None
-            and resolved_import.target_symbol.symbol_id in seed_ids
-        ]
-
-    def _target_documents(
-        self,
-        target_text: str,
-        resolved_imports: list[ResolvedImportReference],
-    ) -> list[Document]:
-        matched: list[Document] = []
-        seen: set[str] = set()
-
-        for resolved_import in resolved_imports:
-            document = resolved_import.target_document
-
-            if document.document_id in seen:
-                continue
-
-            is_exact_match = document.relative_path == target_text
-            is_basename_match = (
-                posixpath.basename(document.relative_path) == target_text
-            )
-
-            if is_exact_match or is_basename_match:
-                seen.add(document.document_id)
-                matched.append(document)
-
-        return matched
+        return importer_ids
 
     def _importer_surface_symbols(self, document_id: str) -> list[Symbol]:
         module_symbols = [
@@ -249,18 +206,17 @@ class HybridRetriever:
             if symbol.document_id == document_id
         ]
 
-        exported_names = {
-            export.symbol_name
-            for export in self.exports or []
-            if export.document_id == document_id
+        exported_ids = {
+            symbol.symbol_id
+            for symbol in self.graph.exports_of_document(document_id)
         }
 
         primary = sorted(
-            (s for s in module_symbols if s.name in exported_names),
+            (s for s in module_symbols if s.symbol_id in exported_ids),
             key=lambda s: s.qualified_name,
         )
         secondary = sorted(
-            (s for s in module_symbols if s.name not in exported_names),
+            (s for s in module_symbols if s.symbol_id not in exported_ids),
             key=lambda s: s.qualified_name,
         )
 
@@ -411,13 +367,7 @@ class HybridRetriever:
         in_results = {candidate.chunk_key for candidate in candidates}
         expanded: list[HybridCandidate] = []
 
-        hits = expand_neighborhood(
-            seed,
-            graph=self.graph,
-            symbol_index=self.symbol_index,
-            resolved_imports=self.resolved_imports,
-            exports=self.exports,
-        )
+        hits = expand_neighborhood(seed, graph=self.graph)
 
         for hit in hits:
             if hit.symbol.stable_key in in_results:

@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from analysis.build_graph import build_graph
+from graph.code_graph import CodeGraph
 from models.entities.symbols import Symbol
 from retrieval.neighborhood import (
     DEFAULT_ONE_HOP_BUDGET,
@@ -54,9 +55,6 @@ class TestExpandNeighborhood(unittest.TestCase):
         return expand_neighborhood(
             _symbol(self.result, seed_name),
             graph=self.result.graph,
-            symbol_index=self.result.symbol_index,
-            resolved_imports=self.result.resolved_import_references,
-            exports=self.result.exports,
             **kwargs,
         )
 
@@ -125,9 +123,6 @@ class TestExpandNeighborhood(unittest.TestCase):
         hits = expand_neighborhood(
             _symbol(result, "f0"),
             graph=result.graph,
-            symbol_index=result.symbol_index,
-            resolved_imports=result.resolved_import_references,
-            exports=result.exports,
         )
 
         self.assertEqual(len(hits), DEFAULT_ONE_HOP_BUDGET)
@@ -162,19 +157,22 @@ class TestExpandNeighborhood(unittest.TestCase):
         hits = expand_neighborhood(
             _symbol(result, "leaf"),
             graph=result.graph,
-            symbol_index=result.symbol_index,
-            resolved_imports=result.resolved_import_references,
-            exports=result.exports,
         )
 
         self.assertEqual(hits, [])
 
-    def test_without_imports_and_exports_skips_supporting_relations(self):
-        hits = expand_neighborhood(
-            _symbol(self.result, "login"),
-            graph=self.result.graph,
-            symbol_index=self.result.symbol_index,
-        )
+    def test_without_document_edges_skips_supporting_relations(self):
+        """A graph carrying only symbols and relationships still expands.
+
+        Import/export relations come from `add_document_edges`; without that
+        call the neighborhood degrades to call/parent edges rather than
+        failing.
+        """
+        graph = CodeGraph()
+        graph.add_symbols(self.result.symbols)
+        graph.add_relationships(self.result.relationships)
+
+        hits = expand_neighborhood(_symbol(self.result, "login"), graph=graph)
 
         relations = {hit.relation for hit in hits}
         self.assertEqual(relations, {"caller", "callee"})

@@ -31,7 +31,12 @@ def _symbol_keys(result) -> set[str]:
     return {symbol.stable_key for symbol in result.symbols}
 
 
-def _relationship_keys(result) -> set[tuple[str, str, str]]:
+def _relationship_counts(result) -> dict[tuple[str, str, str], int]:
+    """Edges keyed by stable identity, with their occurrence counts.
+
+    Counts are part of parity: an incremental run that rebuilds a subset of
+    files must not double or drop them.
+    """
     keys_by_id = {s.symbol_id: s.stable_key for s in result.symbols}
 
     return {
@@ -39,7 +44,7 @@ def _relationship_keys(result) -> set[tuple[str, str, str]]:
             keys_by_id.get(r.source_symbol_id, r.source_symbol_id),
             keys_by_id.get(r.target_symbol_id, r.target_symbol_id),
             r.kind.value,
-        )
+        ): r.count
         for r in result.relationships
     }
 
@@ -97,7 +102,7 @@ class TestFullAndIncrementalParity(unittest.TestCase):
     def _assert_equivalent(self, full, incremental):
         self.assertEqual(_symbol_keys(incremental), _symbol_keys(full))
         self.assertEqual(
-            _relationship_keys(incremental), _relationship_keys(full)
+            _relationship_counts(incremental), _relationship_counts(full)
         )
         self.assertEqual(
             _resolution_statuses(incremental), _resolution_statuses(full)

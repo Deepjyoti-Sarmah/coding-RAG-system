@@ -166,18 +166,22 @@ def _selected_relationships(
     graph: CodeGraph,
 ) -> tuple[str, ...]:
     selected = {entry.symbol_id for entry in entries}
+    names_by_id = {
+        entry.symbol_id: entry.qualified_name for entry in entries
+    }
 
     relationships: list[str] = []
 
     for entry in entries:
         source = symbols_by_key[entry.chunk_key]
 
-        for callee in graph.callees_of(source.symbol_id):
-            if callee.symbol_id not in selected:
+        for edge in graph.outgoing(source.symbol_id):
+            if edge.target_symbol_id not in selected:
                 continue
 
             relationships.append(
-                f"{source.qualified_name} -> {callee.qualified_name} (calls)"
+                f"{source.qualified_name} -> "
+                f"{names_by_id[edge.target_symbol_id]} ({edge.kind.value})"
             )
 
     return tuple(sorted(set(relationships)))

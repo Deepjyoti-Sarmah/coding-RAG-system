@@ -175,8 +175,6 @@ class TestHybridRetrieverStubs(unittest.TestCase):
             fts_search=lambda query, limit: [_fts_hit(login_key)],
             vector_store=None,
             embed=None,
-            resolved_imports=result.resolved_import_references,
-            exports=result.exports,
         )
 
         retrieval = retriever.retrieve("login")
@@ -213,8 +211,6 @@ class TestHybridRetrieverStubs(unittest.TestCase):
             fts_search=lambda query, limit: [_fts_hit(orchestrate_key)],
             vector_store=None,
             embed=None,
-            resolved_imports=result.resolved_import_references,
-            exports=result.exports,
         )
 
         retrieval = retriever.retrieve("orchestrate")
@@ -245,8 +241,6 @@ class TestImportersStrategyStubs(unittest.TestCase):
             fts_search=lambda query, limit: [],
             vector_store=None,
             embed=None,
-            resolved_imports=result.resolved_import_references,
-            exports=result.exports,
         )
 
     def test_module_mode_returns_exported_surface_of_each_importer(self):
