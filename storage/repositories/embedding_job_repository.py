@@ -21,24 +21,40 @@ def enqueue(conn, chunk_key: str, content_hash: str) -> None:
     )
 
 
+MAX_ATTEMPTS = 3
+LEASE_SECONDS = 300
+
+
 def claim(conn, limit: int | None = None) -> list[EmbeddingJob]:
+    import time
+
+    now = int(time.time())
+    lease_cutoff = now - LEASE_SECONDS
     sql = """
         UPDATE embedding_jobs
-        SET status = ?, attempts = attempts + 1
+        SET status = ?, attempts = attempts + 1, claimed_at = ?
         WHERE chunk_key IN (
             SELECT chunk_key FROM embedding_jobs
-            WHERE status IN (?, ?)
+            WHERE (
+                status IN (?, ?) AND attempts < ?
+            ) OR (
+                status = ? AND claimed_at IS NOT NULL AND claimed_at < ?
+            )
             ORDER BY chunk_key
             LIMIT ?
         )
-        RETURNING chunk_key, content_hash, status, attempts, error
+        RETURNING chunk_key, content_hash, status, attempts, error, claimed_at
     """
     rows = conn.execute(
         sql,
         (
             EmbeddingJobStatus.PROCESSING.value,
+            now,
             EmbeddingJobStatus.PENDING.value,
             EmbeddingJobStatus.FAILED.value,
+            MAX_ATTEMPTS,
+            EmbeddingJobStatus.PROCESSING.value,
+            lease_cutoff,
             limit if limit is not None else -1,
         ),
     ).fetchall()
@@ -95,13 +111,21 @@ def status_counts(conn) -> dict[str, int]:
         "SELECT status, COUNT(*) AS n FROM embedding_jobs GROUP BY status"
     ).fetchall()
 
-    return {row["status"]: row["n"] for row in rows}
+    counts = {row["status"]: row["n"] for row in rows}
+    # count exhausted jobs separately (FAILED with attempts >= MAX_ATTEMPTS)
+    exhausted = conn.execute(
+        "SELECT COUNT(*) AS n FROM embedding_jobs WHERE status = ? AND attempts >= ?",
+        (EmbeddingJobStatus.FAILED.value, MAX_ATTEMPTS),
+    ).fetchone()
+    if exhausted and exhausted["n"]:
+        counts["exhausted"] = exhausted["n"]
+    return counts
 
 
 def fetch_all(conn) -> list[EmbeddingJob]:
     rows = conn.execute(
         """
-        SELECT chunk_key, content_hash, status, attempts, error
+        SELECT chunk_key, content_hash, status, attempts, error, claimed_at
         FROM embedding_jobs
         ORDER BY chunk_key
         """
@@ -111,10 +135,16 @@ def fetch_all(conn) -> list[EmbeddingJob]:
 
 
 def _row_to_job(row) -> EmbeddingJob:
+    claimed_at = None
+    try:
+        claimed_at = row["claimed_at"]
+    except (KeyError, IndexError):
+        pass
     return EmbeddingJob(
         chunk_key=row["chunk_key"],
         content_hash=row["content_hash"],
         status=row["status"],
         attempts=row["attempts"],
         error=row["error"],
+        claimed_at=claimed_at,
     )

@@ -1,6 +1,7 @@
+import re
 import sqlite3
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 4
 
 TABLES = [
     """
@@ -120,7 +121,8 @@ TABLES = [
         content_hash TEXT NOT NULL,
         status       TEXT NOT NULL,
         attempts     INTEGER NOT NULL DEFAULT 0,
-        error        TEXT
+        error        TEXT,
+        claimed_at   INTEGER
     )
     """,
     """
@@ -159,9 +161,41 @@ INDEXES = [
 
 
 def create_schema(conn) -> None:
+    existing = schema_version(conn)
+
+    if 0 < existing < SCHEMA_VERSION:
+        # disposable derived state: drop and rebuild
+        drop_schema(conn)
+
     for statement in [*TABLES, *INDEXES]:
         conn.execute(statement)
     set_schema_version(conn, SCHEMA_VERSION)
+
+
+def table_names() -> list[str]:
+    names = []
+    for statement in TABLES:
+        match = re.search(
+            r'CREATE (?:VIRTUAL )?TABLE IF NOT EXISTS "?(\w+)"?',
+            statement,
+        )
+        if match is not None:
+            names.append(match.group(1))
+    if len(names) != len(TABLES):
+        raise AssertionError("every TABLES statement must yield a table name")
+    return names
+
+
+def drop_schema(conn) -> None:
+    from storage.repositories.vec_index_repository import _VEC_TABLE
+
+    try:
+        conn.execute(f'DROP TABLE IF EXISTS "{_VEC_TABLE}"')
+    except sqlite3.OperationalError:
+        pass
+
+    for name in reversed(table_names()):
+        conn.execute(f'DROP TABLE IF EXISTS "{name}"')
 
 
 def schema_version(conn) -> int:

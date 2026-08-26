@@ -8,3 +8,4 @@ class EmbeddingJob:
     status: str
     attempts: int = 0
     error: str | None = None
+    claimed_at: int | None = None
