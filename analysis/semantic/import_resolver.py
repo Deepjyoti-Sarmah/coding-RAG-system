@@ -17,6 +17,7 @@ def resolve_import(
     for candidate in resolve_module_path(
         module_path=import_reference.module_path,
         importing_directory=importing_directory,
+        language=importing_document.language,
     ):
         document = document_index.lookup_by_relative_path(candidate)
 

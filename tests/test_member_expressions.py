@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from analysis.build_graph import build_graph
+from analysis.languages import profile_for
 from analysis.reference_extractor import extract_references
 from analysis.symbol_extractor import extract_symbols
 from models.entities.documents import Document
@@ -74,6 +75,7 @@ class TestMemberExpressionRepresentation(unittest.TestCase):
         return extract_references(
             owner_symbol=outer.symbol,
             owner_node=outer.node,
+            profile=profile_for("typescript"),
         )
 
     def test_member_expression_produces_single_path_reference(self):

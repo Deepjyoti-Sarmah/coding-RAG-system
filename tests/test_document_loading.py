@@ -54,7 +54,7 @@ class TestDirectoryLoad(unittest.TestCase):
 
             self.assertEqual(
                 {d.relative_path for d in documents},
-                {"auth.ts"},
+                {"auth.ts", "script.py"},
             )
 
     def test_skips_excluded_dirs(self):

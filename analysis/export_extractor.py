@@ -1,6 +1,6 @@
 from tree_sitter import Node, Tree
 
-from analysis.export_registry import EXPORT_HANDLERS
+from analysis.export_registry import ExportHandler, export_handlers_for
 from models.entities.documents import Document
 from models.entities.exports import Export
 
@@ -12,11 +12,13 @@ def extract_exports(
 ) -> list[Export]:
 
     results: list[Export] = []
+    handlers = export_handlers_for(document.language)
 
     walk(
         node=tree.root_node,
         document=document,
         results=results,
+        handlers=handlers,
     )
 
     return results
@@ -27,10 +29,12 @@ def walk(
     node: Node,
     document: Document,
     results: list[Export],
+    handlers: dict[str, ExportHandler],
 ):
     exports = visit(
         node=node,
         document=document,
+        handlers=handlers,
     )
 
     if exports:
@@ -41,6 +45,7 @@ def walk(
             node=child,
             document=document,
             results=results,
+            handlers=handlers,
         )
 
 
@@ -48,9 +53,10 @@ def visit(
     *,
     node: Node,
     document: Document,
+    handlers: dict[str, ExportHandler],
 ) -> list[Export] | None:
 
-    handler = EXPORT_HANDLERS.get(node.type)
+    handler = handlers.get(node.type)
 
     if handler is None:
         return None

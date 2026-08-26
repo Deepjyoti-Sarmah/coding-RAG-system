@@ -1,7 +1,9 @@
+from collections.abc import Callable
+
 from tree_sitter import Node
 
-from analysis.registry import NODE_HANDLERS
+Handler = Callable[..., object]
 
 
-def creates_symbol(node: Node) -> bool:
-    return node.type in NODE_HANDLERS
+def creates_symbol(node: Node, handlers: dict[str, Handler]) -> bool:
+    return node.type in handlers

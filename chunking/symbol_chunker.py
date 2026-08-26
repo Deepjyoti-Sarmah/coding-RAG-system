@@ -141,7 +141,17 @@ def build_embedding_text(
 
 
 def format_import(import_reference: ImportReference) -> str:
+    module_path = import_reference.module_path
+
+    # Python relative imports look like `.auth` / `..pkg.auth`: dotted,
+    # but never containing a slash (that is the TS `./x` shape).
+    if module_path.startswith(".") and "/" not in module_path:
+        return (
+            f'from "{module_path}" '
+            f"import {import_reference.imported_name}"
+        )
+
     return (
         f"import {{ {import_reference.imported_name} }} "
-        f'from "{import_reference.module_path}"'
+        f'from "{module_path}"'
     )

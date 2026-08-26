@@ -39,7 +39,7 @@ class TestParsePass(unittest.TestCase):
         self.assertFalse(context.parsed_documents[0].has_parse_errors)
 
     def test_unsupported_language_is_skipped_cleanly(self):
-        document = _make_document("x = 1\n", language="python")
+        document = _make_document("x = 1\n", language="ruby")
 
         context = IndexingContext()
         result = BuildResult()

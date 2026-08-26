@@ -3,6 +3,7 @@ INCLUDE_EXTENSIONS = {
     ".ts",
     ".tsx",
     ".jsx",
+    ".py",
 }
 
 EXCLUDE_DIRS = {
@@ -14,6 +15,9 @@ EXCLUDE_DIRS = {
     "dist",
     "build",
     ".next",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
 }
 
 MAX_FILE_SIZE_BYTES = 200_000

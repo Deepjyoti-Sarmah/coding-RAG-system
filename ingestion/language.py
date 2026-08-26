@@ -3,6 +3,7 @@ EXTENSION_TO_LANGUAGE = {
     ".tsx": "tsx",
     ".js": "javascript",
     ".jsx": "jsx",
+    ".py": "python",
 }
 
 

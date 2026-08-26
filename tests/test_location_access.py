@@ -1,5 +1,6 @@
 import unittest
 
+from analysis.languages import profile_for
 from analysis.reference_extractor import extract_references
 from analysis.symbol_extractor import extract_symbols
 from models.entities.documents import Document
@@ -62,6 +63,7 @@ class TestReferenceLocationAccess(unittest.TestCase):
         references = extract_references(
             owner_symbol=foo.symbol,
             owner_node=foo.node,
+            profile=profile_for("typescript"),
         )
 
         self.assertEqual(len(references), 1)

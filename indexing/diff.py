@@ -117,6 +117,7 @@ def importers_of(
         for candidate in resolve_module_path(
             module_path=import_reference.module_path,
             importing_directory=importing_directory,
+            language=importing_document.language,
         ):
             importers[candidate].add(importing_document.document_id)
 

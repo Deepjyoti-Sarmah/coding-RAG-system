@@ -1,22 +1,20 @@
 from tree_sitter import Node
 
-from analysis.registry import NODE_HANDLERS
-
-# Interface members are not extracted as child symbols, so they are not in
-# NODE_HANDLERS — but their names are still declarations, not references.
-_TYPE_MEMBER_DECLARATIONS = {
-    "property_signature",
-    "method_signature",
-}
+from analysis.languages import LanguageProfile
 
 
-def is_declaration_name(node: Node) -> bool:
+def is_declaration_name(node: Node, profile: LanguageProfile) -> bool:
     parent = node.parent
 
     if parent is None:
         return False
 
-    if parent.type not in NODE_HANDLERS.keys() | _TYPE_MEMBER_DECLARATIONS:
+    # Symbol handlers cover extracted declarations; the extra member
+    # types cover interface members, which are not child symbols but
+    # whose names are still declarations, not references.
+    known = set(profile.symbol_handlers) | profile.declaration_member_types
+
+    if parent.type not in known:
         return False
 
     name_node = parent.child_by_field_name("name")

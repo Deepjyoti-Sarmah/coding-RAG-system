@@ -9,3 +9,4 @@ from models.entities.symbols import Symbol
 class ExtractedSymbol:
     symbol: Symbol
     node: Node
+    language: str = "typescript"
