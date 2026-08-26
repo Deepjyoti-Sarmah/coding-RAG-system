@@ -18,10 +18,11 @@ from cli import (
 mcp = MCPServer(
     name="ckg",
     instructions=(
-        "Code Knowledge Graph: a local-first semantic index over a TypeScript/"
-        "JavaScript repository. Call index_repository once before any other "
-        "tool for a given path. Prefer definition/callers/callees for exact "
-        "structural questions and search/context for open-ended ones."
+        "Code Knowledge Graph: a local-first semantic index over a repository "
+        "supporting TypeScript, JavaScript, TSX, JSX, Python, and Go. Call "
+        "index_repository once before any other tool for a given path. Prefer "
+        "definition/callers/callees for exact structural questions and "
+        "search/context for open-ended ones."
     ),
 )
 
