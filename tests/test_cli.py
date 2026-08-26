@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,6 +10,7 @@ from cli import (
     cmd_definition,
     cmd_imports,
     cmd_index,
+    cmd_init,
     cmd_search,
     cmd_status,
     default_db_path,
@@ -182,6 +184,100 @@ class TestCliMain(unittest.TestCase):
         exit_code = main(["eval"])
 
         self.assertEqual(exit_code, 0)
+
+
+class TestCliInit(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_init_fresh_directory_creates_mcp_json(self):
+        results = cmd_init(str(self.root))
+
+        mcp_path = self.root / ".mcp.json"
+        self.assertTrue(mcp_path.exists())
+        data = json.loads(mcp_path.read_text(encoding="utf-8"))
+        self.assertIn("mcpServers", data)
+        self.assertIn("ckg", data["mcpServers"])
+        self.assertEqual(data["mcpServers"]["ckg"]["command"], "ckg-mcp")
+        self.assertEqual(results[str(mcp_path)], "written")
+
+        # via CLI entry point as well
+        exit_code = main(["init", str(self.root)])
+        self.assertEqual(exit_code, 0)
+
+    def test_init_preserves_existing_unrelated_server(self):
+        mcp_path = self.root / ".mcp.json"
+        mcp_path.write_text(
+            json.dumps({"mcpServers": {"other": {"command": "other-server"}}}),
+            encoding="utf-8",
+        )
+
+        results = cmd_init(str(self.root))
+
+        data = json.loads(mcp_path.read_text(encoding="utf-8"))
+        self.assertIn("other", data["mcpServers"])
+        self.assertEqual(data["mcpServers"]["other"]["command"], "other-server")
+        self.assertIn("ckg", data["mcpServers"])
+        self.assertEqual(data["mcpServers"]["ckg"]["command"], "ckg-mcp")
+        self.assertEqual(results[str(mcp_path)], "written")
+
+    def test_init_idempotent_second_run_reports_already_configured(self):
+        mcp_path = self.root / ".mcp.json"
+
+        first = cmd_init(str(self.root))
+        self.assertEqual(first[str(mcp_path)], "written")
+        content_first = mcp_path.read_text(encoding="utf-8")
+
+        second = cmd_init(str(self.root))
+        self.assertEqual(second[str(mcp_path)], "already configured")
+        content_second = mcp_path.read_text(encoding="utf-8")
+        self.assertEqual(content_first, content_second)
+
+        # also via main, should print already configured and return 0
+        exit_code = main(["init", str(self.root)])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mcp_path.read_text(encoding="utf-8"), content_second)
+
+    def test_init_writes_vscode_and_cursor_when_dirs_present(self):
+        (self.root / ".vscode").mkdir()
+        (self.root / ".cursor").mkdir()
+
+        results = cmd_init(str(self.root))
+
+        vscode_path = self.root / ".vscode" / "mcp.json"
+        cursor_path = self.root / ".cursor" / "mcp.json"
+        self.assertTrue(vscode_path.exists())
+        self.assertTrue(cursor_path.exists())
+        for p in (vscode_path, cursor_path):
+            data = json.loads(p.read_text(encoding="utf-8"))
+            self.assertIn("ckg", data["mcpServers"])
+            self.assertEqual(data["mcpServers"]["ckg"]["command"], "ckg-mcp")
+        self.assertEqual(results[str(vscode_path)], "written")
+        self.assertEqual(results[str(cursor_path)], "written")
+
+    def test_init_updates_opencode_json_when_present(self):
+        opencode_path = self.root / "opencode.json"
+        opencode_path.write_text(json.dumps({"foo": "bar"}), encoding="utf-8")
+
+        results = cmd_init(str(self.root))
+
+        data = json.loads(opencode_path.read_text(encoding="utf-8"))
+        self.assertEqual(data["foo"], "bar")
+        self.assertIn("mcp", data)
+        self.assertIn("ckg", data["mcp"])
+        self.assertEqual(data["mcp"]["ckg"]["command"], "ckg-mcp")
+        self.assertEqual(results[str(opencode_path)], "written")
+
+    def test_init_does_not_create_vscode_when_dir_missing(self):
+        results = cmd_init(str(self.root))
+
+        vscode_path = self.root / ".vscode" / "mcp.json"
+        self.assertFalse(vscode_path.exists())
+        self.assertNotIn(str(vscode_path), results)
 
 
 if __name__ == "__main__":

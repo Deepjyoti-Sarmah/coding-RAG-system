@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -145,6 +146,56 @@ def resolve_provider(db_path: str, *, use_vector: bool) -> EmbeddingProvider | N
     from embeddings.local_provider import LocalEmbeddingProvider
 
     return LocalEmbeddingProvider()
+
+
+def _ensure_mcp_entry(path: Path, container_key: str) -> str:
+    entry: dict[str, object] = {"command": "ckg-mcp"}
+    if path.exists():
+        try:
+            text = path.read_text(encoding="utf-8")
+            data: dict = json.loads(text) if text.strip() else {}
+            if not isinstance(data, dict):
+                data = {}
+        except (json.JSONDecodeError, OSError):
+            data = {}
+        # check if already configured under any common container
+        for key in (container_key, "mcpServers", "servers", "mcp"):
+            container = data.get(key)
+            if isinstance(container, dict) and "ckg" in container:
+                return "already configured"
+        container = data.get(container_key)
+        if not isinstance(container, dict):
+            data[container_key] = {}
+            container = data[container_key]
+        if "ckg" in container:
+            return "already configured"
+        container["ckg"] = entry
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        return "written"
+    else:
+        data = {container_key: {"ckg": entry}}
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        return "written"
+
+
+def cmd_init(root: str = ".") -> dict[str, str]:
+    root_path = Path(root)
+    targets: list[tuple[Path, str]] = []
+    # default always .mcp.json
+    targets.append((root_path / ".mcp.json", "mcpServers"))
+    if (root_path / ".vscode").is_dir():
+        targets.append((root_path / ".vscode" / "mcp.json", "mcpServers"))
+    if (root_path / ".cursor").is_dir():
+        targets.append((root_path / ".cursor" / "mcp.json", "mcpServers"))
+    if (root_path / "opencode.json").is_file():
+        targets.append((root_path / "opencode.json", "mcp"))
+    results: dict[str, str] = {}
+    for path, container_key in targets:
+        status = _ensure_mcp_entry(path, container_key)
+        results[str(path)] = status
+    return results
 
 
 # ---- output formatting ----
@@ -346,6 +397,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="seconds of edit quiet before reindexing (default 0.5)",
     )
 
+    init_parser = subparsers.add_parser(
+        "init", help="configure MCP for this project"
+    )
+    init_parser.add_argument("path", nargs="?", default=".")
+
     return parser
 
 
@@ -374,6 +430,15 @@ def main(argv: list[str] | None = None) -> int:
             provider = LocalEmbeddingProvider()
 
         _print_eval_report(cmd_eval(provider=provider, top_k=args.top_k))
+        return 0
+
+    if args.command == "init":
+        results = cmd_init(args.path)
+        for file_path, status in results.items():
+            if status == "already configured":
+                print(f"already configured: {file_path}")
+            else:
+                print(f"Wrote {file_path}")
         return 0
 
     db_path = args.db or default_db_path(args.path)
