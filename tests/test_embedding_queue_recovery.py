@@ -46,6 +46,30 @@ class TestEmbeddingQueueRecovery(unittest.TestCase):
         finally:
             conn.close()
 
+    def test_processing_exhausted_not_reclaimed(self):
+        """A chunk that keeps crashing the worker must stop being reclaimed.
+
+        A process killed mid-job never reaches `mark_failed`, so the job stays
+        PROCESSING and the lease hands it back. Without an attempts cap on that
+        branch, a chunk that reliably crashes the worker loops forever - and
+        since the drain runs detached, it would do so unattended.
+        """
+        old = int(time.time()) - 600
+        self._insert_job(
+            "crash-loop",
+            "PROCESSING",
+            embedding_job_repository.MAX_ATTEMPTS,
+            old,
+        )
+        conn = db.connect(self.db_path)
+        try:
+            jobs = embedding_job_repository.claim(conn, limit=10)
+            conn.commit()
+            keys = {j.chunk_key for j in jobs}
+            self.assertNotIn("crash-loop", keys)
+        finally:
+            conn.close()
+
     def test_processing_recent_claimed_at_not_reclaimed(self):
         recent = int(time.time()) - 60  # 1 min ago, within lease
         self._insert_job("recent-proc", "PROCESSING", 1, recent)

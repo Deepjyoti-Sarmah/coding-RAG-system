@@ -1,3 +1,5 @@
+import time
+
 from models.entities.embedding_job import EmbeddingJob
 from models.entities.embedding_job_status import EmbeddingJobStatus
 
@@ -26,8 +28,6 @@ LEASE_SECONDS = 300
 
 
 def claim(conn, limit: int | None = None) -> list[EmbeddingJob]:
-    import time
-
     now = int(time.time())
     lease_cutoff = now - LEASE_SECONDS
     sql = """
@@ -39,6 +39,7 @@ def claim(conn, limit: int | None = None) -> list[EmbeddingJob]:
                 status IN (?, ?) AND attempts < ?
             ) OR (
                 status = ? AND claimed_at IS NOT NULL AND claimed_at < ?
+                AND attempts < ?
             )
             ORDER BY chunk_key
             LIMIT ?
@@ -55,6 +56,7 @@ def claim(conn, limit: int | None = None) -> list[EmbeddingJob]:
             MAX_ATTEMPTS,
             EmbeddingJobStatus.PROCESSING.value,
             lease_cutoff,
+            MAX_ATTEMPTS,
             limit if limit is not None else -1,
         ),
     ).fetchall()
