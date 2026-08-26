@@ -4,6 +4,7 @@ from collections.abc import Callable
 from models.entities.import_references import ImportReference
 
 from analysis.import_handlers.default import handle_default_import
+from analysis.import_handlers.go_imports import handle_go_import
 from analysis.import_handlers.named import handle_import_specifier
 from analysis.import_handlers.namespace import handle_namespace_import
 from analysis.import_handlers.python_imports import (
@@ -24,6 +25,10 @@ _TS_IMPORT_HANDLERS: dict[str, ImportHandler] = {
 
 IMPORT_HANDLERS_BY_LANGUAGE: dict[str, dict[str, ImportHandler]] = {
     language: dict(_TS_IMPORT_HANDLERS) for language in TYPESCRIPT_FAMILY
+}
+
+IMPORT_HANDLERS_BY_LANGUAGE["go"] = {
+    "import_declaration": handle_go_import,
 }
 
 IMPORT_HANDLERS_BY_LANGUAGE["python"] = {
