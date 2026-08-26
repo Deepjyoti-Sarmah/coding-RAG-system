@@ -452,26 +452,45 @@ Answers:
 
 > What semantic relationships exist?
 
-Current:
+Current, as symbol-to-symbol edges:
 
 ```text
 CALLS
 EXTENDS
 IMPLEMENTS
+DECLARES
 ```
+
+Each edge carries a `count`: repeated references fold into one edge and
+accumulate rather than being discarded.
+
+Current, as document-scoped adjacency on the graph:
+
+```text
+IMPORTS
+EXPORTS
+```
+
+Imports and exports are file-level facts with no owning symbol, so they are not
+symbol-to-symbol rows. They are indexed on the graph instead
+(`imports_of_document`, `exports_of_document`, `importers_of_document`,
+`importers_of_symbol`) and rebuilt from the `resolved_imports` and `exports`
+tables, which remain their single source of truth.
 
 Planned:
 
 ```text
-IMPORTS
-DECLARES
-EXPORTS
 REFERS_TO
 USES
 OVERRIDES
 HAS_TYPE
 RETURNS
 ```
+
+`USES` / `REFERS_TO` are deferred deliberately: identifier references are the
+highest-volume artifact the reference pass produces, and they need a volume
+guard plus neighborhood ranking work before they earn a place in the graph.
+`HAS_TYPE` / `RETURNS` need per-language type-annotation extraction.
 
 Relationships are built from resolved semantic information rather than repeatedly walking the AST.
 
