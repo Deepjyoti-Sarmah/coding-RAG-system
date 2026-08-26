@@ -1,13 +1,11 @@
 from collections.abc import Callable
 
-
-from models.entities.exports import Export
-
 from analysis.export_handlers.declaration import handle_export_statement
 from analysis.export_handlers.go_exports import handle_go_exports
 from analysis.export_handlers.python_exports import handle_python_top_level
 from analysis.export_handlers.specifier import handle_export_specifier
 from analysis.registry import TYPESCRIPT_FAMILY
+from models.entities.exports import Export
 
 ExportHandler = Callable[..., "list[Export] | None"]
 

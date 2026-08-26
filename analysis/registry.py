@@ -1,8 +1,5 @@
 from collections.abc import Callable
 
-
-from models.entities.symbols import Symbol
-
 from analysis.symbol_handlers.classes import handle_class
 from analysis.symbol_handlers.function import handle_function
 from analysis.symbol_handlers.go_function import (
@@ -15,6 +12,7 @@ from analysis.symbol_handlers.method import handle_method
 from analysis.symbol_handlers.python_function import handle_python_function
 from analysis.symbol_handlers.type_alias import handle_type_alias
 from analysis.symbol_handlers.variable import handle_variable_declarator
+from models.entities.symbols import Symbol
 
 SymbolHandler = Callable[..., "Symbol | None"]
 

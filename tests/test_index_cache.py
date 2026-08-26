@@ -5,8 +5,7 @@ from unittest.mock import patch
 
 from retrieval import index_cache
 from retrieval.index_cache import clear, load_index_cached
-from storage.index_store import persist_index, current_generation
-
+from storage.index_store import current_generation, persist_index
 
 AUTH = {
     "a.ts": "export function createAuth() { return 1; }\n",

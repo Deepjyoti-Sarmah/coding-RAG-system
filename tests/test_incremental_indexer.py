@@ -88,7 +88,7 @@ class TestDeltaPersistence(unittest.TestCase):
         full_tmp = tempfile.TemporaryDirectory()
         try:
             full_root = Path(full_tmp.name)
-            _write(full_root, {"a.ts": edited, **{"b.ts": AUTH["b.ts"]}})
+            _write(full_root, {"a.ts": edited, "b.ts": AUTH["b.ts"]})
             full_db = str(full_root / "index.sqlite")
             reindex_index(full_db, str(full_root))
 
