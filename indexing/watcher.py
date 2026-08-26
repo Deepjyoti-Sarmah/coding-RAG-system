@@ -26,6 +26,7 @@ class _DebouncedReindexer(FileSystemEventHandler):
         *,
         debounce_seconds: float,
         provider: EmbeddingProvider | None,
+        embed_limit: int | None = 200,
         on_report,
     ) -> None:
         super().__init__()
@@ -33,6 +34,7 @@ class _DebouncedReindexer(FileSystemEventHandler):
         self._db_path = db_path
         self._debounce_seconds = debounce_seconds
         self._provider = provider
+        self._embed_limit = embed_limit
         self._on_report = on_report
         self._index_dir = str(Path(db_path).parent.resolve())
         self._lock = threading.Lock()
@@ -63,7 +65,7 @@ class _DebouncedReindexer(FileSystemEventHandler):
         report = reindex_index(self._db_path, self._root)
 
         if self._provider is not None:
-            run_embedding_worker(self._db_path, self._provider)
+            run_embedding_worker(self._db_path, self._provider, limit=self._embed_limit)
 
         if report.parsed_files:
             self._on_report(report)
@@ -75,6 +77,7 @@ def watch_repository(
     *,
     provider: EmbeddingProvider | None = None,
     debounce_seconds: float = DEFAULT_DEBOUNCE_SECONDS,
+    embed_limit: int | None = 200,
     on_report=print,
 ) -> None:
     """Block while watching `root`; Ctrl+C stops the watcher."""
@@ -83,6 +86,7 @@ def watch_repository(
         db_path,
         debounce_seconds=debounce_seconds,
         provider=provider,
+        embed_limit=embed_limit,
         on_report=on_report,
     )
 
