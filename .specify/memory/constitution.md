@@ -47,7 +47,7 @@ Complexity must be justified by a measured need.
 
 ## Additional Constraints
 
-- Python 3.14+; dependencies added only through `pyproject.toml` with rationale
+- Python 3.11+; dependencies added only through `pyproject.toml` with rationale
   in the commit message.
 - SQLite is the sole persistence engine; WAL mode on; all writes transactional
   with snapshot-consistent reads.
@@ -71,4 +71,4 @@ This constitution supersedes ad-hoc practice where they conflict. Amendments
 require updating this file with a version bump and a commit message explaining
 the change. Anything not covered here defaults to `IMPLEMENTATION.md` guidance.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-26 | **Last Amended**: 2026-08-26
+**Version**: 1.1.0 | **Ratified**: 2026-08-26 | **Last Amended**: 2026-08-27
