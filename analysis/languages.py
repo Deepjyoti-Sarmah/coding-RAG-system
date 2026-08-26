@@ -81,6 +81,27 @@ _PROFILES["python"] = LanguageProfile(
     superclass_field="superclasses",
 )
 
+_PROFILES["go"] = LanguageProfile(
+    language="go",
+    symbol_handlers=symbol_handlers_for("go"),
+    import_handlers=import_handlers_for("go"),
+    export_handlers=export_handlers_for("go"),
+    member_node="selector_expression",
+    member_object_field="operand",
+    member_property_field="field",
+    identifier_nodes=frozenset({"identifier", "field_identifier"}),
+    # Go has no heritage clauses; type names appear in declarations,
+    # parameters, and composite literals where they are not resolvable
+    # references in v1.
+    heritage_only_nodes=frozenset({"type_identifier"}),
+    # Struct fields and interface method names are declarations.
+    declaration_member_types=frozenset({"field_declaration", "method_elem"}),
+    extends_parents=frozenset(),
+    implements_parents=frozenset(),
+    call_parent="call_expression",
+    call_function_field="function",
+)
+
 
 def profile_for(language: str) -> LanguageProfile | None:
     return _PROFILES.get(language)

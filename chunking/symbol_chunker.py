@@ -64,6 +64,7 @@ def build_semantic_chunk(
         parent_names=parent_names,
         imports=sorted(document_imports, key=import_sort_key),
         exports=get_symbol_exports(exports, symbol.name),
+        language=language_for_path(symbol.relative_path),
     )
 
     return SemanticChunk(
@@ -111,6 +112,13 @@ def import_sort_key(import_reference: ImportReference) -> tuple[str, str]:
     )
 
 
+def language_for_path(relative_path: str) -> str:
+    from ingestion.language import detect_language
+
+    suffix = relative_path.rsplit(".", 1)
+    return detect_language(f".{suffix[-1]}") if len(suffix) == 2 else "unknown"
+
+
 def build_embedding_text(
     symbol: Symbol,
     callee_names: str,
@@ -118,11 +126,16 @@ def build_embedding_text(
     parent_names: str,
     imports: list[ImportReference],
     exports: str,
+    *,
+    language: str = "typescript",
 ) -> str:
     import_lines = (
         "none"
         if not imports
-        else ", ".join(format_import(import_reference) for import_reference in imports)
+        else ", ".join(
+            format_import(import_reference, language=language)
+            for import_reference in imports
+        )
     )
 
     lines = [
@@ -140,8 +153,11 @@ def build_embedding_text(
     return "\n".join(lines)
 
 
-def format_import(import_reference: ImportReference) -> str:
+def format_import(import_reference: ImportReference, *, language: str) -> str:
     module_path = import_reference.module_path
+
+    if language == "go":
+        return f'import "{module_path}"'
 
     # Python relative imports look like `.auth` / `..pkg.auth`: dotted,
     # but never containing a slash (that is the TS `./x` shape).

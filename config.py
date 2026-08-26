@@ -4,6 +4,7 @@ INCLUDE_EXTENSIONS = {
     ".tsx",
     ".jsx",
     ".py",
+    ".go",
 }
 
 EXCLUDE_DIRS = {
@@ -18,6 +19,7 @@ EXCLUDE_DIRS = {
     ".tox",
     ".mypy_cache",
     ".pytest_cache",
+    "vendor",
 }
 
 MAX_FILE_SIZE_BYTES = 200_000

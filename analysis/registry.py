@@ -5,6 +5,11 @@ from models.entities.symbols import Symbol
 
 from analysis.symbol_handlers.classes import handle_class
 from analysis.symbol_handlers.function import handle_function
+from analysis.symbol_handlers.go_function import (
+    handle_go_function,
+    handle_go_method,
+    handle_go_type_spec,
+)
 from analysis.symbol_handlers.interface import handle_interface
 from analysis.symbol_handlers.method import handle_method
 from analysis.symbol_handlers.python_function import handle_python_function
@@ -30,6 +35,12 @@ _TS_NODE_HANDLERS: dict[str, SymbolHandler] = {
 
 SYMBOL_HANDLERS_BY_LANGUAGE: dict[str, dict[str, SymbolHandler]] = {
     language: dict(_TS_NODE_HANDLERS) for language in TYPESCRIPT_FAMILY
+}
+
+SYMBOL_HANDLERS_BY_LANGUAGE["go"] = {
+    "function_declaration": handle_go_function,
+    "method_declaration": handle_go_method,
+    "type_spec": handle_go_type_spec,
 }
 
 SYMBOL_HANDLERS_BY_LANGUAGE["python"] = {

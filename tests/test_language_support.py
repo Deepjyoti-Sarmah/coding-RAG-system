@@ -16,14 +16,16 @@ class TestLanguageParserSupport(unittest.TestCase):
             )
 
     def test_unknown_extension_has_no_parser(self):
-        for extension in (".md", ".go", ".rs", ".txt"):
+        for extension in (".md", ".rs", ".txt"):
             language = detect_language(extension)
             self.assertEqual(language, "unknown")
             self.assertNotIn(language, PARSER)
 
-    def test_python_extension_is_supported(self):
+    def test_python_and_go_extensions_are_supported(self):
         self.assertEqual(detect_language(".py"), "python")
+        self.assertEqual(detect_language(".go"), "go")
         self.assertIn("python", PARSER)
+        self.assertIn("go", PARSER)
 
 
 if __name__ == "__main__":

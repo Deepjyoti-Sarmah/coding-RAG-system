@@ -57,12 +57,23 @@ def _resolve_python(module_path: str, importing_directory: str) -> list[str]:
     return [joined + extension for extension in _PYTHON_EXTENSIONS]
 
 
+def _resolve_go(module_path: str, importing_directory: str) -> list[str]:
+    """Import paths resolve against the repo root (the assumed module
+    root): `myrepo/auth` -> `myrepo/auth.go`. No go.mod prefix stripping
+    in v1; external modules simply do not resolve."""
+    if not module_path:
+        return []
+
+    return [module_path + ".go"]
+
+
 RESOLVERS: dict[str, Resolver] = {
     "typescript": _resolve_typescript,
     "tsx": _resolve_typescript,
     "javascript": _resolve_typescript,
     "jsx": _resolve_typescript,
     "python": _resolve_python,
+    "go": _resolve_go,
 }
 
 
