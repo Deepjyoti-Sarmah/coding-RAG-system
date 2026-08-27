@@ -11,3 +11,5 @@ class HybridCandidate:
     symbol_kind: str
     score: float
     sources: tuple[str, ...]
+    fts_rank: int | None = None
+    vector_rank: int | None = None

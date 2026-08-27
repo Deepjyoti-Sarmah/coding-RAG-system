@@ -2,17 +2,20 @@ import re
 from dataclasses import dataclass
 
 from graph.code_graph import CodeGraph
-from models.common.tokens import TOKEN_PATTERN
+from models.common.tokens import STOPWORDS, TOKEN_PATTERN, split_identifier
 from models.entities.symbols import Symbol
 from retrieval.candidate import HybridCandidate
 
 RELATIONSHIP_WEIGHT = 1.0
 EXACT_SYMBOL_WEIGHT = 0.8
+TOKEN_OVERLAP_WEIGHT = 0.35
 GRAPH_DISTANCE_WEIGHT = 0.4
 PATH_WEIGHT = 0.3
 KIND_WEIGHT = 0.2
 FTS_WEIGHT = 0.1
 VECTOR_WEIGHT = 0.1
+
+_MIN_FRAGMENT_LENGTH = 2
 
 PREFERENCE_CALLER = "caller"
 PREFERENCE_CALLEE = "callee"
@@ -38,6 +41,7 @@ DEFINITION_INTENT_PATTERNS = (
 
 _WEIGHTS = (
     EXACT_SYMBOL_WEIGHT,
+    TOKEN_OVERLAP_WEIGHT,
     PATH_WEIGHT,
     KIND_WEIGHT,
     FTS_WEIGHT,
@@ -50,6 +54,7 @@ _WEIGHTS = (
 @dataclass(slots=True)
 class RerankFeatures:
     exact_symbol: float
+    token_overlap: float
     path_match: float
     kind_match: float
     fts: float
@@ -60,6 +65,7 @@ class RerankFeatures:
     def boost(self) -> float:
         values = (
             self.exact_symbol,
+            self.token_overlap,
             self.path_match,
             self.kind_match,
             self.fts,
@@ -93,11 +99,13 @@ def rerank_candidates(
     preference: str | None = None,
 ) -> list[HybridCandidate]:
     tokens = set(_tokens(query))
+    relevance_tokens = _relevance_tokens(query)
 
     for candidate in candidates:
         features = _features(
             candidate,
             tokens,
+            relevance_tokens,
             graph=graph,
             symbols_by_key=symbols_by_key,
             seed=seed,
@@ -111,6 +119,7 @@ def rerank_candidates(
 def _features(
     candidate: HybridCandidate,
     tokens: set[str],
+    relevance_tokens: frozenset[str],
     *,
     graph: CodeGraph,
     symbols_by_key: dict[str, Symbol],
@@ -121,10 +130,11 @@ def _features(
 
     return RerankFeatures(
         exact_symbol=1.0 if candidate.symbol_name.lower() in tokens else 0.0,
+        token_overlap=_token_overlap(candidate.symbol_name, relevance_tokens),
         path_match=_path_match(candidate, tokens),
         kind_match=1.0 if candidate.symbol_kind in tokens else 0.0,
-        fts=1.0 if "fts" in candidate.sources else 0.0,
-        vector=1.0 if "vector" in candidate.sources else 0.0,
+        fts=_rank_score(candidate.fts_rank),
+        vector=_rank_score(candidate.vector_rank),
         graph_distance=_graph_distance(symbol, seed, graph),
         relationship=_relationship(symbol, seed, graph, preference),
     )
@@ -206,3 +216,46 @@ def _matches(query: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
 
 def _tokens(text: str) -> list[str]:
     return [token.lower() for token in TOKEN_PATTERN.findall(text)]
+
+
+def _rank_score(rank: int | None) -> float:
+    if rank is None:
+        return 0.0
+    return 1.0 / (1 + rank)
+
+
+def _relevance_tokens(query: str) -> frozenset[str]:
+    """Stopword-filtered, identifier-split query tokens for overlap scoring.
+
+    Mirrors build_fts_query's stopword handling so ranking and lexical
+    matching agree on what counts as a relevant term.
+    """
+    raw_terms = TOKEN_PATTERN.findall(query)
+    filtered = [t for t in raw_terms if t.lower() not in STOPWORDS]
+    terms = filtered if filtered else raw_terms
+
+    expanded: set[str] = set()
+    for term in terms:
+        expanded.add(term.lower())
+        expanded.update(_fragments(term))
+
+    return frozenset(expanded)
+
+
+def _fragments(identifier: str) -> list[str]:
+    words = split_identifier(identifier).split()
+    return [
+        word.lower()
+        for word in words
+        if len(word) >= _MIN_FRAGMENT_LENGTH and word.lower() not in STOPWORDS
+    ]
+
+
+def _token_overlap(symbol_name: str, relevance_tokens: frozenset[str]) -> float:
+    fragments = _fragments(symbol_name)
+
+    if not fragments:
+        return 0.0
+
+    hits = sum(1 for fragment in fragments if fragment in relevance_tokens)
+    return hits / len(fragments)

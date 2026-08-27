@@ -39,6 +39,8 @@ def _candidate(
     symbol: Symbol,
     score: float,
     sources: tuple[str, ...] = ("fts",),
+    fts_rank: int | None = None,
+    vector_rank: int | None = None,
 ) -> HybridCandidate:
     return HybridCandidate(
         chunk_key=symbol.stable_key,
@@ -49,6 +51,8 @@ def _candidate(
         symbol_kind=symbol.kind.value,
         score=score,
         sources=sources,
+        fts_rank=fts_rank,
+        vector_rank=vector_rank,
     )
 
 
@@ -178,14 +182,30 @@ class TestRerankCandidates(unittest.TestCase):
 
         self.assertEqual([c.symbol_name for c in ranked], ["login", "run"])
 
-    def test_fts_source_presence_breaks_tie(self):
+    def test_top_ranked_source_breaks_tie(self):
         login = _symbol(self.result, "login")
         create_auth = _symbol(self.result, "createAuth")
 
         ranked = self._rerank(
             [
-                _candidate(create_auth, score=0.1, sources=("vector",)),
-                _candidate(login, score=0.1, sources=("fts",)),
+                _candidate(
+                    create_auth, score=0.1, sources=("vector",), vector_rank=5
+                ),
+                _candidate(login, score=0.1, sources=("fts",), fts_rank=0),
+            ],
+            "some login text",
+        )
+
+        self.assertEqual([c.symbol_name for c in ranked], ["login", "createAuth"])
+
+    def test_lower_fts_rank_outranks_higher_rank_at_equal_score(self):
+        login = _symbol(self.result, "login")
+        create_auth = _symbol(self.result, "createAuth")
+
+        ranked = self._rerank(
+            [
+                _candidate(create_auth, score=0.1, sources=("fts",), fts_rank=4),
+                _candidate(login, score=0.1, sources=("fts",), fts_rank=0),
             ],
             "some login text",
         )
@@ -226,6 +246,96 @@ class TestRerankCandidates(unittest.TestCase):
         )
 
         self.assertEqual([c.symbol_name for c in ranked], ["run", "login", "createAuth"])
+
+
+TOKEN = {
+    "token.ts": (
+        "export function validateToken(token) { return token.length > 0; }\n"
+        "export function validateTokenExpiry(token) { return token.length > 0; }\n"
+        "export function generateToken(userId) { return userId; }\n"
+        "export function tokenExpiry(token) { return token.length; }\n"
+        "export function connectDatabase() { return true; }\n"
+    ),
+}
+
+
+class TestTokenOverlapFeature(unittest.TestCase):
+    def setUp(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name, content in TOKEN.items():
+                (root / name).write_text(content, encoding="utf-8")
+            self.result = build_graph(str(root))
+
+        self.graph = self.result.graph
+        self.symbols_by_key = {
+            symbol.stable_key: symbol for symbol in self.result.symbols
+        }
+
+    def _rerank(self, candidates, query):
+        return rerank_candidates(
+            candidates,
+            query,
+            graph=self.graph,
+            symbols_by_key=self.symbols_by_key,
+        )
+
+    def test_partial_overlap_ranks_above_lesser_overlap(self):
+        validate_token = _symbol(self.result, "validateToken")
+        validate_token_expiry = _symbol(self.result, "validateTokenExpiry")
+
+        ranked = self._rerank(
+            [
+                _candidate(validate_token, score=0.1),
+                _candidate(validate_token_expiry, score=0.1),
+            ],
+            "How is token expiry checked?",
+        )
+
+        self.assertEqual(
+            [c.symbol_name for c in ranked],
+            ["validateTokenExpiry", "validateToken"],
+        )
+
+    def test_full_overlap_beats_partial_overlap(self):
+        token_expiry = _symbol(self.result, "tokenExpiry")
+        validate_token_expiry = _symbol(self.result, "validateTokenExpiry")
+
+        ranked = self._rerank(
+            [
+                _candidate(validate_token_expiry, score=0.1),
+                _candidate(token_expiry, score=0.1),
+            ],
+            "How is token expiry checked?",
+        )
+
+        self.assertEqual(
+            [c.symbol_name for c in ranked],
+            ["tokenExpiry", "validateTokenExpiry"],
+        )
+
+    def test_zero_overlap_contributes_nothing(self):
+        connect_database = _symbol(self.result, "connectDatabase")
+        validate_token_expiry = _symbol(self.result, "validateTokenExpiry")
+
+        ranked = self._rerank(
+            [
+                _candidate(connect_database, score=0.1),
+                _candidate(validate_token_expiry, score=0.1),
+            ],
+            "How is token expiry checked?",
+        )
+
+        self.assertEqual(
+            [c.symbol_name for c in ranked],
+            ["validateTokenExpiry", "connectDatabase"],
+        )
+
+        # connectDatabase overlaps on nothing but the query's raw "token"
+        # substring via path_match; its boost is entirely path_match, never
+        # token_overlap.
+        loser = next(c for c in ranked if c.symbol_name == "connectDatabase")
+        self.assertAlmostEqual(loser.score, 0.1 + 0.3 * 0.5)
 
 
 if __name__ == "__main__":

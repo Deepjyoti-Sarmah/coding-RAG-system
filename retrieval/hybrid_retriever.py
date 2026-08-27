@@ -228,6 +228,7 @@ class HybridRetriever:
 
         fts_hits = self.fts_search(query, top_k * 3)
         fts_meta = {hit.chunk_key: hit for hit in fts_hits}
+        fts_rank_by_key = {hit.chunk_key: rank for rank, hit in enumerate(fts_hits)}
 
         if fts_hits:
             ranked.append([hit.chunk_key for hit in fts_hits])
@@ -236,11 +237,13 @@ class HybridRetriever:
                 source_by_key.setdefault(hit.chunk_key, set()).add("fts")
 
         vector_meta: dict[str, object] = {}
+        vector_rank_by_key: dict[str, int] = {}
 
         if self.vector_store is not None and self.embed is not None:
             vector_hits = self.vector_store.search(self.embed(query), top_k=top_k * 3)
             vector_keys = [hit.chunk_key for hit in vector_hits]
             vector_meta.update({hit.chunk_key: hit for hit in vector_hits})
+            vector_rank_by_key = {key: rank for rank, key in enumerate(vector_keys)}
 
             if vector_keys:
                 ranked.append(vector_keys)
@@ -271,6 +274,8 @@ class HybridRetriever:
                 vector_meta,
                 score,
                 tuple(sorted(source_by_key.get(key, set()))),
+                fts_rank_by_key,
+                vector_rank_by_key,
             )
 
             if candidate is None:
@@ -327,11 +332,21 @@ class HybridRetriever:
         vector_meta: dict[str, object],
         score: float,
         sources: tuple[str, ...],
+        fts_rank_by_key: dict[str, int],
+        vector_rank_by_key: dict[str, int],
     ) -> HybridCandidate | None:
         symbol = symbols_by_key.get(key)
+        fts_rank = fts_rank_by_key.get(key)
+        vector_rank = vector_rank_by_key.get(key)
 
         if symbol is not None:
-            return self._from_symbol(symbol, sources=sources, score=score)
+            return self._from_symbol(
+                symbol,
+                sources=sources,
+                score=score,
+                fts_rank=fts_rank,
+                vector_rank=vector_rank,
+            )
 
         hit = fts_meta.get(key) or vector_meta.get(key)
 
@@ -345,6 +360,8 @@ class HybridRetriever:
                 symbol_kind="",
                 score=score,
                 sources=sources,
+                fts_rank=fts_rank,
+                vector_rank=vector_rank,
             )
 
         return None
@@ -384,6 +401,8 @@ class HybridRetriever:
         *,
         sources: tuple[str, ...],
         score: float = 0.0,
+        fts_rank: int | None = None,
+        vector_rank: int | None = None,
     ) -> HybridCandidate:
         return HybridCandidate(
             chunk_key=symbol.stable_key,
@@ -394,4 +413,6 @@ class HybridRetriever:
             symbol_kind=symbol.kind.value,
             score=score,
             sources=sources,
+            fts_rank=fts_rank,
+            vector_rank=vector_rank,
         )
