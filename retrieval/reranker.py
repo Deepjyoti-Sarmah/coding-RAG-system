@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 
 from graph.code_graph import CodeGraph
+from models.common.tokens import TOKEN_PATTERN
 from models.entities.symbols import Symbol
 from retrieval.candidate import HybridCandidate
 
@@ -34,8 +35,6 @@ DEFINITION_INTENT_PATTERNS = (
     re.compile(r"\bimplemented\b", re.IGNORECASE),
     re.compile(r"\bimplementation\b", re.IGNORECASE),
 )
-
-TOKEN_PATTERN = re.compile(r"[A-Za-z_]\w*")
 
 _WEIGHTS = (
     EXACT_SYMBOL_WEIGHT,

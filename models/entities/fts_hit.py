@@ -8,3 +8,4 @@ class FtsHit:
     qualified_name: str
     relative_path: str
     score: float
+

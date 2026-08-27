@@ -1,15 +1,33 @@
 from chunking.symbol_chunker import SemanticChunk
+from models.common.tokens import STOPWORDS, TOKEN_PATTERN, split_identifier
 from models.entities.fts_hit import FtsHit
 from models.entities.symbols import Symbol
 
 
 def build_fts_query(query: str) -> str:
-    terms = [f'"{term}"' for term in query.split() if term]
-
-    if not terms:
+    raw_terms = TOKEN_PATTERN.findall(query)
+    if not raw_terms:
         return ""
+    # Drop stopwords case-insensitive, fallback to unfiltered if all are stopwords
+    filtered = [t for t in raw_terms if t.lower() not in STOPWORDS]
+    terms_to_use = filtered if filtered else raw_terms
 
-    return " AND ".join(terms)
+    expanded = []
+    seen = set()
+    for term in terms_to_use:
+        candidates = [term] + [
+            word
+            for word in split_identifier(term).split()
+            if word != term and len(word) >= 2 and word.lower() not in STOPWORDS
+        ]
+        for word in candidates:
+            if word.lower() in seen:
+                continue
+            seen.add(word.lower())
+            expanded.append(word)
+
+    quoted = [f'"{term}"' for term in expanded]
+    return " OR ".join(quoted)
 
 
 def insert_many(conn, chunks: list[SemanticChunk], symbols_by_id: dict[str, Symbol]) -> None:

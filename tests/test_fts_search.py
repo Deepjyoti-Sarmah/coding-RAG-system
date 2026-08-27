@@ -59,7 +59,7 @@ class TestFtsSearch(unittest.TestCase):
         hits = search_lexical(self.db_path, "auth.ts")
 
         self.assertTrue(
-            all(hit.relative_path == "auth.ts" for hit in hits)
+            any(hit.relative_path == "auth.ts" for hit in hits)
         )
 
     def test_search_finds_chunk_source_text(self):
@@ -93,6 +93,11 @@ class TestFtsSearch(unittest.TestCase):
         hits = search_lexical(self.db_path, "auth", limit=1)
 
         self.assertLessEqual(len(hits), 1)
+
+    def test_natural_language_query_finds_definition(self):
+        hits = search_lexical(self.db_path, "where is login defined")
+
+        self.assertIn("auth.ts|typescript|login|function", _keys(hits))
 
 
 if __name__ == "__main__":
