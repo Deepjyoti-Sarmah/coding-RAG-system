@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 import time
@@ -24,6 +25,39 @@ DEFAULT_DB_DIRNAME = ".ckg"
 DEFAULT_DB_FILENAME = "index.sqlite"
 
 
+def _get_version() -> str:
+    try:
+        from importlib.metadata import version as _pkg_version
+
+        return _pkg_version("code-knowledge-graph")
+    except Exception:
+        pass
+    # fallback for source checkouts without installed metadata
+    try:
+        import tomllib  # Python 3.11+
+
+        pyproject = Path(__file__).with_name("pyproject.toml")
+        if pyproject.exists():
+            with pyproject.open("rb") as fh:
+                data = tomllib.load(fh)
+                return data.get("project", {}).get("version", "0.0.0+source")
+    except Exception:
+        pass
+    return "0.0.0+source"
+
+
+def _is_tty() -> bool:
+    try:
+        return sys.stderr.isatty()
+    except Exception:
+        return False
+
+
+def _emit_progress(message: str) -> None:
+    if _is_tty():
+        print(message, file=sys.stderr)
+
+
 def default_db_path(root: str) -> str:
     return str(Path(root) / DEFAULT_DB_DIRNAME / DEFAULT_DB_FILENAME)
 
@@ -43,10 +77,37 @@ def cmd_index(
 ) -> IndexRunReport:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
-    report = reindex_index(db_path, root)
+    if _is_tty():
+        print(f"Indexing {root}...", file=sys.stderr)
+
+    report = reindex_index(db_path, root, on_progress=_emit_progress if _is_tty() else None)
+
+    if _is_tty():
+        print(f"Parsed {report.parsed_files} files...", file=sys.stderr)
 
     if provider is not None:
-        run_embedding_worker(db_path, provider)
+        # drain embeddings in batches so large repos emit periodic progress
+        # instead of appearing hung; suppress when stderr is not a TTY
+        total = 0
+        batch_size = 50
+        while True:
+            batch_report = run_embedding_worker(
+                db_path, provider, limit=batch_size, on_progress=_emit_progress if _is_tty() else None
+            )
+            if batch_report.claimed == 0:
+                break
+            total += batch_report.done
+            if _is_tty():
+                print(f"Embedded {total} chunks...", file=sys.stderr)
+            if batch_report.claimed < batch_size:
+                # check if any pending remain; if not, break, else continue
+                try:
+                    pending = queue_status(db_path)
+                    runnable = pending.get("PENDING", 0) + max(0, pending.get("FAILED", 0) - pending.get("exhausted", 0))
+                    if runnable == 0:
+                        break
+                except Exception:
+                    break
 
     return report
 
@@ -218,7 +279,33 @@ def cmd_embed(
         from embeddings.local_provider import LocalEmbeddingProvider
 
         provider = LocalEmbeddingProvider()
-    return run_embedding_worker(db_path, provider, limit=limit)
+    if limit is None:
+        # when no explicit limit, drain in batches with periodic progress
+        total = 0
+        batch_size = 50
+        last_report = None
+        while True:
+            batch_report = run_embedding_worker(
+                db_path, provider, limit=batch_size, on_progress=_emit_progress if _is_tty() else None
+            )
+            if batch_report.claimed == 0:
+                if last_report is None:
+                    return batch_report
+                break
+            last_report = batch_report
+            total += batch_report.done
+            if _is_tty():
+                print(f"Embedded {total} chunks...", file=sys.stderr)
+            # peek queue to decide continuation
+            try:
+                pending = queue_status(db_path)
+                runnable = pending.get("PENDING", 0) + max(0, pending.get("FAILED", 0) - pending.get("exhausted", 0))
+                if runnable == 0:
+                    break
+            except Exception:
+                break
+        return last_report if last_report is not None else batch_report
+    return run_embedding_worker(db_path, provider, limit=limit, on_progress=_emit_progress if _is_tty() else None)
 
 
 def _background_lock_path(db_path: str) -> Path:
@@ -311,7 +398,13 @@ def _print_index_report(report: IndexRunReport, db_path: str) -> None:
             print(f"  {kind}: {counts[kind]}")
 
 
-def _print_status(status: dict) -> None:
+def _print_status(status: dict, *, oneline: bool = False) -> None:
+    if oneline:
+        jobs = status["embedding_jobs"]
+        pending = jobs.get("PENDING", 0) + jobs.get("FAILED", 0) - jobs.get("exhausted", 0)
+        pending = max(0, pending)
+        print(f"symbols {status['symbols']} chunks {status['chunks']} pending {pending} gen {status['generation']}")
+        return
     print(f"generation: {status['generation']}")
     print(f"documents:  {status['documents']}")
     print(f"symbols:    {status['symbols']}")
@@ -436,6 +529,7 @@ def _print_eval_report(report: EvaluationReport) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ckg")
+    parser.add_argument("--version", action="version", version=_get_version())
     parser.add_argument("--db", help="override the index database path")
 
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -457,6 +551,9 @@ def build_parser() -> argparse.ArgumentParser:
         "status", help="show index generation and counts"
     )
     status_parser.add_argument("path", nargs="?", default=".")
+    status_parser.add_argument(
+        "--oneline", action="store_true", help="one-line summary for shell prompts"
+    )
 
     search_parser = subparsers.add_parser("search", help="hybrid search over the index")
     search_parser.add_argument("query")
@@ -529,121 +626,160 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _require_dir(path: str) -> None:
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"path '{path}' does not exist")
+    if not p.is_dir():
+        raise NotADirectoryError(f"path '{path}' is not a directory")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
-    if args.command == "index":
+    try:
+        # validate target paths before dispatch
+        if args.command in ("index", "watch"):
+            _require_dir(args.path)
+        elif args.command not in ("eval",) and hasattr(args, "path"):
+            _require_dir(args.path)
+
+        if args.command == "index":
+            db_path = args.db or default_db_path(args.path)
+            provider = None
+
+            if args.embed:
+                from embeddings.local_provider import LocalEmbeddingProvider
+
+                provider = LocalEmbeddingProvider()
+
+            report = cmd_index(args.path, db_path, provider=provider)
+            _print_index_report(report, db_path)
+            if not args.no_background and not args.embed:
+                _maybe_spawn_background_embed(db_path)
+            return 0
+
+        if args.command == "eval":
+            provider = None
+
+            if args.embed:
+                from embeddings.local_provider import LocalEmbeddingProvider
+
+                provider = LocalEmbeddingProvider()
+
+            _print_eval_report(cmd_eval(provider=provider, top_k=args.top_k))
+            return 0
+
+        if args.command == "init":
+            try:
+                results = cmd_init(args.path)
+            except (ValueError, OSError) as error:
+                print(f"Could not configure MCP: {error}", file=sys.stderr)
+                return 1
+
+            for file_path, status in results.items():
+                if status == "already configured":
+                    print(f"already configured: {file_path}")
+                else:
+                    print(f"Wrote {file_path}")
+            return 0
+
         db_path = args.db or default_db_path(args.path)
-        provider = None
 
-        if args.embed:
-            from embeddings.local_provider import LocalEmbeddingProvider
+        if args.command == "watch":
+            if args.no_embed:
+                provider = None
+            else:
+                from embeddings.local_provider import LocalEmbeddingProvider
 
-            provider = LocalEmbeddingProvider()
+                provider = LocalEmbeddingProvider()
 
-        report = cmd_index(args.path, db_path, provider=provider)
-        _print_index_report(report, db_path)
-        if not args.no_background and not args.embed:
-            _maybe_spawn_background_embed(db_path)
-        return 0
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+            print(f"Watching {args.path} (index: {db_path})")
+            cmd_watch(
+                args.path,
+                db_path,
+                provider=provider,
+                debounce_seconds=args.debounce,
+                embed_limit=200,
+            )
+            return 0
 
-    if args.command == "eval":
-        provider = None
-
-        if args.embed:
-            from embeddings.local_provider import LocalEmbeddingProvider
-
-            provider = LocalEmbeddingProvider()
-
-        _print_eval_report(cmd_eval(provider=provider, top_k=args.top_k))
-        return 0
-
-    if args.command == "init":
-        try:
-            results = cmd_init(args.path)
-        except (ValueError, OSError) as error:
-            print(f"Could not configure MCP: {error}")
+        if not Path(db_path).exists():
+            print(f"No index found at {db_path}. Run `ckg index {args.path}` first.")
             return 1
 
-        for file_path, status in results.items():
-            if status == "already configured":
-                print(f"already configured: {file_path}")
-            else:
-                print(f"Wrote {file_path}")
-        return 0
-
-    db_path = args.db or default_db_path(args.path)
-
-    if args.command == "watch":
-        if args.no_embed:
-            provider = None
-        else:
-            from embeddings.local_provider import LocalEmbeddingProvider
-
-            provider = LocalEmbeddingProvider()
-
-        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-        print(f"Watching {args.path} (index: {db_path})")
-        cmd_watch(
-            args.path,
-            db_path,
-            provider=provider,
-            debounce_seconds=args.debounce,
-            embed_limit=200,
-        )
-        return 0
-
-    if not Path(db_path).exists():
-        print(f"No index found at {db_path}. Run `ckg index {args.path}` first.")
-        return 1
-
-    if args.command == "embed":
-        report = cmd_embed(db_path, limit=args.limit)
-        _print_embed_report(report)
-    elif args.command == "status":
-        _print_status(cmd_status(db_path))
-    elif args.command == "search":
-        provider = resolve_provider(db_path, use_vector=not args.no_vector)
-        if provider is None:
-            try:
-                qs = queue_status(db_path)
-                pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
-                if pending > 0:
-                    print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
-            except Exception:  # noqa: BLE001, S110
-                pass
-        _print_candidates(
-            cmd_search(db_path, args.query, provider=provider, top_k=args.top_k)
-        )
-    elif args.command == "definition":
-        _print_candidates(cmd_definition(db_path, args.name))
-    elif args.command == "callers":
-        _print_candidates(cmd_callers(db_path, args.name))
-    elif args.command == "callees":
-        _print_candidates(cmd_callees(db_path, args.name))
-    elif args.command == "imports":
-        _print_imports(cmd_imports(db_path, args.file))
-    elif args.command == "context":
-        provider = resolve_provider(db_path, use_vector=not args.no_vector)
-        if provider is None:
-            try:
-                qs = queue_status(db_path)
-                pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
-                if pending > 0:
-                    print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
-            except Exception:  # noqa: BLE001, S110
-                pass
-        _print_context_pack(
-            cmd_context(
-                db_path,
-                args.query,
-                token_budget=args.budget,
-                provider=provider,
-                top_k=args.top_k,
+        if args.command == "embed":
+            report = cmd_embed(db_path, limit=args.limit)
+            _print_embed_report(report)
+        elif args.command == "status":
+            _print_status(cmd_status(db_path), oneline=getattr(args, "oneline", False))
+        elif args.command == "search":
+            provider = resolve_provider(db_path, use_vector=not args.no_vector)
+            if provider is None:
+                try:
+                    qs = queue_status(db_path)
+                    pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+                    if pending > 0:
+                        print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
+                except Exception:  # noqa: BLE001, S110
+                    pass
+            _print_candidates(
+                cmd_search(db_path, args.query, provider=provider, top_k=args.top_k)
             )
-        )
+        elif args.command == "definition":
+            _print_candidates(cmd_definition(db_path, args.name))
+        elif args.command == "callers":
+            _print_candidates(cmd_callers(db_path, args.name))
+        elif args.command == "callees":
+            _print_candidates(cmd_callees(db_path, args.name))
+        elif args.command == "imports":
+            _print_imports(cmd_imports(db_path, args.file))
+        elif args.command == "context":
+            provider = resolve_provider(db_path, use_vector=not args.no_vector)
+            if provider is None:
+                try:
+                    qs = queue_status(db_path)
+                    pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+                    if pending > 0:
+                        print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
+                except Exception:  # noqa: BLE001, S110
+                    pass
+            _print_context_pack(
+                cmd_context(
+                    db_path,
+                    args.query,
+                    token_budget=args.budget,
+                    provider=provider,
+                    top_k=args.top_k,
+                )
+            )
 
-    return 0
+        return 0
+    except FileNotFoundError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    except NotADirectoryError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    except sqlite3.Error as exc:
+        db = locals().get("db_path", "index")
+        print(f"Database error at {db}: {exc} — try removing the database and re-running `ckg index`.", file=sys.stderr)
+        return 1
+    except ImportError as exc:
+        print(f"Embeddings unavailable: {exc}", file=sys.stderr)
+        return 1
+    except OSError as exc:
+        if getattr(args, "embed", False) or args.command in ("embed", "eval"):
+            print(f"Embeddings unavailable: {exc}", file=sys.stderr)
+        else:
+            print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    except (ValueError, RuntimeError) as exc:
+        if getattr(args, "embed", False) or args.command in ("embed", "eval"):
+            print(f"Embeddings unavailable: {exc}", file=sys.stderr)
+            return 1
+        raise
 
 
 if __name__ == "__main__":

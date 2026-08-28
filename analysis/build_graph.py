@@ -5,11 +5,11 @@ from chunking.symbol_chunker import build_semantic_chunks
 from ingestion.loader import load_code_files
 
 
-def build_graph(root_dir: str) -> BuildResult:
+def build_graph(root_dir: str, *, on_progress=None) -> BuildResult:
     result = BuildResult()
     context = IndexingContext()
 
-    result.documents = load_code_files(root_dir)
+    result.documents = load_code_files(root_dir, on_progress=on_progress)
     context.document_index.add_many(result.documents)
 
     run_extraction_passes(context=context, result=result)

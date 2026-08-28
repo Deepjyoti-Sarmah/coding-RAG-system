@@ -47,6 +47,7 @@ def run_embedding_worker(
     provider: EmbeddingProvider,
     *,
     limit: int | None = None,
+    on_progress=None,
 ) -> EmbeddingRunReport:
     conn = db.connect(db_path)
     report = EmbeddingRunReport()
@@ -88,13 +89,34 @@ def run_embedding_worker(
 
         try:
             if embeddable:
-                embeddings_by_key, missing = embed_chunks(
-                    embeddable,
-                    provider,
-                    load_embedding_cache(db_path),
-                )
-                report.done = len(embeddable)
-                report.reused = len(embeddable) - missing
+                # emit periodic progress when embedding many chunks
+                if on_progress is not None and len(embeddable) >= 50:
+                    # process in batches to allow periodic progress emission
+                    embeddings_by_key = {}
+                    total_missing = 0
+                    cache = load_embedding_cache(db_path)
+                    for idx in range(0, len(embeddable), 50):
+                        batch = embeddable[idx : idx + 50]
+                        batch_embeddings, missing = embed_chunks(batch, provider, cache)
+                        embeddings_by_key.update(batch_embeddings)
+                        total_missing += missing
+                        # update cache with newly computed embeddings for next batch reuse within same run
+                        for k, v in batch_embeddings.items():
+                            cache[k] = v
+                        try:
+                            on_progress(f"Embedding {min(idx + 50, len(embeddable))}/{len(embeddable)} chunks...")
+                        except Exception:
+                            pass
+                    report.done = len(embeddable)
+                    report.reused = len(embeddable) - total_missing
+                else:
+                    embeddings_by_key, missing = embed_chunks(
+                        embeddable,
+                        provider,
+                        load_embedding_cache(db_path),
+                    )
+                    report.done = len(embeddable)
+                    report.reused = len(embeddable) - missing
         except Exception as exc:  # noqa: BLE001 - any provider failure marks jobs failed instead of crashing the run
             with db.transaction(conn):
                 for chunk in embeddable:

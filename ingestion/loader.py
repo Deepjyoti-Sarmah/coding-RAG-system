@@ -72,10 +72,10 @@ def build_document(
     )
 
 
-def load_code_files(path: str) -> list[Document]:
+def load_code_files(path: str, *, on_progress=None) -> list[Document]:
     documents: list[Document] = []
 
-    for file_path, relative_path in iter_repo_files(path):
+    for idx, (file_path, relative_path) in enumerate(iter_repo_files(path), start=1):
         try:
             content = file_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
@@ -90,5 +90,11 @@ def load_code_files(path: str) -> list[Document]:
                 document_id=str(uuid4()),
             )
         )
+
+        if on_progress is not None and idx % 50 == 0:
+            try:
+                on_progress(f"Parsed {idx} files...")
+            except Exception:
+                pass
 
     return documents

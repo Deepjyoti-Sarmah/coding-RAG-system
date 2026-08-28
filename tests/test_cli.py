@@ -1,9 +1,13 @@
+import contextlib
+import io
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 from cli import (
+    build_parser,
     cmd_callees,
     cmd_callers,
     cmd_context,
@@ -184,6 +188,61 @@ class TestCliMain(unittest.TestCase):
         exit_code = main(["eval"])
 
         self.assertEqual(exit_code, 0)
+
+    def test_version_prints_and_exits_zero(self):
+        parser = build_parser()
+        # argparse version action exits via SystemExit(0) and prints version
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as cm:
+                parser.parse_args(["--version"])
+        self.assertEqual(cm.exception.code, 0)
+        output = stdout.getvalue() + stderr.getvalue()
+        # version should be non-empty and match _get_version format
+        self.assertTrue(output.strip())
+        # also via main entry point
+        stdout2 = io.StringIO()
+        stderr2 = io.StringIO()
+        with contextlib.redirect_stdout(stdout2), contextlib.redirect_stderr(stderr2):
+            with self.assertRaises(SystemExit) as cm2:
+                main(["--version"])
+        self.assertEqual(cm2.exception.code, 0)
+        output2 = stdout2.getvalue() + stderr2.getvalue()
+        self.assertTrue(output2.strip())
+
+    def test_missing_path_exits_nonzero_with_message_and_no_traceback(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            exit_code = main(["index", "/nonexistent/path/xyz"])
+        self.assertEqual(exit_code, 1)
+        combined = stdout.getvalue() + stderr.getvalue()
+        self.assertIn("does not exist", combined.lower())
+        self.assertNotIn("Traceback", combined)
+        # also for search with missing path
+        stdout2 = io.StringIO()
+        stderr2 = io.StringIO()
+        with contextlib.redirect_stdout(stdout2), contextlib.redirect_stderr(stderr2):
+            exit_code2 = main(["--db", self.db_path, "search", "hello", "/nope"])
+        self.assertEqual(exit_code2, 1)
+        combined2 = stdout2.getvalue() + stderr2.getvalue()
+        self.assertIn("does not exist", combined2.lower())
+        self.assertNotIn("Traceback", combined2)
+
+    def test_status_oneline_emits_exactly_one_line(self):
+        main(["--db", self.db_path, "index", str(self.root)])
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            exit_code = main(["--db", self.db_path, "status", "--oneline", str(self.root)])
+        self.assertEqual(exit_code, 0)
+        output = stdout.getvalue().strip()
+        lines = [l for l in output.splitlines() if l.strip()]
+        self.assertEqual(len(lines), 1, f"expected exactly one line, got {lines!r}")
+        lower = lines[0].lower()
+        self.assertIn("symbols", lower)
+        self.assertIn("chunks", lower)
+        self.assertIn("pending", lower)
 
 
 class TestCliInit(unittest.TestCase):

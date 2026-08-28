@@ -46,13 +46,22 @@ class IndexRunReport:
     new_embeddings: int = 0
 
 
-def reindex_index(db_path: str, root_dir: str) -> IndexRunReport:
+def reindex_index(db_path: str, root_dir: str, *, on_progress=None) -> IndexRunReport:
     previous_states = _load_previous_states(db_path)
 
     scan = scan_files(root_dir, previous_states)
 
+    if on_progress is not None:
+        total = len(scan.current)
+        # emit early scan progress so large repos don't appear hung
+        if total >= 50:
+            try:
+                on_progress(f"Scanning {total} files...")
+            except Exception:
+                pass
+
     if not previous_states:
-        result = build_graph(root_dir)
+        result = build_graph(root_dir, on_progress=on_progress)
         persist_index(
             db_path,
             result,
@@ -70,6 +79,7 @@ def reindex_index(db_path: str, root_dir: str) -> IndexRunReport:
         db_path=db_path,
         previous_states=previous_states,
         scan=scan,
+        on_progress=on_progress,
     )
 
 
@@ -78,6 +88,7 @@ def _incremental_rebuild(
     db_path: str,
     previous_states: dict[str, FileState],
     scan: ScanResult,
+    on_progress=None,
 ) -> IndexRunReport:
     changes = scan.changes
     partition = partition_files(scan)
@@ -91,6 +102,7 @@ def _incremental_rebuild(
         scan=scan,
         changes=changes,
         previous_docs_by_path=snapshot.docs_by_path,
+        on_progress=on_progress,
     )
     documents_by_id = {d.document_id: d for d in documents_by_path.values()}
 
@@ -264,10 +276,11 @@ def _build_documents(
     scan: ScanResult,
     changes: dict[str, FileChange],
     previous_docs_by_path: dict[str, Document],
+    on_progress=None,
 ) -> dict[str, Document]:
     documents_by_path: dict[str, Document] = {}
 
-    for path, scanned in scan.current.items():
+    for idx, (path, scanned) in enumerate(scan.current.items(), start=1):
         previous_doc = previous_docs_by_path.get(path)
 
         if changes[path] == FileChange.UNCHANGED and previous_doc is not None:
@@ -289,6 +302,12 @@ def _build_documents(
             content=content,
             document_id=document_id,
         )
+
+        if on_progress is not None and idx % 50 == 0:
+            try:
+                on_progress(f"Parsed {idx}/{len(scan.current)} files...")
+            except Exception:
+                pass
 
     return documents_by_path
 
