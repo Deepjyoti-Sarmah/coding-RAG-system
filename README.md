@@ -2,6 +2,85 @@
 
 > A local-first semantic code intelligence engine for AI coding agents.
 
+## Quick start
+
+Install from a checkout (installs `ckg` and `ckg-mcp` via `[project.scripts]`):
+
+```bash
+uv tool install .      # from the repository root
+ckg --version
+# 0.1.0
+```
+
+Index a project and search it:
+
+```bash
+cd /path/to/your/project
+ckg index .
+# Indexed into .ckg/index.sqlite
+#   parsed files:        2
+#   resolved references: 4
+#   new: 2
+
+ckg search "login"
+# vector search inactive: 3 chunks pending embedding — run `ckg embed`
+# login (function) — auth.ts [score=1.433 sources=exact,fts]
+# run (function) — api.ts [score=0.466 sources=fts]
+# createAuth (function) — auth.ts [score=0.449 sources=fts]
+
+ckg status --oneline
+# symbols 3 chunks 3 pending 3 gen 1
+```
+
+Wire up the MCP server for your agent (writes `.mcp.json` by default):
+
+```bash
+ckg init
+# Wrote .mcp.json
+# cat .mcp.json
+# {
+#   "mcpServers": {
+#     "ckg": {
+#       "command": "ckg-mcp"
+#     }
+#   }
+# }
+```
+
+Restart your editor/agent after `ckg init`. Every question now hits the local index instead of re-reading files.
+
+## What you get
+
+- **Hybrid retrieval** — exact symbol match + graph expansion (`CALLS`/`IMPORTS`) + SQLite FTS5 lexical + vector similarity, fused by reciprocal rank and heuristic reranking
+- **Incremental indexing** — file hashes + Merkle-style change detection; only changed files are reparsed and re-resolved, embeddings are content-addressed and reused
+- **Local-first, no cloud** — SQLite + sqlite-vec + local embeddings; the index is disposable derived state, source files are the source of truth
+- **MCP integration** — `ckg-mcp` server exposes `index_repository`, `search`, `definition`, `callers`, `callees`, `imports`, `context`, and `repository_status` to Claude Code, Cursor, VS Code, and other MCP clients; `ckg init` wires it up
+- **Supported languages** — Python, TypeScript/TSX, JavaScript/JSX, Go (tree-sitter grammars via `parsing/registry.py`)
+
+## CLI at a glance
+
+All commands are available as `ckg <command>` (installed via `[project.scripts]` in `pyproject.toml`; `python cli.py <command>` also works from a source checkout).
+
+| Command | Usage | What it does |
+|---------|-------|--------------|
+| `ckg index <path> [--embed] [--no-background]` | `ckg index .` | Build or update the semantic index for `<path>` |
+| `ckg status [path] [--oneline]` | `ckg status --oneline` | Show index generation and counts; `--oneline` for shell prompts |
+| `ckg search <query> [path] [--top-k N] [--no-vector]` | `ckg search "login"` | Hybrid search over the index |
+| `ckg definition <name> [path]` | `ckg definition createAuth` | Find where a symbol is defined |
+| `ckg callers <name> [path]` | `ckg callers login` | Find callers of a symbol (graph) |
+| `ckg callees <name> [path]` | `ckg callees login` | Find callees of a symbol (graph) |
+| `ckg imports <file> [path]` | `ckg imports api.ts` | List a file's imports and resolutions |
+| `ckg context <query> [path] [--budget N] [--top-k N] [--no-vector]` | `ckg context "how does login work?"` | Build a token-budgeted context pack |
+| `ckg eval [--embed] [--top-k N]` | `ckg eval --embed` | Run the fixed benchmark and report retrieval/indexing metrics |
+| `ckg watch <path> [--no-embed] [--debounce SEC]` | `ckg watch .` | Keep the index fresh by watching for file changes |
+| `ckg init [path]` | `ckg init` | Configure MCP for this project (writes `.mcp.json`) |
+| `ckg embed [path] [--limit N]` | `ckg embed` | Drain the embedding queue |
+
+Top-level options: `ckg --version` (from `importlib.metadata`), `ckg --db <path>` to override the index database path, `ckg --help`.
+
+
+---
+
 CKG builds a semantic model of a repository, stores it locally, derives retrieval-ready chunks from that model, and gives coding agents only the code that is relevant to the current task.
 
 The goal is not to make the LLM read the repository.
@@ -1206,9 +1285,7 @@ Do not claim a specific token reduction until it is measured.
 - Asynchronous / incremental embedding worker
 - Ignore rules (`.gitignore` / `.ckgignore`)
 - Index generations
-- Local CLI — `index`, `status`, `search`, `definition`, `callers`,
-  `callees`, `imports`, `context`, `eval`. Invoked as `python cli.py
-<command>`; no `ckg` console script is installed yet.
+- Local CLI — `index`, `status`, `search`, `definition`, `callers`, `callees`, `imports`, `context`, `eval`, `watch`, `init`, `embed` (12 commands via `build_parser()`). Installed as `ckg` (and `ckg-mcp`) via `[project.scripts]` in `pyproject.toml`; invoke as `ckg <command>` (`python cli.py <command>` also works from a source checkout).
 - MCP / agent integration (`mcp_server.py`)
 - Evaluation suite
 
