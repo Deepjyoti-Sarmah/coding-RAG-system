@@ -2,7 +2,8 @@
 
 Ground truth is expected_files (paths relative to source_dir), not symbol
 names.  Candidates are chunks; several can share a file, so dedupe to
-file paths and retrieve wider (top_k=30) to yield ~10 distinct files.
+file paths and retrieve wider (top_k=30) to yield min(10, distinct files
+available) distinct files.
 """
 import json
 import time
@@ -35,6 +36,9 @@ class ExternalQuestionResult:
     recall_at_10: float
     reciprocal_rank: float
     latency_seconds: float
+    precision_ceiling_at_10: float = 0.0
+    precision_at_10_normalized: float = 0.0
+    precision_over_returned: float = 0.0
 
 
 @dataclass(slots=True)
@@ -46,6 +50,9 @@ class ExternalReport:
     mean_precision_at_10: float = 0.0
     mean_recall_at_10: float = 0.0
     mean_reciprocal_rank: float = 0.0
+    mean_precision_ceiling_at_10: float = 0.0
+    mean_precision_at_10_normalized: float = 0.0
+    mean_precision_over_returned: float = 0.0
     p50_latency_seconds: float = 0.0
     p95_latency_seconds: float = 0.0
     index_seconds: float = 0.0
@@ -89,6 +96,19 @@ def _precision_at_k(expected: frozenset[str], ranked: list[str], k: int = 10) ->
     top = ranked[:k]
     hits = sum(1 for f in top if f in expected)
     return hits / k
+
+
+def _precision_ceiling_at_k(expected: frozenset[str], k: int = 10) -> float:
+    if k == 0:
+        return 0.0
+    return min(len(expected), k) / k
+
+
+def _precision_over_returned(expected: frozenset[str], ranked: list[str]) -> float:
+    if not ranked:
+        return 0.0
+    hits = sum(1 for f in ranked if f in expected)
+    return hits / len(ranked)
 
 
 def run_external_evaluation(
@@ -143,6 +163,9 @@ def run_external_evaluation(
         prec = _precision_at_k(q.expected_files, ranked_files, k=file_k)
         rec = recall_at_k(q.expected_files, ranked_files, k=file_k)
         rr = reciprocal_rank(q.expected_files, ranked_files)
+        ceiling = _precision_ceiling_at_k(q.expected_files, k=file_k)
+        normalized = (prec / ceiling) if ceiling > 0 else 0.0
+        over_ret = _precision_over_returned(q.expected_files, ranked_files)
 
         results.append(
             ExternalQuestionResult(
@@ -154,12 +177,18 @@ def run_external_evaluation(
                 recall_at_10=rec,
                 reciprocal_rank=rr,
                 latency_seconds=latency,
+                precision_ceiling_at_10=ceiling,
+                precision_at_10_normalized=normalized,
+                precision_over_returned=over_ret,
             )
         )
 
     mean_p = mean(r.precision_at_10 for r in results)
     mean_r = mean(r.recall_at_10 for r in results)
     mean_rr = mean(r.reciprocal_rank for r in results)
+    mean_ceiling = mean(r.precision_ceiling_at_10 for r in results)
+    mean_norm = mean(r.precision_at_10_normalized for r in results)
+    mean_over = mean(r.precision_over_returned for r in results)
     p50 = statistics.median(latencies) if latencies else 0.0
     # p95 as 95th percentile
     p95 = 0.0
@@ -174,6 +203,9 @@ def run_external_evaluation(
         mean_precision_at_10=mean_p,
         mean_recall_at_10=mean_r,
         mean_reciprocal_rank=mean_rr,
+        mean_precision_ceiling_at_10=mean_ceiling,
+        mean_precision_at_10_normalized=mean_norm,
+        mean_precision_over_returned=mean_over,
         p50_latency_seconds=p50,
         p95_latency_seconds=p95,
         index_seconds=index_seconds,
