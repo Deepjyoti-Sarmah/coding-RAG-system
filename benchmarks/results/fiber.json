@@ -32,7 +32,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.033893266023369506,
-      "category": "core"
+      "category": "core",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1
     },
     {
       "query": "How does fiber implement its Ctx (context) object for request and response?",
@@ -55,7 +58,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.02997884899377823,
-      "category": "context"
+      "category": "context",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1
     },
     {
       "query": "How does fiber handle route registration with GET, POST, PUT, DELETE?",
@@ -79,7 +85,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.027689859009115025,
-      "category": "routing"
+      "category": "routing",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.2
     },
     {
       "query": "How does fiber's router match incoming requests to handlers?",
@@ -102,7 +111,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.028329519991530105,
-      "category": "routing"
+      "category": "routing",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1
     },
     {
       "query": "How does fiber implement middleware chaining with Use()?",
@@ -126,7 +138,10 @@
       "recall_at_10": 0.5,
       "reciprocal_rank": 0.25,
       "latency_seconds": 0.0289461069914978,
-      "category": "middleware"
+      "category": "middleware",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.1
     },
     {
       "query": "How does fiber handle path parameters and query strings?",
@@ -150,7 +165,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.030270166986156255,
-      "category": "routing"
+      "category": "routing",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does fiber implement request body parsing and binding?",
@@ -173,7 +191,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.2,
       "latency_seconds": 0.030366915016202256,
-      "category": "binding"
+      "category": "binding",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1
     },
     {
       "query": "How does fiber's error handling and ErrorHandler work?",
@@ -197,7 +218,10 @@
       "recall_at_10": 0.5,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.03427137900143862,
-      "category": "errors"
+      "category": "errors",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.1
     },
     {
       "query": "How does fiber implement route groups with Group()?",
@@ -221,7 +245,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.032419647002825513,
-      "category": "routing"
+      "category": "routing",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.2
     },
     {
       "query": "How does the fiber Logger middleware log requests?",
@@ -244,7 +271,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.03550148499198258,
-      "category": "middleware"
+      "category": "middleware",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does fiber implement static file serving?",
@@ -262,7 +292,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.03169607699965127,
-      "category": "static"
+      "category": "static",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does fiber's Recover middleware handle panics?",
@@ -283,7 +316,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.2,
       "latency_seconds": 0.047339667013147846,
-      "category": "middleware"
+      "category": "middleware",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.125
     },
     {
       "query": "How does fiber implement WebSocket support?",
@@ -303,7 +339,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.03337062697391957,
-      "category": "websocket"
+      "category": "websocket",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does fiber's CORS middleware handle cross-origin requests?",
@@ -322,7 +361,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.2,
       "latency_seconds": 0.03539106799871661,
-      "category": "middleware"
+      "category": "middleware",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.16666666666666666
     },
     {
       "query": "How does fiber implement rate limiting middleware?",
@@ -343,7 +385,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.125,
       "latency_seconds": 0.03314500200212933,
-      "category": "middleware"
+      "category": "middleware",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.125
     },
     {
       "query": "How does fiber use fasthttp under the hood for HTTP handling?",
@@ -367,7 +412,10 @@
       "recall_at_10": 0.5,
       "reciprocal_rank": 0.3333333333333333,
       "latency_seconds": 0.033062929986044765,
-      "category": "internals"
+      "category": "internals",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.1
     },
     {
       "query": "How does fiber implement hooks for application lifecycle events?",
@@ -383,7 +431,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.029927576979389414,
-      "category": "lifecycle"
+      "category": "lifecycle",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.3333333333333333
     },
     {
       "query": "How does fiber's compress middleware handle gzip and deflate?",
@@ -398,7 +449,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.031680147018050775,
-      "category": "middleware"
+      "category": "middleware",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does fiber implement Server-Sent Events?",
@@ -421,7 +475,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.030414694017963484,
-      "category": "streaming"
+      "category": "streaming",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does fiber's cache middleware store and retrieve cached responses?",
@@ -440,7 +497,13 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.16666666666666666,
       "latency_seconds": 0.03304546099388972,
-      "category": "middleware"
+      "category": "middleware",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.16666666666666666
     }
-  ]
+  ],
+  "mean_precision_ceiling_at_10": 0.135,
+  "mean_precision_at_10_normalized": 0.625,
+  "mean_precision_over_returned": 0.10083333333333333
 }

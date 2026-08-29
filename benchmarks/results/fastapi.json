@@ -25,7 +25,10 @@
       "recall_at_10": 0.5,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.02521609701216221,
-      "category": "architecture"
+      "category": "architecture",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.5
     },
     {
       "query": "How are route decorators like @app.get implemented?",
@@ -43,7 +46,10 @@
       "recall_at_10": 0.5,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.019930120004573837,
-      "category": "routing"
+      "category": "routing",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.25
     },
     {
       "query": "How does OAuth2 password bearer authentication work?",
@@ -62,7 +68,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.02253349800594151,
-      "category": "security"
+      "category": "security",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.16666666666666666
     },
     {
       "query": "How does FastAPI generate OpenAPI schema?",
@@ -79,7 +88,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.02717686802498065,
-      "category": "openapi"
+      "category": "openapi",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.6666666666666666
     },
     {
       "query": "How are request body parameters validated?",
@@ -103,7 +115,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.018869393999921158,
-      "category": "validation"
+      "category": "validation",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.2
     },
     {
       "query": "How does the Swagger UI docs page get served?",
@@ -118,7 +133,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.02095939900027588,
-      "category": "openapi"
+      "category": "openapi",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.5
     },
     {
       "query": "How does FastAPI handle CORS middleware?",
@@ -132,7 +150,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.025931723008397967,
-      "category": "middleware"
+      "category": "middleware",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How are HTTP exceptions and error handlers implemented?",
@@ -149,7 +170,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.01847609897959046,
-      "category": "errors"
+      "category": "errors",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.6666666666666666
     },
     {
       "query": "How does the APIRouter class work?",
@@ -172,7 +196,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.0194403370260261,
-      "category": "routing"
+      "category": "routing",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does FastAPI encode response models with jsonable_encoder?",
@@ -188,7 +215,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.030850809009280056,
-      "category": "serialization"
+      "category": "serialization",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.3333333333333333
     },
     {
       "query": "How are WebSocket endpoints defined and handled?",
@@ -207,7 +237,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.021684613020624965,
-      "category": "websocket"
+      "category": "websocket",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does the HTTPBearer security scheme work?",
@@ -228,7 +261,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.018837639974663034,
-      "category": "security"
+      "category": "security",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.125
     },
     {
       "query": "How does FastAPI handle background tasks?",
@@ -244,7 +280,10 @@
       "recall_at_10": 0.5,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.024884332990041003,
-      "category": "background"
+      "category": "background",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.5
     },
     {
       "query": "How are API key security dependencies implemented?",
@@ -267,7 +306,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.3333333333333333,
       "latency_seconds": 0.01911833800841123,
-      "category": "security"
+      "category": "security",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1
     },
     {
       "query": "How does FastAPI integrate with Jinja2 templates?",
@@ -283,7 +325,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.029084735026117414,
-      "category": "templating"
+      "category": "templating",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does the FastAPI application class initialize?",
@@ -298,7 +343,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
       "latency_seconds": 0.026332717010518536,
-      "category": "core"
+      "category": "core",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.5
     },
     {
       "query": "How are path parameters and query parameters resolved from the request?",
@@ -322,7 +370,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.020623845019144937,
-      "category": "parameters"
+      "category": "parameters",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.2
     },
     {
       "query": "How does FastAPI serve static files?",
@@ -337,7 +388,10 @@
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
       "latency_seconds": 0.02612847398268059,
-      "category": "static"
+      "category": "static",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0
     },
     {
       "query": "How does FastAPI implement Server-Sent Events streaming?",
@@ -353,7 +407,10 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.3333333333333333,
       "latency_seconds": 0.02654719300335273,
-      "category": "streaming"
+      "category": "streaming",
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.3333333333333333
     },
     {
       "query": "What Pydantic compatibility layer does FastAPI use for v1 and v2?",
@@ -371,7 +428,13 @@
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
       "latency_seconds": 0.029356887011090294,
-      "category": "compatibility"
+      "category": "compatibility",
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.5
     }
-  ]
+  ],
+  "mean_precision_ceiling_at_10": 0.14500000000000002,
+  "mean_precision_at_10_normalized": 0.675,
+  "mean_precision_over_returned": 0.27708333333333335
 }
