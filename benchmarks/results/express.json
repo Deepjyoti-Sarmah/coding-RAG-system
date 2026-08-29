@@ -1,0 +1,355 @@
+{
+  "repo": "https://github.com/expressjs/express.git",
+  "source_dir": "lib",
+  "commit": "023767fe9872e029271df1418f73401bff20ff40",
+  "queries_file": "benchmarks/express_queries.json",
+  "total_questions": 20,
+  "mean_precision_at_10": 0.10500000000000001,
+  "mean_recall_at_10": 1.0,
+  "mean_reciprocal_rank": 0.875,
+  "p50_latency_seconds": 0.03604429950064514,
+  "p95_latency_seconds": 0.05207209300715476,
+  "index_seconds": 0.04407356699812226,
+  "questions": [
+    {
+      "query": "How does Express initialize the application and set up the default router?",
+      "expected_files": [
+        "application.js"
+      ],
+      "ranked_files": [
+        "express.js",
+        "application.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.03905102700809948,
+      "category": "core"
+    },
+    {
+      "query": "How does app.use() register middleware on an Express application?",
+      "expected_files": [
+        "application.js"
+      ],
+      "ranked_files": [
+        "express.js",
+        "application.js",
+        "response.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.049327503016684204,
+      "category": "middleware"
+    },
+    {
+      "query": "How does app.handle() dispatch an incoming request through the router?",
+      "expected_files": [
+        "application.js"
+      ],
+      "ranked_files": [
+        "application.js",
+        "express.js",
+        "response.js",
+        "request.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.03815348801435903,
+      "category": "routing"
+    },
+    {
+      "query": "How does app.set() and app.enabled() manage application settings?",
+      "expected_files": [
+        "application.js"
+      ],
+      "ranked_files": [
+        "application.js",
+        "response.js",
+        "express.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.033883674012031406,
+      "category": "core"
+    },
+    {
+      "query": "How does app.render() render a view with a template engine?",
+      "expected_files": [
+        "application.js",
+        "view.js"
+      ],
+      "ranked_files": [
+        "application.js",
+        "view.js",
+        "response.js",
+        "express.js"
+      ],
+      "precision_at_10": 0.2,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.03331702799187042,
+      "category": "views"
+    },
+    {
+      "query": "How does Express resolve and load view templates by name?",
+      "expected_files": [
+        "view.js"
+      ],
+      "ranked_files": [
+        "view.js",
+        "response.js",
+        "application.js",
+        "express.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.03544393999618478,
+      "category": "views"
+    },
+    {
+      "query": "How does res.send() determine the response body type and content-length?",
+      "expected_files": [
+        "response.js"
+      ],
+      "ranked_files": [
+        "response.js",
+        "express.js",
+        "request.js",
+        "utils.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.0384670979983639,
+      "category": "response"
+    },
+    {
+      "query": "How does res.json() serialize an object and set the JSON content type?",
+      "expected_files": [
+        "response.js"
+      ],
+      "ranked_files": [
+        "response.js",
+        "request.js",
+        "express.js",
+        "utils.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.03137066899216734,
+      "category": "response"
+    },
+    {
+      "query": "How does res.sendFile() stream a file to the client?",
+      "expected_files": [
+        "response.js"
+      ],
+      "ranked_files": [
+        "response.js",
+        "request.js",
+        "express.js",
+        "view.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.034409607003908604,
+      "category": "response"
+    },
+    {
+      "query": "How does res.download() set the Content-Disposition header for file downloads?",
+      "expected_files": [
+        "response.js"
+      ],
+      "ranked_files": [
+        "response.js",
+        "request.js",
+        "express.js",
+        "view.js",
+        "utils.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.04160295499605127,
+      "category": "response"
+    },
+    {
+      "query": "How does res.status() and res.sendStatus() set the HTTP status code?",
+      "expected_files": [
+        "response.js"
+      ],
+      "ranked_files": [
+        "request.js",
+        "response.js",
+        "express.js",
+        "application.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.03939917599200271,
+      "category": "response"
+    },
+    {
+      "query": "How does res.cookie() and res.clearCookie() manage response cookies?",
+      "expected_files": [
+        "response.js"
+      ],
+      "ranked_files": [
+        "response.js",
+        "express.js",
+        "request.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.03600917899166234,
+      "category": "response"
+    },
+    {
+      "query": "How does req.accepts() perform content negotiation against the Accept header?",
+      "expected_files": [
+        "request.js"
+      ],
+      "ranked_files": [
+        "request.js",
+        "response.js",
+        "express.js",
+        "utils.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.03495860900147818,
+      "category": "request"
+    },
+    {
+      "query": "How does req.get() and req.header() read request headers?",
+      "expected_files": [
+        "request.js"
+      ],
+      "ranked_files": [
+        "request.js",
+        "response.js",
+        "express.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.05207209300715476,
+      "category": "request"
+    },
+    {
+      "query": "How does req.is() check the request's Content-Type against a given type?",
+      "expected_files": [
+        "request.js"
+      ],
+      "ranked_files": [
+        "request.js",
+        "response.js",
+        "express.js",
+        "utils.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.03315958398161456,
+      "category": "request"
+    },
+    {
+      "query": "How does req.range() parse a Range header for partial content requests?",
+      "expected_files": [
+        "request.js"
+      ],
+      "ranked_files": [
+        "request.js",
+        "response.js",
+        "express.js",
+        "utils.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.034851859003538266,
+      "category": "request"
+    },
+    {
+      "query": "How does Express generate an ETag for a response body?",
+      "expected_files": [
+        "utils.js"
+      ],
+      "ranked_files": [
+        "response.js",
+        "utils.js",
+        "express.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.044359256979078054,
+      "category": "utils"
+    },
+    {
+      "query": "How does Express compile and normalize configured MIME types?",
+      "expected_files": [
+        "utils.js"
+      ],
+      "ranked_files": [
+        "utils.js",
+        "response.js",
+        "express.js",
+        "application.js",
+        "request.js",
+        "view.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.04020708199823275,
+      "category": "utils"
+    },
+    {
+      "query": "How does the express() factory function create an application instance?",
+      "expected_files": [
+        "express.js"
+      ],
+      "ranked_files": [
+        "express.js",
+        "application.js",
+        "utils.js",
+        "request.js",
+        "response.js",
+        "view.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.0329180010012351,
+      "category": "core"
+    },
+    {
+      "query": "How does Express expose the json, urlencoded, and static middleware helpers?",
+      "expected_files": [
+        "express.js"
+      ],
+      "ranked_files": [
+        "response.js",
+        "express.js",
+        "application.js",
+        "view.js",
+        "request.js"
+      ],
+      "precision_at_10": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.03607942000962794,
+      "category": "middleware"
+    }
+  ]
+}
