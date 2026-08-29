@@ -64,34 +64,54 @@ class EvaluationReport:
     embedding_cache_hit_rate: float = 0.0
 
 
-def run_evaluation(
+def run_evaluation_on_repo(
+    repo_dir: str | Path,
+    questions: tuple[Question, ...] | list[Question],
     *,
     provider: EmbeddingProvider | None = None,
     top_k: int = RECALL_K,
     token_budget: int = 800,
+    db_path: str | None = None,
 ) -> EvaluationReport:
-    with tempfile.TemporaryDirectory() as tmp:
-        repo_dir = Path(tmp) / "repo"
-        shutil.copytree(BENCHMARK_REPO, repo_dir)
-        db_path = str(Path(tmp) / "index.sqlite")
+    """Core evaluation over an already-materialized repo directory.
 
+    Used by `run_evaluation` (which copies the fixture) and by the
+    external harness (`evaluation.external`) which clones real repos.
+    """
+    repo_path = Path(repo_dir)
+    # When db_path is None, caller manages its own temp dir; otherwise
+    # we create a temporary DB alongside. For external harness the caller
+    # provides db_path inside its own temp dir.
+    tmp_obj = None
+    if db_path is None:
+        tmp_obj = tempfile.TemporaryDirectory()
+        db_path = str(Path(tmp_obj.name) / "index.sqlite")
+
+    try:
         start = time.perf_counter()
-        reindex_index(db_path, str(repo_dir))
+        reindex_index(db_path, str(repo_path))
         initial_indexing_seconds = time.perf_counter() - start
 
         # A no-op reindex over an unchanged repo is the cheapest possible
         # incremental run and is what "steady state" looks like in practice.
         start = time.perf_counter()
-        reindex_index(db_path, str(repo_dir))
+        reindex_index(db_path, str(repo_path))
         incremental_indexing_seconds = time.perf_counter() - start
 
         embedding_cache_hit_rate = 0.0
         if provider is not None:
-            embedding_cache_hit_rate = _measure_embedding_cache_hit_rate(
-                repo_dir=repo_dir,
-                db_path=db_path,
-                provider=provider,
-            )
+            # Only the fixture has token.ts for the cache-hit micro-benchmark.
+            # For external repos we skip this and report 0.0.
+            token_file = repo_path / "token.ts"
+            if token_file.exists():
+                embedding_cache_hit_rate = _measure_embedding_cache_hit_rate(
+                    repo_dir=repo_path,
+                    db_path=db_path,
+                    provider=provider,
+                )
+            else:
+                # Still need to embed everything once for retrieval.
+                run_embedding_worker(db_path, provider)
 
         result = load_index(db_path)
         retriever = build_hybrid_retriever(db_path, provider=provider)
@@ -112,7 +132,7 @@ def run_evaluation(
         import_checks: list[bool] = []
         context_token_counts: list[int] = []
 
-        for question in BENCHMARK_QUESTIONS:
+        for question in questions:
             start = time.perf_counter()
             retrieval = retriever.retrieve(question.text, top_k=top_k)
             latency = time.perf_counter() - start
@@ -179,6 +199,29 @@ def run_evaluation(
             initial_indexing_seconds=initial_indexing_seconds,
             incremental_indexing_seconds=incremental_indexing_seconds,
             embedding_cache_hit_rate=embedding_cache_hit_rate,
+        )
+    finally:
+        if tmp_obj is not None:
+            tmp_obj.cleanup()
+
+
+def run_evaluation(
+    *,
+    provider: EmbeddingProvider | None = None,
+    top_k: int = RECALL_K,
+    token_budget: int = 800,
+) -> EvaluationReport:
+    with tempfile.TemporaryDirectory() as tmp:
+        repo_dir = Path(tmp) / "repo"
+        shutil.copytree(BENCHMARK_REPO, repo_dir)
+        db_path = str(Path(tmp) / "index.sqlite")
+        return run_evaluation_on_repo(
+            repo_dir,
+            BENCHMARK_QUESTIONS,
+            provider=provider,
+            top_k=top_k,
+            token_budget=token_budget,
+            db_path=db_path,
         )
 
 
