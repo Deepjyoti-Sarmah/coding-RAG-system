@@ -5,11 +5,14 @@
   "queries_file": "benchmarks/chi_queries.json",
   "total_questions": 18,
   "mean_precision_at_10": 0.1,
+  "mean_precision_ceiling_at_10": 0.1277777777777778,
+  "mean_precision_at_10_normalized": 0.8611111111111112,
+  "mean_precision_over_returned": 0.1,
   "mean_recall_at_10": 0.8611111111111112,
   "mean_reciprocal_rank": 0.7777777777777778,
-  "p50_latency_seconds": 0.03208258000086062,
-  "p95_latency_seconds": 0.03475428800447844,
-  "index_seconds": 0.580476847011596,
+  "p50_latency_seconds": 0.02186436550982762,
+  "p95_latency_seconds": 0.02662629701080732,
+  "index_seconds": 0.6162258610129356,
   "questions": [
     {
       "query": "How does chi implement its Router interface?",
@@ -30,13 +33,13 @@
         "middleware/get_head.go"
       ],
       "precision_at_10": 0.0,
-      "recall_at_10": 0.0,
-      "reciprocal_rank": 0.0,
-      "latency_seconds": 0.021744739991845563,
-      "category": "routing",
       "precision_ceiling_at_10": 0.2,
       "precision_at_10_normalized": 0.0,
-      "precision_over_returned": 0.0
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.02129925601184368,
+      "category": "routing"
     },
     {
       "query": "How are URL parameters extracted from a request context?",
@@ -56,13 +59,13 @@
         "middleware/strip_test.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.030678590992465615,
-      "category": "routing",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.02110610602539964,
+      "category": "routing"
     },
     {
       "query": "How does chi handle subrouters and route mounting?",
@@ -82,13 +85,13 @@
         "middleware/strip_test.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.030965459998697042,
-      "category": "routing",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.021907329006353393,
+      "category": "routing"
     },
     {
       "query": "How is middleware chained and applied to routes?",
@@ -104,18 +107,18 @@
         "_examples/todos-resource/users.go",
         "middleware/route_headers.go",
         "middleware/page_route.go",
+        "middleware/route_headers_test.go",
         "middleware/get_head.go",
-        "middleware/client_ip_example_test.go",
-        "middleware/route_headers_test.go"
+        "middleware/client_ip_example_test.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 0.5,
-      "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.032087294006487355,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.2,
       "precision_at_10_normalized": 0.5,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 0.5,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.021536259999265894,
+      "category": "middleware"
     },
     {
       "query": "How does the middleware.Logger log HTTP requests?",
@@ -135,13 +138,13 @@
         "middleware/maybe.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.033048657001927495,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.02662629701080732,
+      "category": "middleware"
     },
     {
       "query": "How does chi implement route groups?",
@@ -161,13 +164,13 @@
         "middleware/strip_test.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.5,
-      "latency_seconds": 0.030611726018832996,
-      "category": "routing",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.020525706000626087,
+      "category": "routing"
     },
     {
       "query": "How does middleware.Recoverer handle panics?",
@@ -182,18 +185,18 @@
         "middleware/logger.go",
         "middleware/client_ip_test.go",
         "middleware/compress.go",
-        "middleware/route_headers.go",
-        "middleware/profiler.go",
-        "middleware/client_ip.go"
+        "middleware/client_ip.go",
+        "middleware/throttle.go",
+        "middleware/middleware.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03207786599523388,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.022219495003810152,
+      "category": "middleware"
     },
     {
       "query": "How does chi match wildcard and parameterized routes?",
@@ -214,13 +217,13 @@
         "tree_test.go"
       ],
       "precision_at_10": 0.2,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.0316815139958635,
-      "category": "routing",
       "precision_ceiling_at_10": 0.2,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.2
+      "precision_over_returned": 0.2,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.021995084010995924,
+      "category": "routing"
     },
     {
       "query": "How does middleware.RealIP extract client IP from headers?",
@@ -231,20 +234,22 @@
         "middleware/realip.go",
         "middleware/client_ip_example_test.go",
         "middleware/client_ip.go",
-        "middleware/realip_test.go",
         "middleware/route_headers.go",
-        "middleware/client_ip_test.go",
+        "middleware/realip_test.go",
         "middleware/route_headers_test.go",
-        "middleware/throttle_test.go"
+        "middleware/client_ip_test.go",
+        "middleware/throttle_test.go",
+        "middleware/wrap_writer_test.go",
+        "middleware/request_id_test.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03252323699416593,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.125
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.02270352901541628,
+      "category": "middleware"
     },
     {
       "query": "How is request context used to pass values between middleware and handlers?",
@@ -265,13 +270,13 @@
         "middleware/basic_auth.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 0.5,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03164242999628186,
-      "category": "context",
       "precision_ceiling_at_10": 0.2,
       "precision_at_10_normalized": 0.5,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 0.5,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.02279011401697062,
+      "category": "context"
     },
     {
       "query": "How does chi implement the HTTP method routing (GET, POST, DELETE)?",
@@ -292,13 +297,13 @@
         "middleware/compress.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 0.5,
-      "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.03319714200915769,
-      "category": "routing",
       "precision_ceiling_at_10": 0.2,
       "precision_at_10_normalized": 0.5,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 0.5,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.022483525972347707,
+      "category": "routing"
     },
     {
       "query": "How does middleware.Timeout cancel long running requests?",
@@ -314,16 +319,17 @@
         "middleware/client_ip_test.go",
         "middleware/request_size.go",
         "middleware/middleware_test.go",
-        "middleware/request_id.go"
+        "middleware/request_id.go",
+        "middleware/wrap_writer.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03272059099981561,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1111111111111111
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.02213056301116012,
+      "category": "middleware"
     },
     {
       "query": "How does chi's radix tree store and resolve routes?",
@@ -333,19 +339,23 @@
       "ranked_files": [
         "chi.go",
         "tree.go",
-        "mux.go",
         "_examples/todos-resource/todos.go",
+        "mux.go",
         "_examples/todos-resource/users.go",
-        "tree_test.go"
+        "tree_test.go",
+        "middleware/clean_path.go",
+        "middleware/get_head.go",
+        "_examples/router-walk/main.go",
+        "_examples/pathvalue/main.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.5,
-      "latency_seconds": 0.0313922319910489,
-      "category": "internals",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.16666666666666666
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.020985327020753175,
+      "category": "internals"
     },
     {
       "query": "How does middleware.Compress handle gzip response compression?",
@@ -359,16 +369,19 @@
         "middleware/middleware_test.go",
         "middleware/wrap_writer.go",
         "middleware/content_encoding_test.go",
-        "_examples/rest/main.go"
+        "_examples/rest/main.go",
+        "middleware/middleware.go",
+        "middleware/heartbeat_test.go",
+        "middleware/supress_notfound.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.033170227019581944,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.14285714285714285
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.02182140201330185,
+      "category": "middleware"
     },
     {
       "query": "How are 404 and 405 not found and method not allowed handlers set?",
@@ -384,16 +397,17 @@
         "middleware/throttle.go",
         "chain.go",
         "_examples/custom-handler/main.go",
-        "middleware/route_headers.go"
+        "middleware/route_headers.go",
+        "middleware/recoverer.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03216398099903017,
-      "category": "errors",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1111111111111111
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.021140440978342667,
+      "category": "errors"
     },
     {
       "query": "How does middleware.Throttle limit concurrent requests?",
@@ -413,13 +427,13 @@
         "middleware/request_id_test.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03313054799218662,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.021248969016596675,
+      "category": "middleware"
     },
     {
       "query": "How does chi handle route walking for introspection?",
@@ -432,20 +446,20 @@
         "tree.go",
         "chi.go",
         "middleware/page_route.go",
+        "_examples/router-walk/main.go",
         "context_test.go",
         "middleware/route_headers_test.go",
         "_examples/pathvalue/main.go",
-        "middleware/strip_test.go",
-        "tree_test.go"
+        "middleware/strip_test.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03199932599090971,
-      "category": "internals",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.020715652004582807,
+      "category": "internals"
     },
     {
       "query": "How does middleware.StripSlashes normalize trailing slashes in URLs?",
@@ -465,16 +479,13 @@
         "middleware/url_format_test.go"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03475428800447844,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.021995477000018582,
+      "category": "middleware"
     }
-  ],
-  "mean_precision_ceiling_at_10": 0.1277777777777778,
-  "mean_precision_at_10_normalized": 0.8611111111111112,
-  "mean_precision_over_returned": 0.10870811287477955
+  ]
 }

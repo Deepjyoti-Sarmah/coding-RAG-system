@@ -5,11 +5,14 @@
   "queries_file": "benchmarks/django_queries.json",
   "total_questions": 22,
   "mean_precision_at_10": 0.09090909090909091,
+  "mean_precision_ceiling_at_10": 0.11363636363636363,
+  "mean_precision_at_10_normalized": 0.8181818181818182,
+  "mean_precision_over_returned": 0.09285714285714287,
   "mean_recall_at_10": 0.8181818181818182,
   "mean_reciprocal_rank": 0.646969696969697,
-  "p50_latency_seconds": 0.04911717398499604,
-  "p95_latency_seconds": 0.060540902020875365,
-  "index_seconds": 25.801224089984316,
+  "p50_latency_seconds": 0.052554819514625706,
+  "p95_latency_seconds": 0.07695943498401903,
+  "index_seconds": 29.97223464300623,
   "questions": [
     {
       "query": "How does Django's ORM build and compile SQL queries from a QuerySet?",
@@ -25,16 +28,18 @@
         "contrib/admin/static/admin/js/SelectFilter2.js",
         "utils/dateformat.py",
         "db/models/sql/query.py",
-        "db/models/manager.py"
+        "db/models/manager.py",
+        "db/models/lookups.py",
+        "contrib/admin/views/main.py"
       ],
       "precision_at_10": 0.2,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05337212301674299,
-      "category": "orm",
       "precision_ceiling_at_10": 0.2,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.25
+      "precision_over_returned": 0.2,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.05817151902010664,
+      "category": "orm"
     },
     {
       "query": "How does Django's ModelBase metaclass and Model.save() assign and persist field values?",
@@ -54,13 +59,13 @@
         "contrib/sessions/backends/cached_db.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05056160897947848,
-      "category": "orm",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.05541030497988686,
+      "category": "orm"
     },
     {
       "query": "How does Django's MigrationExecutor.migrate() apply a migration plan?",
@@ -80,13 +85,13 @@
         "core/management/commands/squashmigrations.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.043702563008992,
-      "category": "migrations",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.04731805101619102,
+      "category": "migrations"
     },
     {
       "query": "How does Django's migration autodetector figure out model changes?",
@@ -106,13 +111,13 @@
         "db/migrations/recorder.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.04745280198403634,
-      "category": "migrations",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.05076931999064982,
+      "category": "migrations"
     },
     {
       "query": "How does Django's URL resolver match a request path to a view?",
@@ -129,16 +134,16 @@
         "contrib/staticfiles/storage.py",
         "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
         "core/files/storage/memory.py",
-        "template/defaulttags.py"
+        "core/files/storage/filesystem.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.5,
-      "latency_seconds": 0.0473546770226676,
-      "category": "routing",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.05271044501569122,
+      "category": "routing"
     },
     {
       "query": "How does Django convert URL path converters like <int:id> into Python types?",
@@ -158,13 +163,13 @@
         "db/migrations/writer.py"
       ],
       "precision_at_10": 0.0,
-      "recall_at_10": 0.0,
-      "reciprocal_rank": 0.0,
-      "latency_seconds": 0.046411316987359896,
-      "category": "routing",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 0.0,
-      "precision_over_returned": 0.0
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.04873913698247634,
+      "category": "routing"
     },
     {
       "query": "How does Django's HttpRequest.build_absolute_uri() and get_host() determine the request URL?",
@@ -179,16 +184,18 @@
         "core/handlers/wsgi.py",
         "core/handlers/asgi.py",
         "contrib/flatpages/models.py",
-        "views/generic/base.py"
+        "views/generic/base.py",
+        "contrib/staticfiles/handlers.py",
+        "contrib/auth/views.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05245997299789451,
-      "category": "http",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.125
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.05649334299960174,
+      "category": "http"
     },
     {
       "query": "How does Django's HttpResponse class set headers and write content?",
@@ -208,13 +215,13 @@
         "core/cache/backends/db.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.0480620110174641,
-      "category": "http",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.05239919401356019,
+      "category": "http"
     },
     {
       "query": "How does Django parse multipart form data and file uploads?",
@@ -234,13 +241,13 @@
         "test/client.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.04765749300713651,
-      "category": "http",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.05074754901579581,
+      "category": "http"
     },
     {
       "query": "How does Django's authentication backend verify a user's credentials?",
@@ -256,16 +263,17 @@
         "contrib/auth/__init__.py",
         "contrib/auth/forms.py",
         "contrib/auth/middleware.py",
-        "contrib/auth/views.py"
+        "contrib/auth/views.py",
+        "contrib/gis/utils/layermapping.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.2,
-      "latency_seconds": 0.04641482498846017,
-      "category": "auth",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1111111111111111
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.2,
+      "latency_seconds": 0.04875243399874307,
+      "category": "auth"
     },
     {
       "query": "How does Django hash and validate user passwords?",
@@ -285,13 +293,13 @@
         "db/models/fields/related.py"
       ],
       "precision_at_10": 0.0,
-      "recall_at_10": 0.0,
-      "reciprocal_rank": 0.0,
-      "latency_seconds": 0.04480108298594132,
-      "category": "auth",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 0.0,
-      "precision_over_returned": 0.0
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.07695943498401903,
+      "category": "auth"
     },
     {
       "query": "How does Django's session middleware load and persist session data?",
@@ -303,8 +311,8 @@
         "contrib/sessions/models.py",
         "contrib/sessions/backends/cached_db.py",
         "contrib/sessions/backends/cache.py",
-        "contrib/sessions/backends/db.py",
         "contrib/sessions/backends/file.py",
+        "contrib/sessions/backends/db.py",
         "contrib/sessions/backends/signed_cookies.py",
         "contrib/sessions/backends/base.py",
         "test/client.py",
@@ -312,13 +320,13 @@
         "db/backends/postgresql/psycopg_any.py"
       ],
       "precision_at_10": 0.0,
-      "recall_at_10": 0.0,
-      "reciprocal_rank": 0.0,
-      "latency_seconds": 0.0469152900041081,
-      "category": "sessions",
       "precision_ceiling_at_10": 0.2,
       "precision_at_10_normalized": 0.0,
-      "precision_over_returned": 0.0
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.04891600299743004,
+      "category": "sessions"
     },
     {
       "query": "How does Django's CSRF middleware protect against cross-site request forgery?",
@@ -333,17 +341,18 @@
         "middleware/csrf.py",
         "views/csrf.py",
         "contrib/sites/middleware.py",
+        "middleware/security.py",
         "views/decorators/csrf.py",
-        "middleware/security.py"
+        "middleware/common.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.2,
-      "latency_seconds": 0.049516231985762715,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1111111111111111
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.2,
+      "latency_seconds": 0.04984352600877173,
+      "category": "middleware"
     },
     {
       "query": "How does Django's CommonMiddleware implement the APPEND_SLASH redirect?",
@@ -355,21 +364,21 @@
         "shortcuts.py",
         "contrib/redirects/models.py",
         "utils/dateformat.py",
-        "views/decorators/common.py",
         "contrib/redirects/middleware.py",
+        "views/decorators/common.py",
         "middleware/locale.py",
         "views/generic/base.py",
         "test/client.py",
         "contrib/redirects/admin.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.04871811598422937,
-      "category": "middleware",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.06501234698225744,
+      "category": "middleware"
     },
     {
       "query": "How does Django's Field.to_python() and validate() methods convert and check form input?",
@@ -380,16 +389,22 @@
         "forms/fields.py",
         "db/models/fields/__init__.py",
         "template/backends/django.py",
-        "urls/converters.py"
+        "urls/converters.py",
+        "forms/models.py",
+        "contrib/postgres/forms/array.py",
+        "contrib/postgres/fields/array.py",
+        "contrib/auth/forms.py",
+        "contrib/gis/forms/fields.py",
+        "contrib/postgres/forms/hstore.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05715198299731128,
-      "category": "forms",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.25
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.07534871902316809,
+      "category": "forms"
     },
     {
       "query": "How does Django's ModelForm generate form fields from model fields?",
@@ -409,13 +424,13 @@
         "db/models/options.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.06158798298565671,
-      "category": "forms",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.07189133201609366,
+      "category": "forms"
     },
     {
       "query": "How does Django's template engine compile and render templates?",
@@ -431,16 +446,18 @@
         "template/library.py",
         "template/backends/dummy.py",
         "template/defaulttags.py",
-        "template/response.py"
+        "template/response.py",
+        "template/backends/jinja2.py",
+        "template/utils.py"
       ],
       "precision_at_10": 0.2,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.5,
-      "latency_seconds": 0.0497527509869542,
-      "category": "templates",
       "precision_ceiling_at_10": 0.2,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.25
+      "precision_over_returned": 0.2,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.06572619298822246,
+      "category": "templates"
     },
     {
       "query": "How does Django's ListView class paginate a queryset of objects?",
@@ -460,13 +477,13 @@
         "db/models/expressions.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05214760600938462,
-      "category": "views",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.05090416199527681,
+      "category": "views"
     },
     {
       "query": "How does Django's DetailView.get_object() and get_queryset() fetch a single model instance?",
@@ -481,18 +498,18 @@
         "contrib/contenttypes/fields.py",
         "db/models/manager.py",
         "contrib/admin/options.py",
+        "contrib/admin/views/main.py",
         "contrib/syndication/views.py",
-        "contrib/admin/views/autocomplete.py",
-        "contrib/sites/managers.py"
+        "contrib/admin/views/autocomplete.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.060540902020875365,
-      "category": "views",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.1
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.08458099898416549,
+      "category": "views"
     },
     {
       "query": "How does Django's test client simulate HTTP requests for testing?",
@@ -504,16 +521,18 @@
         "test/testcases.py",
         "utils/autoreload.py",
         "utils/dateformat.py",
-        "test/runner.py"
+        "test/runner.py",
+        "core/handlers/asgi.py",
+        "core/handlers/wsgi.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 1.0,
-      "latency_seconds": 0.04955085599794984,
-      "category": "testing",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.2
+      "precision_over_returned": 0.14285714285714285,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.051657287986017764,
+      "category": "testing"
     },
     {
       "query": "How does Django's signal dispatcher connect and send signals?",
@@ -527,16 +546,19 @@
         "core/mail/message.py",
         "utils/dateformat.py",
         "core/checks/model_checks.py",
-        "utils/autoreload.py"
+        "utils/autoreload.py",
+        "core/handlers/asgi.py",
+        "tasks/signals.py",
+        "test/signals.py"
       ],
       "precision_at_10": 0.1,
-      "recall_at_10": 1.0,
-      "reciprocal_rank": 0.5,
-      "latency_seconds": 0.047796846978599206,
-      "category": "signals",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 1.0,
-      "precision_over_returned": 0.14285714285714285
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.04657028001383878,
+      "category": "signals"
     },
     {
       "query": "How does Django's management command base class parse arguments and execute?",
@@ -548,24 +570,21 @@
         "core/management/commands/dbshell.py",
         "core/management/commands/diffsettings.py",
         "core/management/commands/sqlmigrate.py",
-        "core/management/commands/sendtestemail.py",
-        "core/management/commands/check.py",
         "core/management/commands/compilemessages.py",
+        "core/management/commands/check.py",
+        "core/management/commands/runserver.py",
         "core/management/commands/createcachetable.py",
-        "core/management/commands/test.py",
-        "contrib/staticfiles/management/commands/findstatic.py"
+        "contrib/staticfiles/management/commands/findstatic.py",
+        "core/management/commands/sendtestemail.py"
       ],
       "precision_at_10": 0.0,
-      "recall_at_10": 0.0,
-      "reciprocal_rank": 0.0,
-      "latency_seconds": 0.05193861300358549,
-      "category": "management",
       "precision_ceiling_at_10": 0.1,
       "precision_at_10_normalized": 0.0,
-      "precision_over_returned": 0.0
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.053174547996604815,
+      "category": "management"
     }
-  ],
-  "mean_precision_ceiling_at_10": 0.11363636363636363,
-  "mean_precision_at_10_normalized": 0.8181818181818182,
-  "mean_precision_over_returned": 0.11091269841269842
+  ]
 }
