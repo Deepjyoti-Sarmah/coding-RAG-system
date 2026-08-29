@@ -1,20 +1,42 @@
 # External Benchmark Results (with embeddings)
 
-> **Superseded numbers below for chi/fiber.** The coverage audit
-> (`benchmarks/results/COVERAGE.md`) found `chi_queries.json` and
-> `fiber_queries.json` referenced files that don't exist at the pinned
-> commits (see `benchmarks/ATTRIBUTION.md`). Those queries were corrected
-> and all five repos re-run; current baseline is chi R@10 0.917 (was
-> 0.861), fiber R@10 0.737 (was 0.675), mean 0.834 (was 0.811 across the
-> uncorrected sets) — recorded in `benchmarks/results/{chi,fiber}.json`.
-> express/fastapi/django are unchanged. See `benchmarks/results/TRACK2.md`
-> for the subsequent module-symbol-synthesis change on top of this.
+> **The table immediately below (§ "Final") is historical and stale.**
+> It predates two later changes: the chi/fiber ground-truth correction
+> (`benchmarks/ATTRIBUTION.md`, commit `3df5c40`) and module-symbol
+> synthesis for definition-free documents (commit `f803314`, see
+> `benchmarks/results/TRACK2.md`). **Current canonical numbers are the
+> "Canonical (current)" table directly below this notice** — sourced
+> live from `benchmarks/results/{express,chi,django,fastapi,fiber}.json`,
+> which are regenerated in place on every benchmark change (they are
+> not versioned snapshots). Anything reading recall/precision numbers
+> for this project should use the canonical table, not "Final".
 
-Harness: `evaluation/external.py` + `benchmarks/run_external.py`
-Indexing: `source_dir` as repo root for file-level ground truth, `top_k=30` chunks deduped to `min(10, distinct files available)` distinct files.
-Embeddings: `LocalEmbeddingProvider` (all-MiniLM-L6-v2) via `run_embedding_worker`.
+## Canonical (current)
 
-Final (A+B: per-file cap 3 + weighted BM25 10/5/8/1):
+Harness: `evaluation/external.py` + `benchmarks/run_external.py`. Same
+methodology as below (`top_k=30` deduped to 10 distinct files,
+`LocalEmbeddingProvider`). Reflects ground-truth correction (`3df5c40`)
++ module-symbol synthesis (`f803314`); routing.py (fastapi, dropped by
+`MAX_FILE_SIZE_BYTES`) is the only known remaining coverage gap.
+
+| repo | source_dir | commit | queries | ceiling P@10 | CKG P@10 | P@10 norm | P_over_ret | R@10 | MRR | p50 latency | index time |
+|------|------------|--------|---------|--------------|----------|------------|------|-----|-------------|------------|
+| express | lib | 023767fe | 20 | 0.105 | 0.105 | 1.000 | 0.180 | **1.000** | 0.875 | 486.1 ms | 0.0 s |
+| chi | . | 36611d24 | 18 | 0.122 | 0.106 | 0.917 | 0.106 | **0.917** | 0.833 | 211.8 ms | 2.1 s |
+| django | django | 3b767c5f | 22 | 0.114 | 0.091 | 0.818 | 0.092 | **0.818** | 50.1 ms | 79.7 s | 0.670 |
+| fastapi | fastapi | 49033471 | 20 | 0.145 | 0.120 | 0.825 | 0.120 | **0.825** | 44.0 ms | 2.8 s | 0.557 |
+| fiber | . | e7229b1b | 19 | 0.132 | 0.089 | 0.737 | 0.089 | **0.737** | 256.1 ms | 86.2 s | 0.418 |
+| **mean** | | | 99 | | | | | **0.859** | | | |
+
+Of this delta from the "Final" table's 0.811 mean: **+0.023 (chi+fiber)
+is definitional** — three `expected_files` entries were corrected because
+they named files that don't exist at the pinned commits, not because
+retrieval changed (see `ATTRIBUTION.md`'s "could only raise the score"
+note) — and **+0.025 (fastapi) is a real retrieval improvement** from
+module-symbol synthesis (`TRACK2.md`). These two deltas must not be
+conflated when citing progress.
+
+## Final (superseded, kept for history)
 
 | repo | source_dir | commit | queries | mean \|expected\| | ceiling P@10 | CKG P@10 | P@10 norm | P_over_ret | R@10 | MRR | p50 latency | index time | mean distinct |
 |------|------------|--------|---------|---------------|--------------|----------|------------|------|-----|-------------|------------|---------------|
