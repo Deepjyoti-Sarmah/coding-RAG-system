@@ -1,0 +1,518 @@
+{
+  "repo": "https://github.com/gofiber/fiber.git",
+  "source_dir": ".",
+  "commit": "e7229b1b3ead150398ad7c100a128c6f276f4b43",
+  "queries_file": "benchmarks/fiber_queries.json",
+  "total_questions": 19,
+  "mean_precision_at_10": 0.09473684210526316,
+  "mean_precision_ceiling_at_10": 0.13157894736842105,
+  "mean_precision_at_10_normalized": 0.7894736842105263,
+  "mean_precision_over_returned": 0.09473684210526316,
+  "mean_recall_at_10": 0.7894736842105263,
+  "mean_reciprocal_rank": 0.4917293233082707,
+  "p50_latency_seconds": 0.13244887301698327,
+  "p95_latency_seconds": 0.38216083496809006,
+  "index_seconds": 84.64437680802075,
+  "questions": [
+    {
+      "query": "How does fiber's App struct initialize and configure the server?",
+      "expected_files": [
+        "app.go"
+      ],
+      "ranked_files": [
+        "app.go",
+        "middleware/session/middleware.go",
+        "res.go",
+        "req.go",
+        "ctx.go",
+        "middleware/adaptor/adaptor.go",
+        "internal/contextvalue/contextvalue.go",
+        "mount.go",
+        "middleware/idempotency/config.go",
+        "middleware/pprof/config.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.12374069000361487,
+      "category": "core"
+    },
+    {
+      "query": "How does fiber implement its Ctx (context) object for request and response?",
+      "expected_files": [
+        "ctx.go"
+      ],
+      "ranked_files": [
+        "client/response.go",
+        "ctx.go",
+        "middleware/idempotency/response.go",
+        "client/request.go",
+        "ctx_interface_gen.go",
+        "middleware/sse/sse.go",
+        "log/context.go",
+        "res.go",
+        "req.go",
+        "internal/contextvalue/contextvalue.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.25690386298811063,
+      "category": "context"
+    },
+    {
+      "query": "How does fiber handle route registration with GET, POST, PUT, DELETE?",
+      "expected_files": [
+        "app.go",
+        "router.go"
+      ],
+      "ranked_files": [
+        "client/request.go",
+        "app.go",
+        "ctx.go",
+        "middleware/session/session.go",
+        "redirect.go",
+        "req.go",
+        "middleware/session/middleware.go",
+        "router.go",
+        "middleware/adaptor/adaptor.go",
+        "res.go"
+      ],
+      "precision_at_10": 0.2,
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.2,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.38216083496809006,
+      "category": "routing"
+    },
+    {
+      "query": "How does fiber's router match incoming requests to handlers?",
+      "expected_files": [
+        "router.go"
+      ],
+      "ranked_files": [
+        "router.go",
+        "middleware/csrf/helpers.go",
+        "domain.go",
+        "internal/etag/etag.go",
+        "middleware/adaptor/adaptor.go",
+        "app.go",
+        "adapter.go",
+        "ctx_interface_gen.go",
+        "middleware/limiter/limiter.go",
+        "router_skip.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.10834573901956901,
+      "category": "routing"
+    },
+    {
+      "query": "How does fiber implement middleware chaining with Use()?",
+      "expected_files": [
+        "app.go",
+        "router.go"
+      ],
+      "ranked_files": [
+        "middleware/session/middleware.go",
+        "group.go",
+        "domain.go",
+        "app.go",
+        "ctx.go",
+        "middleware/adaptor/adaptor.go",
+        "extractors/extractors.go",
+        "client/transport.go",
+        "middleware/cache/config.go",
+        "middleware/csrf/config.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 0.5,
+      "reciprocal_rank": 0.25,
+      "latency_seconds": 0.10655620699981228,
+      "category": "middleware"
+    },
+    {
+      "query": "How does fiber handle path parameters and query strings?",
+      "expected_files": [
+        "ctx.go",
+        "router.go"
+      ],
+      "ranked_files": [
+        "app.go",
+        "client/request.go",
+        "domain.go",
+        "group.go",
+        "client/client.go",
+        "register.go",
+        "req.go",
+        "bind.go",
+        "binder/query_test.go",
+        "bind_test.go"
+      ],
+      "precision_at_10": 0.0,
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.1241611810401082,
+      "category": "routing"
+    },
+    {
+      "query": "How does fiber implement request body parsing and binding?",
+      "expected_files": [
+        "ctx.go"
+      ],
+      "ranked_files": [
+        "client/request.go",
+        "bind.go",
+        "req.go",
+        "ctx.go",
+        "client/response_test.go",
+        "bind_test.go",
+        "client/transport.go",
+        "client/hooks.go",
+        "res.go",
+        "middleware/adaptor/adaptor.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.25,
+      "latency_seconds": 0.25402967201080173,
+      "category": "binding"
+    },
+    {
+      "query": "How does fiber's error handling and ErrorHandler work?",
+      "expected_files": [
+        "app.go"
+      ],
+      "ranked_files": [
+        "app.go",
+        "middleware/adaptor/adaptor.go",
+        "middleware/limiter/limiter.go",
+        "middleware/csrf/csrf.go",
+        "error.go",
+        "middleware/session/config.go",
+        "middleware/csrf/config.go",
+        "adapter.go",
+        "middleware/timeout/timeout.go",
+        "middleware/session/middleware.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.12287791399285197,
+      "category": "errors"
+    },
+    {
+      "query": "How does fiber implement route groups with Group()?",
+      "expected_files": [
+        "app.go",
+        "group.go"
+      ],
+      "ranked_files": [
+        "group.go",
+        "app.go",
+        "domain.go",
+        "router.go",
+        "req.go",
+        "ctx.go",
+        "redirect.go",
+        "register.go",
+        "hooks.go",
+        "middleware/adaptor/adaptor.go"
+      ],
+      "precision_at_10": 0.2,
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.2,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.31973780901171267,
+      "category": "routing"
+    },
+    {
+      "query": "How does the fiber Logger middleware log requests?",
+      "expected_files": [
+        "middleware/logger/logger.go"
+      ],
+      "ranked_files": [
+        "log/log.go",
+        "middleware/session/middleware.go",
+        "log/default.go",
+        "client/client.go",
+        "middleware/logger/utils.go",
+        "middleware/logger/default_logger.go",
+        "middleware/logger/logger.go",
+        "middleware/logger/context_tag.go",
+        "log/fiberlog.go",
+        "prefork_logger.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.14285714285714285,
+      "latency_seconds": 0.14907997602131218,
+      "category": "middleware"
+    },
+    {
+      "query": "How does fiber implement static file serving?",
+      "expected_files": [
+        "app.go",
+        "ctx.go"
+      ],
+      "ranked_files": [
+        "client/request.go",
+        "middleware/static/static.go",
+        "middleware/static/config.go",
+        "res.go",
+        "middleware/adaptor/adaptor.go",
+        "router_skip.go",
+        "middleware/idempotency/config.go",
+        "middleware/session/middleware.go",
+        "middleware/csrf/config.go",
+        "middleware/compress/compress.go"
+      ],
+      "precision_at_10": 0.0,
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.15206921100616455,
+      "category": "static"
+    },
+    {
+      "query": "How does fiber's Recover middleware handle panics?",
+      "expected_files": [
+        "middleware/recover/recover.go"
+      ],
+      "ranked_files": [
+        "middleware/session/middleware.go",
+        "middleware/recover/recover.go",
+        "middleware/recover/config.go",
+        "middleware/sse/sse.go",
+        "middleware/session/data.go",
+        "middleware/timeout/timeout.go",
+        "middleware/idempotency/config.go",
+        "middleware/csrf/csrf.go",
+        "middleware/proxy/proxy.go",
+        "middleware/csrf/config.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.2974389559822157,
+      "category": "middleware"
+    },
+    {
+      "query": "How does fiber's CORS middleware handle cross-origin requests?",
+      "expected_files": [
+        "middleware/cors/cors.go"
+      ],
+      "ranked_files": [
+        "middleware/session/middleware.go",
+        "middleware/cors/cors.go",
+        "middleware/cors/utils.go",
+        "middleware/cors/config.go",
+        "middleware/csrf/csrf.go",
+        "middleware/helmet/helmet.go",
+        "redirect.go",
+        "middleware/helmet/config.go",
+        "middleware/earlydata/config.go",
+        "middleware/earlydata/earlydata.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.06399775703903288,
+      "category": "middleware"
+    },
+    {
+      "query": "How does fiber implement rate limiting middleware?",
+      "expected_files": [
+        "middleware/limiter/limiter.go"
+      ],
+      "ranked_files": [
+        "middleware/session/middleware.go",
+        "middleware/limiter/config.go",
+        "middleware/adaptor/adaptor.go",
+        "middleware/limiter/limiter_sliding.go",
+        "middleware/limiter/limiter.go",
+        "middleware/timeout/config.go",
+        "middleware/limiter/limiter_fixed.go",
+        "middleware/cache/heap.go",
+        "middleware/idempotency/config.go",
+        "middleware/limiter/manager.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.2,
+      "latency_seconds": 0.07492404198274016,
+      "category": "middleware"
+    },
+    {
+      "query": "How does fiber use fasthttp under the hood for HTTP handling?",
+      "expected_files": [
+        "app.go",
+        "ctx.go"
+      ],
+      "ranked_files": [
+        "group.go",
+        "app.go",
+        "domain.go",
+        "middleware/adaptor/adaptor.go",
+        "client/client.go",
+        "adapter.go",
+        "internal/contextvalue/contextvalue.go",
+        "res.go",
+        "extractors/extractors.go",
+        "router.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.2,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 0.5,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.08201733505120501,
+      "category": "internals"
+    },
+    {
+      "query": "How does fiber implement hooks for application lifecycle events?",
+      "expected_files": [
+        "hooks.go"
+      ],
+      "ranked_files": [
+        "hooks.go",
+        "app.go",
+        "client/hooks.go",
+        "middleware/adaptor/adaptor.go",
+        "adapter.go",
+        "middleware/sse/event.go",
+        "middleware/sse/sse.go",
+        "middleware/timeout/timeout.go",
+        "middleware/sse/config.go",
+        "middleware/healthcheck/healthcheck.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.13244887301698327,
+      "category": "lifecycle"
+    },
+    {
+      "query": "How does fiber's compress middleware handle gzip and deflate?",
+      "expected_files": [
+        "middleware/compress/compress.go"
+      ],
+      "ranked_files": [
+        "middleware/session/middleware.go",
+        "middleware/compress/compress.go",
+        "middleware/compress/compress_test.go",
+        "middleware/compress/config.go",
+        "middleware/static/config.go",
+        "middleware/idempotency/config.go",
+        "middleware/static/static.go",
+        "middleware/etag/etag.go",
+        "middleware/cache/config.go",
+        "middleware/limiter/config.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.20869265700457618,
+      "category": "middleware"
+    },
+    {
+      "query": "How does fiber implement Server-Sent Events?",
+      "expected_files": [
+        "ctx.go"
+      ],
+      "ranked_files": [
+        "app.go",
+        "middleware/adaptor/adaptor.go",
+        "middleware/sse/config.go",
+        "internal/crosshost/crosshost.go",
+        "middleware/etag/etag.go",
+        "middleware/sse/sse.go",
+        "middleware/sse/event.go",
+        "res.go",
+        "middleware/timeout/timeout.go",
+        "ctx_interface_gen.go"
+      ],
+      "precision_at_10": 0.0,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.3684377379831858,
+      "category": "streaming"
+    },
+    {
+      "query": "How does fiber's cache middleware store and retrieve cached responses?",
+      "expected_files": [
+        "middleware/cache/cache.go"
+      ],
+      "ranked_files": [
+        "middleware/session/middleware.go",
+        "middleware/cache/cache.go",
+        "middleware/cache/manager.go",
+        "middleware/session/store.go",
+        "middleware/cache/utils.go",
+        "middleware/cache/config.go",
+        "middleware/cache/cachecontrol.go",
+        "middleware/cache/manager_msgp.go",
+        "middleware/cache/keygen.go",
+        "middleware/cache/vary.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.0953859020373784,
+      "category": "middleware"
+    }
+  ]
+}
