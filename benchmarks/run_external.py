@@ -17,8 +17,13 @@ from pathlib import Path
 
 # Ensure repo root is on sys.path for imports when run as script
 ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+# Unconditional: a stale editable-install copy of config.py (hatchling's
+# force-include copies it into site-packages, which goes stale on every
+# edit without a reinstall) can sit ahead of ROOT in sys.path even when
+# ROOT is technically already present further back - `if ROOT not in
+# sys.path` silently no-ops in that case and imports resolve to the
+# stale copy instead. Insert at position 0 every time.
+sys.path.insert(0, str(ROOT))
 
 from evaluation.external import load_external_questions, run_external_evaluation
 

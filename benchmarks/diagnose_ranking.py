@@ -39,8 +39,10 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+# Unconditional: a stale editable-install copy of config.py can sit ahead
+# of ROOT in sys.path even when ROOT is technically already present
+# further back - see benchmarks/run_external.py for the full story.
+sys.path.insert(0, str(ROOT))
 
 import retrieval.hybrid_retriever as hr_module  # noqa: E402
 from evaluation.external import _dedupe_files  # noqa: E402

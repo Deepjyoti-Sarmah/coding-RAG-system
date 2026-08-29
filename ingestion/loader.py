@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 from uuid import uuid4
@@ -20,7 +21,20 @@ def should_skip_file(file_path: Path) -> bool:
     if file_path.suffix.lower() not in INCLUDE_EXTENSIONS:
         return True
 
-    return file_path.stat().st_size > MAX_FILE_SIZE_BYTES
+    size_bytes = file_path.stat().st_size
+
+    if size_bytes > MAX_FILE_SIZE_BYTES:
+        # Silent otherwise: a user asking why a known symbol (e.g. a class
+        # or route defined near the top of a large file) can't be found
+        # gets no signal at all that the file was ever seen and dropped.
+        print(
+            f"Skipping {file_path}: {size_bytes} bytes exceeds "
+            f"MAX_FILE_SIZE_BYTES ({MAX_FILE_SIZE_BYTES})",
+            file=sys.stderr,
+        )
+        return True
+
+    return False
 
 
 def iter_repo_files(path: str | Path) -> Iterator[tuple[Path, str]]:
