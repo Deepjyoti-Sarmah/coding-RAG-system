@@ -51,6 +51,41 @@ TOKEN_PATTERN = re.compile(r"[A-Za-z_]\w*")
 FtsSearch = Callable[[str, int], list[FtsHit]]
 Embed = Callable[[str], np.ndarray]
 
+# Per-file cap to diversify retrieval: at most this many chunks per file in first pass.
+DEFAULT_PER_FILE_CAP = 3
+
+
+def _select_with_per_file_cap(
+    candidates: list["HybridCandidate"],
+    top_k: int,
+    per_file_cap: int,
+) -> list["HybridCandidate"]:
+    """Diversity-aware truncation: first pass caps per file, second pass fills remainder."""
+    if per_file_cap <= 0 or top_k <= 0:
+        return candidates[:top_k]
+
+    selected: list["HybridCandidate"] = []
+    counts: dict[str, int] = {}
+    skipped: list["HybridCandidate"] = []
+
+    for cand in candidates:
+        cnt = counts.get(cand.relative_path, 0)
+        if cnt < per_file_cap:
+            selected.append(cand)
+            counts[cand.relative_path] = cnt + 1
+            if len(selected) >= top_k:
+                return selected
+        else:
+            skipped.append(cand)
+
+    # Second pass: admit remainder in rank order if top_k not yet filled
+    for cand in skipped:
+        if len(selected) >= top_k:
+            break
+        selected.append(cand)
+
+    return selected[:top_k]
+
 
 def detect_intent(query: str) -> Intent | None:
     """Extract a structural question from natural language, if present."""
@@ -91,7 +126,7 @@ class HybridRetriever:
         self.vector_store = vector_store
         self.embed = embed
 
-    def retrieve(self, query: str, top_k: int = 5) -> HybridRetrieval:
+    def retrieve(self, query: str, top_k: int = 5, per_file_cap: int = DEFAULT_PER_FILE_CAP) -> HybridRetrieval:
         intent = detect_intent(query)
 
         if intent is not None:
@@ -102,7 +137,7 @@ class HybridRetriever:
             if result.candidates:
                 return result
 
-        return self._hybrid_search(query, top_k)
+        return self._hybrid_search(query, top_k, per_file_cap=per_file_cap)
 
     def _run_intent(self, intent: Intent) -> HybridRetrieval:
         kind, target = intent
@@ -222,7 +257,7 @@ class HybridRetriever:
 
         return primary + secondary
 
-    def _hybrid_search(self, query: str, top_k: int) -> HybridRetrieval:
+    def _hybrid_search(self, query: str, top_k: int, per_file_cap: int = DEFAULT_PER_FILE_CAP) -> HybridRetrieval:
         ranked: list[list[str]] = []
         source_by_key: dict[str, set[str]] = {}
 
@@ -300,7 +335,7 @@ class HybridRetriever:
         return HybridRetrieval(
             strategy="hybrid",
             query=query,
-            candidates=reranked[:top_k],
+            candidates=_select_with_per_file_cap(reranked, top_k, per_file_cap),
         )
 
     def _detect_seed(self, query: str) -> Symbol | None:
