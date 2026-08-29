@@ -1,0 +1,235 @@
+{
+  "root": "/tmp/ckg_audit/fastapi/fastapi",
+  "files_walked": 56,
+  "skipped": {
+    "excluded_dir": 0,
+    "extension": 8,
+    "size": 1,
+    "ignore_rules": 0
+  },
+  "skipped_total": 9,
+  "documents_created": 47,
+  "documents_read_error": 0,
+  "documents_zero_symbols": 3,
+  "documents_zero_chunks": 3,
+  "total_symbols": 360,
+  "total_chunks": 360,
+  "skipped_paths": {
+    "excluded_dir": [],
+    "extension": [
+      "py.typed",
+      ".agents/skills/fastapi/SKILL.md",
+      ".agents/skills/fastapi/references/streaming.md",
+      ".agents/skills/fastapi/references/responses.md",
+      ".agents/skills/fastapi/references/pydantic.md",
+      ".agents/skills/fastapi/references/path-operations.md",
+      ".agents/skills/fastapi/references/other-tools.md",
+      ".agents/skills/fastapi/references/dependencies.md"
+    ],
+    "size": [
+      "routing.py"
+    ],
+    "ignore_rules": []
+  },
+  "read_error_paths": [],
+  "zero_symbol_paths": [
+    "dependencies/__init__.py",
+    "openapi/__init__.py",
+    "openapi/constants.py"
+  ],
+  "zero_chunk_paths": [
+    "dependencies/__init__.py",
+    "openapi/__init__.py",
+    "openapi/constants.py"
+  ],
+  "per_file": {
+    "websockets.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "utils.py": {
+      "symbols": 7,
+      "chunks": 7
+    },
+    "types.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "testclient.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "templating.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "staticfiles.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "sse.py": {
+      "symbols": 8,
+      "chunks": 8
+    },
+    "responses.py": {
+      "symbols": 8,
+      "chunks": 8
+    },
+    "requests.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "params.py": {
+      "symbols": 21,
+      "chunks": 21
+    },
+    "param_functions.py": {
+      "symbols": 9,
+      "chunks": 9
+    },
+    "logger.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "exceptions.py": {
+      "symbols": 20,
+      "chunks": 20
+    },
+    "exception_handlers.py": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "encoders.py": {
+      "symbols": 6,
+      "chunks": 6
+    },
+    "datastructures.py": {
+      "symbols": 13,
+      "chunks": 13
+    },
+    "concurrency.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "cli.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "background.py": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "applications.py": {
+      "symbols": 33,
+      "chunks": 33
+    },
+    "__main__.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "__init__.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "security/utils.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "security/open_id_connect_url.py": {
+      "symbols": 4,
+      "chunks": 4
+    },
+    "security/oauth2.py": {
+      "symbols": 16,
+      "chunks": 16
+    },
+    "security/http.py": {
+      "symbols": 17,
+      "chunks": 17
+    },
+    "security/base.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "security/api_key.py": {
+      "symbols": 13,
+      "chunks": 13
+    },
+    "security/__init__.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "openapi/utils.py": {
+      "symbols": 12,
+      "chunks": 12
+    },
+    "openapi/models.py": {
+      "symbols": 46,
+      "chunks": 46
+    },
+    "openapi/docs.py": {
+      "symbols": 4,
+      "chunks": 4
+    },
+    "openapi/constants.py": {
+      "symbols": 0,
+      "chunks": 0
+    },
+    "openapi/__init__.py": {
+      "symbols": 0,
+      "chunks": 0
+    },
+    "middleware/wsgi.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/trustedhost.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/httpsredirect.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/gzip.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/cors.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/asyncexitstack.py": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "middleware/__init__.py": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "dependencies/utils.py": {
+      "symbols": 28,
+      "chunks": 28
+    },
+    "dependencies/models.py": {
+      "symbols": 19,
+      "chunks": 19
+    },
+    "dependencies/__init__.py": {
+      "symbols": 0,
+      "chunks": 0
+    },
+    "_compat/v2.py": {
+      "symbols": 32,
+      "chunks": 32
+    },
+    "_compat/shared.py": {
+      "symbols": 15,
+      "chunks": 15
+    },
+    "_compat/__init__.py": {
+      "symbols": 1,
+      "chunks": 1
+    }
+  }
+}
