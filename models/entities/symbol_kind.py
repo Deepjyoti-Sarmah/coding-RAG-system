@@ -8,3 +8,4 @@ class SymbolKind(Enum):
     VARIABLE = "variable"
     INTERFACE = "interface"
     TYPE_ALIAS = "type_alias"
+    MODULE = "module"
