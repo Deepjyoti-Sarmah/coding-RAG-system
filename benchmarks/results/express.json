@@ -10,9 +10,9 @@
   "mean_precision_over_returned": 0.18,
   "mean_recall_at_10": 1.0,
   "mean_reciprocal_rank": 0.875,
-  "p50_latency_seconds": 0.0216789244877873,
-  "p95_latency_seconds": 0.030048359010834247,
-  "index_seconds": 0.042397528974106535,
+  "p50_latency_seconds": 0.014592736013582908,
+  "p95_latency_seconds": 0.028419890004443005,
+  "index_seconds": 0.03707313898485154,
   "questions": [
     {
       "query": "How does Express initialize the application and set up the default router?",
@@ -33,7 +33,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.02207776898285374,
+      "latency_seconds": 0.013535334990592673,
       "category": "core"
     },
     {
@@ -55,7 +55,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.028309501998592168,
+      "latency_seconds": 0.014400353014934808,
       "category": "middleware"
     },
     {
@@ -77,7 +77,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.030048359010834247,
+      "latency_seconds": 0.013496877974830568,
       "category": "routing"
     },
     {
@@ -99,7 +99,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.020846655999775976,
+      "latency_seconds": 0.013597643992397934,
       "category": "core"
     },
     {
@@ -122,7 +122,7 @@
       "precision_over_returned": 0.3333333333333333,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.019052481977269053,
+      "latency_seconds": 0.012916064006276429,
       "category": "views"
     },
     {
@@ -144,7 +144,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.01927331800106913,
+      "latency_seconds": 0.014018916001077741,
       "category": "views"
     },
     {
@@ -166,7 +166,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02060809000977315,
+      "latency_seconds": 0.017005892004817724,
       "category": "response"
     },
     {
@@ -188,7 +188,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.023017336992779747,
+      "latency_seconds": 0.01721879799151793,
       "category": "response"
     },
     {
@@ -210,7 +210,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02057226697797887,
+      "latency_seconds": 0.013952568988315761,
       "category": "response"
     },
     {
@@ -232,7 +232,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021969371009618044,
+      "latency_seconds": 0.014785119012231007,
       "category": "response"
     },
     {
@@ -253,7 +253,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.021511683997232467,
+      "latency_seconds": 0.01868960598949343,
       "category": "response"
     },
     {
@@ -275,7 +275,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.026571688998956233,
+      "latency_seconds": 0.0163480119954329,
       "category": "response"
     },
     {
@@ -296,7 +296,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02256465799291618,
+      "latency_seconds": 0.02067862800322473,
       "category": "request"
     },
     {
@@ -318,7 +318,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021059840015368536,
+      "latency_seconds": 0.014808940992224962,
       "category": "request"
     },
     {
@@ -340,7 +340,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.022094668995123357,
+      "latency_seconds": 0.015035065007396042,
       "category": "request"
     },
     {
@@ -361,7 +361,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021771720988908783,
+      "latency_seconds": 0.028419890004443005,
       "category": "request"
     },
     {
@@ -383,7 +383,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.01997575900168158,
+      "latency_seconds": 0.012880756985396147,
       "category": "utils"
     },
     {
@@ -405,7 +405,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.019793813000433147,
+      "latency_seconds": 0.012496660987380892,
       "category": "utils"
     },
     {
@@ -427,7 +427,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021586127986665815,
+      "latency_seconds": 0.013330983987543732,
       "category": "core"
     },
     {
@@ -449,7 +449,7 @@
       "precision_over_returned": 0.16666666666666666,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.023363968008197844,
+      "latency_seconds": 0.014846738980850205,
       "category": "middleware"
     }
   ]

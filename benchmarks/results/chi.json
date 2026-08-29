@@ -4,21 +4,21 @@
   "commit": "36611d24579aaca3250ed9732e17e085c5026334",
   "queries_file": "benchmarks/chi_queries.json",
   "total_questions": 18,
-  "mean_precision_at_10": 0.1,
-  "mean_precision_ceiling_at_10": 0.1277777777777778,
-  "mean_precision_at_10_normalized": 0.8611111111111112,
-  "mean_precision_over_returned": 0.1,
-  "mean_recall_at_10": 0.8611111111111112,
-  "mean_reciprocal_rank": 0.7777777777777778,
-  "p50_latency_seconds": 0.02186436550982762,
-  "p95_latency_seconds": 0.02662629701080732,
-  "index_seconds": 0.6162258610129356,
+  "mean_precision_at_10": 0.10555555555555557,
+  "mean_precision_ceiling_at_10": 0.12222222222222223,
+  "mean_precision_at_10_normalized": 0.9166666666666666,
+  "mean_precision_over_returned": 0.10555555555555557,
+  "mean_recall_at_10": 0.9166666666666666,
+  "mean_reciprocal_rank": 0.8333333333333334,
+  "p50_latency_seconds": 0.05879518850997556,
+  "p95_latency_seconds": 0.41644149797502905,
+  "index_seconds": 0.7181206140085123,
   "questions": [
     {
       "query": "How does chi implement its Router interface?",
       "expected_files": [
-        "mux.go",
-        "router.go"
+        "chi.go",
+        "mux.go"
       ],
       "ranked_files": [
         "chi.go",
@@ -32,13 +32,13 @@
         "_examples/todos-resource/todos.go",
         "middleware/get_head.go"
       ],
-      "precision_at_10": 0.0,
+      "precision_at_10": 0.1,
       "precision_ceiling_at_10": 0.2,
-      "precision_at_10_normalized": 0.0,
-      "precision_over_returned": 0.0,
-      "recall_at_10": 0.0,
-      "reciprocal_rank": 0.0,
-      "latency_seconds": 0.02129925601184368,
+      "precision_at_10_normalized": 0.5,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 0.5,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.13569828600157052,
       "category": "routing"
     },
     {
@@ -64,7 +64,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02110610602539964,
+      "latency_seconds": 0.046356257022125646,
       "category": "routing"
     },
     {
@@ -90,7 +90,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021907329006353393,
+      "latency_seconds": 0.034776749002048746,
       "category": "routing"
     },
     {
@@ -117,7 +117,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 0.5,
       "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.021536259999265894,
+      "latency_seconds": 0.04594208797789179,
       "category": "middleware"
     },
     {
@@ -143,7 +143,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02662629701080732,
+      "latency_seconds": 0.04720579402055591,
       "category": "middleware"
     },
     {
@@ -169,7 +169,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.020525706000626087,
+      "latency_seconds": 0.41644149797502905,
       "category": "routing"
     },
     {
@@ -195,7 +195,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.022219495003810152,
+      "latency_seconds": 0.05853647500043735,
       "category": "middleware"
     },
     {
@@ -222,7 +222,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.021995084010995924,
+      "latency_seconds": 0.15411684699938633,
       "category": "routing"
     },
     {
@@ -248,7 +248,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02270352901541628,
+      "latency_seconds": 0.0675777209980879,
       "category": "middleware"
     },
     {
@@ -275,14 +275,13 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 0.5,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02279011401697062,
+      "latency_seconds": 0.3044568839832209,
       "category": "context"
     },
     {
       "query": "How does chi implement the HTTP method routing (GET, POST, DELETE)?",
       "expected_files": [
-        "mux.go",
-        "router.go"
+        "mux.go"
       ],
       "ranked_files": [
         "_examples/todos-resource/users.go",
@@ -297,12 +296,12 @@
         "middleware/compress.go"
       ],
       "precision_at_10": 0.1,
-      "precision_ceiling_at_10": 0.2,
-      "precision_at_10_normalized": 0.5,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
       "precision_over_returned": 0.1,
-      "recall_at_10": 0.5,
+      "recall_at_10": 1.0,
       "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.022483525972347707,
+      "latency_seconds": 0.05310125500545837,
       "category": "routing"
     },
     {
@@ -328,7 +327,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02213056301116012,
+      "latency_seconds": 0.05905390201951377,
       "category": "middleware"
     },
     {
@@ -354,7 +353,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.020985327020753175,
+      "latency_seconds": 0.06995544099481776,
       "category": "internals"
     },
     {
@@ -380,7 +379,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02182140201330185,
+      "latency_seconds": 0.232199555990519,
       "category": "middleware"
     },
     {
@@ -406,7 +405,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021140440978342667,
+      "latency_seconds": 0.06677673500962555,
       "category": "errors"
     },
     {
@@ -432,7 +431,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021248969016596675,
+      "latency_seconds": 0.03795512701617554,
       "category": "middleware"
     },
     {
@@ -458,7 +457,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.020715652004582807,
+      "latency_seconds": 0.04006874602055177,
       "category": "internals"
     },
     {
@@ -484,7 +483,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021995477000018582,
+      "latency_seconds": 0.0423374270030763,
       "category": "middleware"
     }
   ]

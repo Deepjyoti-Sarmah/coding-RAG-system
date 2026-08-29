@@ -1,7 +1,7 @@
 [
     {
         "query": "How does chi implement its Router interface?",
-        "expected_files": ["router.go", "mux.go"],
+        "expected_files": ["chi.go", "mux.go"],
         "category": "routing"
     },
     {
@@ -51,7 +51,7 @@
     },
     {
         "query": "How does chi implement the HTTP method routing (GET, POST, DELETE)?",
-        "expected_files": ["mux.go", "router.go"],
+        "expected_files": ["mux.go"],
         "category": "routing"
     },
     {

@@ -1,5 +1,15 @@
 # External Benchmark Results (with embeddings)
 
+> **Superseded numbers below for chi/fiber.** The coverage audit
+> (`benchmarks/results/COVERAGE.md`) found `chi_queries.json` and
+> `fiber_queries.json` referenced files that don't exist at the pinned
+> commits (see `benchmarks/ATTRIBUTION.md`). Those queries were corrected
+> and all five repos re-run; current baseline is chi R@10 0.917 (was
+> 0.861), fiber R@10 0.737 (was 0.675), mean 0.834 (was 0.811 across the
+> uncorrected sets) — recorded in `benchmarks/results/{chi,fiber}.json`.
+> express/fastapi/django are unchanged. See `benchmarks/results/TRACK2.md`
+> for the subsequent module-symbol-synthesis change on top of this.
+
 Harness: `evaluation/external.py` + `benchmarks/run_external.py`
 Indexing: `source_dir` as repo root for file-level ground truth, `top_k=30` chunks deduped to `min(10, distinct files available)` distinct files.
 Embeddings: `LocalEmbeddingProvider` (all-MiniLM-L6-v2) via `run_embedding_worker`.

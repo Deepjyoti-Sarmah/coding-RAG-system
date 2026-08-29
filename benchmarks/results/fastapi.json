@@ -10,9 +10,9 @@
   "mean_precision_over_returned": 0.10500000000000001,
   "mean_recall_at_10": 0.7,
   "mean_reciprocal_rank": 0.5083333333333333,
-  "p50_latency_seconds": 0.02588446049776394,
-  "p95_latency_seconds": 0.04229529600706883,
-  "index_seconds": 0.5566824220004492,
+  "p50_latency_seconds": 0.04636735550593585,
+  "p95_latency_seconds": 0.40541961300186813,
+  "index_seconds": 1.0453420550038572,
   "questions": [
     {
       "query": "How does FastAPI handle dependency injection?",
@@ -38,7 +38,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.02607775799697265,
+      "latency_seconds": 0.054167247988516465,
       "category": "architecture"
     },
     {
@@ -65,7 +65,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 0.5,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.02063934301258996,
+      "latency_seconds": 0.03301781299524009,
       "category": "routing"
     },
     {
@@ -91,7 +91,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.018500048987334594,
+      "latency_seconds": 0.04669165800441988,
       "category": "security"
     },
     {
@@ -118,7 +118,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.028499431995442137,
+      "latency_seconds": 0.40541961300186813,
       "category": "openapi"
     },
     {
@@ -145,7 +145,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.018421668995870277,
+      "latency_seconds": 0.037319687980925664,
       "category": "validation"
     },
     {
@@ -171,7 +171,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.02020505501423031,
+      "latency_seconds": 0.07114026401541196,
       "category": "openapi"
     },
     {
@@ -197,7 +197,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.02702008798951283,
+      "latency_seconds": 0.03769575501792133,
       "category": "middleware"
     },
     {
@@ -224,7 +224,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.019420178985456005,
+      "latency_seconds": 0.12196710999705829,
       "category": "errors"
     },
     {
@@ -250,7 +250,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.018846351973479614,
+      "latency_seconds": 0.030208604992367327,
       "category": "routing"
     },
     {
@@ -276,7 +276,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.03646006801864132,
+      "latency_seconds": 0.05331692402251065,
       "category": "serialization"
     },
     {
@@ -303,7 +303,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.02424655301729217,
+      "latency_seconds": 0.027164939005160704,
       "category": "websocket"
     },
     {
@@ -329,7 +329,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.021296213002642617,
+      "latency_seconds": 0.02697387500666082,
       "category": "security"
     },
     {
@@ -356,7 +356,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 0.5,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.029365314985625446,
+      "latency_seconds": 0.04604305300745182,
       "category": "background"
     },
     {
@@ -382,7 +382,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.021925665001617745,
+      "latency_seconds": 0.03285636898363009,
       "category": "security"
     },
     {
@@ -408,7 +408,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.03382551102549769,
+      "latency_seconds": 0.08310499502113089,
       "category": "templating"
     },
     {
@@ -434,7 +434,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03061363799497485,
+      "latency_seconds": 0.040655493998201564,
       "category": "core"
     },
     {
@@ -461,7 +461,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.025691162998555228,
+      "latency_seconds": 0.04203054099343717,
       "category": "parameters"
     },
     {
@@ -487,7 +487,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.03581426298478618,
+      "latency_seconds": 0.053192868013866246,
       "category": "static"
     },
     {
@@ -513,7 +513,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.03595958897494711,
+      "latency_seconds": 0.05421759499586187,
       "category": "streaming"
     },
     {
@@ -540,7 +540,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.04229529600706883,
+      "latency_seconds": 0.05220100498991087,
       "category": "compatibility"
     }
   ]

@@ -3,16 +3,16 @@
   "source_dir": ".",
   "commit": "e7229b1b3ead150398ad7c100a128c6f276f4b43",
   "queries_file": "benchmarks/fiber_queries.json",
-  "total_questions": 20,
-  "mean_precision_at_10": 0.085,
-  "mean_precision_ceiling_at_10": 0.135,
-  "mean_precision_at_10_normalized": 0.675,
-  "mean_precision_over_returned": 0.085,
-  "mean_recall_at_10": 0.675,
-  "mean_reciprocal_rank": 0.39708333333333334,
-  "p50_latency_seconds": 0.03581028399639763,
-  "p95_latency_seconds": 0.053520022018346936,
-  "index_seconds": 29.135081774991704,
+  "total_questions": 19,
+  "mean_precision_at_10": 0.08947368421052633,
+  "mean_precision_ceiling_at_10": 0.13157894736842105,
+  "mean_precision_at_10_normalized": 0.7368421052631579,
+  "mean_precision_over_returned": 0.08947368421052633,
+  "mean_recall_at_10": 0.7368421052631579,
+  "mean_reciprocal_rank": 0.41798245614035084,
+  "p50_latency_seconds": 0.22273623899673112,
+  "p95_latency_seconds": 0.44941372302128,
+  "index_seconds": 63.47442359800334,
   "questions": [
     {
       "query": "How does fiber's App struct initialize and configure the server?",
@@ -37,7 +37,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03572403598809615,
+      "latency_seconds": 0.1848858289886266,
       "category": "core"
     },
     {
@@ -63,7 +63,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.053520022018346936,
+      "latency_seconds": 0.07244968597660773,
       "category": "context"
     },
     {
@@ -90,7 +90,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.047509194002486765,
+      "latency_seconds": 0.17743211702327244,
       "category": "routing"
     },
     {
@@ -116,7 +116,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03430207198834978,
+      "latency_seconds": 0.11695185702410527,
       "category": "routing"
     },
     {
@@ -143,7 +143,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 0.5,
       "reciprocal_rank": 0.25,
-      "latency_seconds": 0.03626051597530022,
+      "latency_seconds": 0.26725378300761804,
       "category": "middleware"
     },
     {
@@ -170,7 +170,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.03384006101987325,
+      "latency_seconds": 0.27760946098715067,
       "category": "routing"
     },
     {
@@ -196,14 +196,13 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.2,
-      "latency_seconds": 0.03415321200736798,
+      "latency_seconds": 0.27043240098282695,
       "category": "binding"
     },
     {
       "query": "How does fiber's error handling and ErrorHandler work?",
       "expected_files": [
-        "app.go",
-        "utils.go"
+        "app.go"
       ],
       "ranked_files": [
         "app.go",
@@ -218,12 +217,12 @@
         "adapter.go"
       ],
       "precision_at_10": 0.1,
-      "precision_ceiling_at_10": 0.2,
-      "precision_at_10_normalized": 0.5,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
       "precision_over_returned": 0.1,
-      "recall_at_10": 0.5,
+      "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03460720699513331,
+      "latency_seconds": 0.2193834500212688,
       "category": "errors"
     },
     {
@@ -250,7 +249,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03049312499933876,
+      "latency_seconds": 0.28670445701573044,
       "category": "routing"
     },
     {
@@ -276,7 +275,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.03923838498303667,
+      "latency_seconds": 0.25843565198010765,
       "category": "middleware"
     },
     {
@@ -303,7 +302,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.03589653200469911,
+      "latency_seconds": 0.40398603401263244,
       "category": "static"
     },
     {
@@ -329,34 +328,8 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.2,
-      "latency_seconds": 0.03627556300489232,
+      "latency_seconds": 0.1791894510097336,
       "category": "middleware"
-    },
-    {
-      "query": "How does fiber implement WebSocket support?",
-      "expected_files": [
-        "middleware/websocket/websocket.go"
-      ],
-      "ranked_files": [
-        "ctx.go",
-        "middleware/adaptor/adaptor_test.go",
-        "middleware/adaptor/adaptor.go",
-        "req.go",
-        "internal/contextvalue/contextvalue.go",
-        "constraint.go",
-        "adapter_test.go",
-        "router_test.go",
-        "app.go",
-        "ctx_interface_gen.go"
-      ],
-      "precision_at_10": 0.0,
-      "precision_ceiling_at_10": 0.1,
-      "precision_at_10_normalized": 0.0,
-      "precision_over_returned": 0.0,
-      "recall_at_10": 0.0,
-      "reciprocal_rank": 0.0,
-      "latency_seconds": 0.041320040996652097,
-      "category": "websocket"
     },
     {
       "query": "How does fiber's CORS middleware handle cross-origin requests?",
@@ -381,7 +354,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.16666666666666666,
-      "latency_seconds": 0.036146099999314174,
+      "latency_seconds": 0.19352579599944875,
       "category": "middleware"
     },
     {
@@ -407,7 +380,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.125,
-      "latency_seconds": 0.03510701598133892,
+      "latency_seconds": 0.2976730680093169,
       "category": "middleware"
     },
     {
@@ -434,7 +407,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 0.5,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.03808494200347923,
+      "latency_seconds": 0.39488911599619314,
       "category": "internals"
     },
     {
@@ -460,7 +433,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.03164179198211059,
+      "latency_seconds": 0.44941372302128,
       "category": "lifecycle"
     },
     {
@@ -486,7 +459,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.03433984701405279,
+      "latency_seconds": 0.18516055200598203,
       "category": "middleware"
     },
     {
@@ -512,7 +485,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.034607969981152564,
+      "latency_seconds": 0.22273623899673112,
       "category": "streaming"
     },
     {
@@ -538,7 +511,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.16666666666666666,
-      "latency_seconds": 0.03820925601758063,
+      "latency_seconds": 0.06953942100517452,
       "category": "middleware"
     }
   ]

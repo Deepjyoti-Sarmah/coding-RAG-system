@@ -36,7 +36,7 @@
     },
     {
         "query": "How does fiber's error handling and ErrorHandler work?",
-        "expected_files": ["app.go", "utils.go"],
+        "expected_files": ["app.go"],
         "category": "errors"
     },
     {
@@ -58,11 +58,6 @@
         "query": "How does fiber's Recover middleware handle panics?",
         "expected_files": ["middleware/recover/recover.go"],
         "category": "middleware"
-    },
-    {
-        "query": "How does fiber implement WebSocket support?",
-        "expected_files": ["middleware/websocket/websocket.go"],
-        "category": "websocket"
     },
     {
         "query": "How does fiber's CORS middleware handle cross-origin requests?",

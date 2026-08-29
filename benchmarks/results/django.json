@@ -10,9 +10,9 @@
   "mean_precision_over_returned": 0.09285714285714287,
   "mean_recall_at_10": 0.8181818181818182,
   "mean_reciprocal_rank": 0.646969696969697,
-  "p50_latency_seconds": 0.052554819514625706,
-  "p95_latency_seconds": 0.07695943498401903,
-  "index_seconds": 29.97223464300623,
+  "p50_latency_seconds": 0.05462366950814612,
+  "p95_latency_seconds": 0.06541106395889074,
+  "index_seconds": 59.85423717199592,
   "questions": [
     {
       "query": "How does Django's ORM build and compile SQL queries from a QuerySet?",
@@ -38,7 +38,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05817151902010664,
+      "latency_seconds": 0.05699190002633259,
       "category": "orm"
     },
     {
@@ -64,7 +64,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05541030497988686,
+      "latency_seconds": 0.05782614497002214,
       "category": "orm"
     },
     {
@@ -90,7 +90,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.04731805101619102,
+      "latency_seconds": 0.051402186043560505,
       "category": "migrations"
     },
     {
@@ -116,7 +116,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05076931999064982,
+      "latency_seconds": 0.05276735499501228,
       "category": "migrations"
     },
     {
@@ -142,7 +142,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.05271044501569122,
+      "latency_seconds": 0.053047809982672334,
       "category": "routing"
     },
     {
@@ -168,7 +168,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.04873913698247634,
+      "latency_seconds": 0.052203016995918006,
       "category": "routing"
     },
     {
@@ -194,7 +194,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05649334299960174,
+      "latency_seconds": 0.058914371009450406,
       "category": "http"
     },
     {
@@ -220,7 +220,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05239919401356019,
+      "latency_seconds": 0.05329311598325148,
       "category": "http"
     },
     {
@@ -246,7 +246,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05074754901579581,
+      "latency_seconds": 0.05194290104554966,
       "category": "http"
     },
     {
@@ -272,7 +272,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.2,
-      "latency_seconds": 0.04875243399874307,
+      "latency_seconds": 0.050302461022511125,
       "category": "auth"
     },
     {
@@ -298,7 +298,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.07695943498401903,
+      "latency_seconds": 0.050378634012304246,
       "category": "auth"
     },
     {
@@ -325,7 +325,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.04891600299743004,
+      "latency_seconds": 0.05386092496337369,
       "category": "sessions"
     },
     {
@@ -351,7 +351,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.2,
-      "latency_seconds": 0.04984352600877173,
+      "latency_seconds": 0.05415603198343888,
       "category": "middleware"
     },
     {
@@ -377,7 +377,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.06501234698225744,
+      "latency_seconds": 0.056503820000216365,
       "category": "middleware"
     },
     {
@@ -403,7 +403,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.07534871902316809,
+      "latency_seconds": 0.06394231098238379,
       "category": "forms"
     },
     {
@@ -429,7 +429,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.3333333333333333,
-      "latency_seconds": 0.07189133201609366,
+      "latency_seconds": 0.06541106395889074,
       "category": "forms"
     },
     {
@@ -456,7 +456,7 @@
       "precision_over_returned": 0.2,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.06572619298822246,
+      "latency_seconds": 0.05534975999034941,
       "category": "templates"
     },
     {
@@ -482,7 +482,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.05090416199527681,
+      "latency_seconds": 0.05349929799558595,
       "category": "views"
     },
     {
@@ -508,7 +508,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.08458099898416549,
+      "latency_seconds": 0.06528638600138947,
       "category": "views"
     },
     {
@@ -531,7 +531,7 @@
       "precision_over_returned": 0.14285714285714285,
       "recall_at_10": 1.0,
       "reciprocal_rank": 1.0,
-      "latency_seconds": 0.051657287986017764,
+      "latency_seconds": 0.055091307032853365,
       "category": "testing"
     },
     {
@@ -557,7 +557,7 @@
       "precision_over_returned": 0.1,
       "recall_at_10": 1.0,
       "reciprocal_rank": 0.5,
-      "latency_seconds": 0.04657028001383878,
+      "latency_seconds": 0.055260042019654065,
       "category": "signals"
     },
     {
@@ -583,7 +583,7 @@
       "precision_over_returned": 0.0,
       "recall_at_10": 0.0,
       "reciprocal_rank": 0.0,
-      "latency_seconds": 0.053174547996604815,
+      "latency_seconds": 0.06556870002532378,
       "category": "management"
     }
   ]
