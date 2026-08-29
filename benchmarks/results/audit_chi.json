@@ -1,0 +1,417 @@
+{
+  "root": "/tmp/ckg_audit/chi",
+  "files_walked": 135,
+  "skipped": {
+    "excluded_dir": 30,
+    "extension": 21,
+    "size": 0,
+    "ignore_rules": 0
+  },
+  "skipped_total": 51,
+  "documents_created": 84,
+  "documents_read_error": 0,
+  "documents_zero_symbols": 0,
+  "documents_zero_chunks": 0,
+  "total_symbols": 462,
+  "total_chunks": 462,
+  "skipped_paths": {
+    "excluded_dir": [
+      ".git/HEAD",
+      ".git/index",
+      ".git/shallow",
+      ".git/FETCH_HEAD",
+      ".git/config",
+      ".git/packed-refs",
+      ".git/description",
+      ".git/logs/HEAD",
+      ".git/info/exclude",
+      ".git/hooks/prepare-commit-msg.sample",
+      ".git/hooks/pre-rebase.sample",
+      ".git/hooks/fsmonitor-watchman.sample",
+      ".git/hooks/update.sample",
+      ".git/hooks/sendemail-validate.sample",
+      ".git/hooks/push-to-checkout.sample",
+      ".git/hooks/pre-receive.sample",
+      ".git/hooks/pre-push.sample",
+      ".git/hooks/pre-merge-commit.sample",
+      ".git/hooks/pre-commit.sample",
+      ".git/hooks/pre-applypatch.sample",
+      ".git/hooks/post-update.sample",
+      ".git/hooks/commit-msg.sample",
+      ".git/hooks/applypatch-msg.sample",
+      ".git/objects/pack/pack-59422ddb12f12ceada7e944db3956fc5da550530.idx",
+      ".git/objects/pack/pack-59422ddb12f12ceada7e944db3956fc5da550530.rev",
+      ".git/objects/pack/pack-59422ddb12f12ceada7e944db3956fc5da550530.pack",
+      ".git/refs/heads/master",
+      ".git/refs/remotes/origin/HEAD",
+      ".git/logs/refs/heads/master",
+      ".git/logs/refs/remotes/origin/HEAD"
+    ],
+    "extension": [
+      "go.mod",
+      "SECURITY.md",
+      "README.md",
+      "Makefile",
+      "LICENSE",
+      "CONTRIBUTING.md",
+      "CHANGELOG.md",
+      ".gitignore",
+      "testdata/key.pem",
+      "testdata/cert.pem",
+      "_examples/chi.svg",
+      "_examples/README.md",
+      ".github/FUNDING.yml",
+      ".github/workflows/ci.yml",
+      "_examples/versions/go.sum",
+      "_examples/versions/go.mod",
+      "_examples/rest/routes.md",
+      "_examples/rest/routes.json",
+      "_examples/rest/go.sum",
+      "_examples/rest/go.mod",
+      "_examples/fileserver/data/notes.txt"
+    ],
+    "size": [],
+    "ignore_rules": []
+  },
+  "read_error_paths": [],
+  "zero_symbol_paths": [],
+  "zero_chunk_paths": [],
+  "per_file": {
+    "tree_test.go": {
+      "symbols": 14,
+      "chunks": 14
+    },
+    "tree.go": {
+      "symbols": 29,
+      "chunks": 29
+    },
+    "pattern_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "path_value_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "mux_test.go": {
+      "symbols": 47,
+      "chunks": 47
+    },
+    "mux.go": {
+      "symbols": 36,
+      "chunks": 36
+    },
+    "context_test.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "context.go": {
+      "symbols": 14,
+      "chunks": 14
+    },
+    "chi.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "chain.go": {
+      "symbols": 6,
+      "chunks": 6
+    },
+    "middleware/wrap_writer_test.go": {
+      "symbols": 8,
+      "chunks": 8
+    },
+    "middleware/wrap_writer.go": {
+      "symbols": 25,
+      "chunks": 25
+    },
+    "middleware/value_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/value.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/url_format_test.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "middleware/url_format.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/timeout.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/throttle_test.go": {
+      "symbols": 8,
+      "chunks": 8
+    },
+    "middleware/throttle.go": {
+      "symbols": 7,
+      "chunks": 7
+    },
+    "middleware/terminal_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/terminal.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "middleware/supress_notfound.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/sunset_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/sunset.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/strip_test.go": {
+      "symbols": 6,
+      "chunks": 6
+    },
+    "middleware/strip.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "middleware/route_headers_test.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "middleware/route_headers.go": {
+      "symbols": 10,
+      "chunks": 10
+    },
+    "middleware/request_size.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/request_id_test.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "middleware/request_id.go": {
+      "symbols": 4,
+      "chunks": 4
+    },
+    "middleware/recoverer_test.go": {
+      "symbols": 6,
+      "chunks": 6
+    },
+    "middleware/recoverer.go": {
+      "symbols": 8,
+      "chunks": 8
+    },
+    "middleware/realip_test.go": {
+      "symbols": 4,
+      "chunks": 4
+    },
+    "middleware/realip.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "middleware/profiler.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/path_rewrite_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/path_rewrite.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/page_route.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/nocache.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/middleware_test.go": {
+      "symbols": 11,
+      "chunks": 11
+    },
+    "middleware/middleware.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "middleware/maybe.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/logger_test.go": {
+      "symbols": 4,
+      "chunks": 4
+    },
+    "middleware/logger.go": {
+      "symbols": 13,
+      "chunks": 13
+    },
+    "middleware/heartbeat_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/heartbeat.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/get_head_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/get_head.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/content_type_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/content_type.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "middleware/content_encoding_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/content_encoding.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/content_charset_test.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "middleware/content_charset.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "middleware/compress_test.go": {
+      "symbols": 5,
+      "chunks": 5
+    },
+    "middleware/compress.go": {
+      "symbols": 21,
+      "chunks": 21
+    },
+    "middleware/client_ip_test.go": {
+      "symbols": 21,
+      "chunks": 21
+    },
+    "middleware/client_ip_example_test.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "middleware/client_ip_bench_test.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "middleware/client_ip.go": {
+      "symbols": 9,
+      "chunks": 9
+    },
+    "middleware/clean_path_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/clean_path.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/basic_auth_test.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "middleware/basic_auth.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "_examples/versions/main.go": {
+      "symbols": 6,
+      "chunks": 6
+    },
+    "_examples/todos-resource/users.go": {
+      "symbols": 7,
+      "chunks": 7
+    },
+    "_examples/todos-resource/todos.go": {
+      "symbols": 8,
+      "chunks": 8
+    },
+    "_examples/todos-resource/main.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "_examples/router-walk/main.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "_examples/rest/main.go": {
+      "symbols": 34,
+      "chunks": 34
+    },
+    "_examples/pathvalue/main.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "_examples/logging/main.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "_examples/limits/main.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "_examples/hello-world/main.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "_examples/graceful/main.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "_examples/fileserver/main.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "_examples/custom-method/main.go": {
+      "symbols": 2,
+      "chunks": 2
+    },
+    "_examples/custom-handler/main.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "_examples/versions/data/errors.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "_examples/versions/data/article.go": {
+      "symbols": 1,
+      "chunks": 1
+    },
+    "_examples/versions/presenter/v3/article.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "_examples/versions/presenter/v2/article.go": {
+      "symbols": 3,
+      "chunks": 3
+    },
+    "_examples/versions/presenter/v1/article.go": {
+      "symbols": 3,
+      "chunks": 3
+    }
+  }
+}

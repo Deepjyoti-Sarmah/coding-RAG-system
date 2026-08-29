@@ -1,0 +1,52 @@
+{
+  "root": "/tmp/ckg_audit/express/lib",
+  "files_walked": 6,
+  "skipped": {
+    "excluded_dir": 0,
+    "extension": 0,
+    "size": 0,
+    "ignore_rules": 0
+  },
+  "skipped_total": 0,
+  "documents_created": 6,
+  "documents_read_error": 0,
+  "documents_zero_symbols": 0,
+  "documents_zero_chunks": 0,
+  "total_symbols": 233,
+  "total_chunks": 233,
+  "skipped_paths": {
+    "excluded_dir": [],
+    "extension": [],
+    "size": [],
+    "ignore_rules": []
+  },
+  "read_error_paths": [],
+  "zero_symbol_paths": [],
+  "zero_chunk_paths": [],
+  "per_file": {
+    "view.js": {
+      "symbols": 27,
+      "chunks": 27
+    },
+    "utils.js": {
+      "symbols": 20,
+      "chunks": 20
+    },
+    "response.js": {
+      "symbols": 96,
+      "chunks": 96
+    },
+    "request.js": {
+      "symbols": 38,
+      "chunks": 38
+    },
+    "express.js": {
+      "symbols": 9,
+      "chunks": 9
+    },
+    "application.js": {
+      "symbols": 43,
+      "chunks": 43
+    }
+  }
+}
