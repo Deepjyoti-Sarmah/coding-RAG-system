@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from pathlib import PurePosixPath as Path
 
 from graph.code_graph import CodeGraph
 from models.common.tokens import STOPWORDS, TOKEN_PATTERN, split_identifier
@@ -14,6 +15,7 @@ PATH_WEIGHT = 0.3
 KIND_WEIGHT = 0.2
 FTS_WEIGHT = 0.1
 VECTOR_WEIGHT = 0.1
+TEST_EXAMPLE_WEIGHT = -0.4
 
 _MIN_FRAGMENT_LENGTH = 2
 
@@ -48,6 +50,20 @@ _WEIGHTS = (
     VECTOR_WEIGHT,
     GRAPH_DISTANCE_WEIGHT,
     RELATIONSHIP_WEIGHT,
+    TEST_EXAMPLE_WEIGHT,
+)
+
+# Test/example files that legitimately turn up in results (a real test
+# calling the function asked about) shouldn't be excluded, only deprioritized
+# relative to non-test source - see benchmarks/results/TRACK1_DIAGNOSIS.md,
+# where these routinely outranked the actual implementation because nothing
+# else in the reranker distinguishes them.
+_TEST_EXAMPLE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"(^|/)tests?/"),
+    re.compile(r"(^|/)test_[^/]+$"),
+    re.compile(r"_test\.[A-Za-z0-9]+$"),
+    re.compile(r"(^|/)_examples?/"),
+    re.compile(r"(^|/)testdata/"),
 )
 
 
@@ -61,6 +77,7 @@ class RerankFeatures:
     vector: float
     graph_distance: float
     relationship: float
+    test_example: float = 0.0
 
     def boost(self) -> float:
         values = (
@@ -72,6 +89,7 @@ class RerankFeatures:
             self.vector,
             self.graph_distance,
             self.relationship,
+            self.test_example,
         )
         return sum(weight * value for weight, value in zip(_WEIGHTS, values))
 
@@ -137,15 +155,38 @@ def _features(
         vector=_rank_score(candidate.vector_rank),
         graph_distance=_graph_distance(symbol, seed, graph),
         relationship=_relationship(symbol, seed, graph, preference),
+        test_example=1.0 if _is_test_or_example(candidate.relative_path) else 0.0,
     )
 
 
 def _path_match(candidate: HybridCandidate, tokens: set[str]) -> float:
+    """How well the candidate's file identifies the query, at two strengths.
+
+    A hit on the file's own basename (e.g. "base" in "core/management/
+    base.py") is a strong, specific signal - the query is plausibly naming
+    this exact file - and gets full credit. A hit only on a directory
+    segment or the qualified name (e.g. every file under "middleware/"
+    matching a query containing "middleware") is a weak, generic signal:
+    dozens of unrelated files in the same directory tree share it equally,
+    so it's capped well below a basename match rather than saturating to
+    the same 1.0 (see benchmarks/results/TRACK1_DIAGNOSIS.md - this
+    generic-directory case was routinely outscoring the actual target,
+    whose own path often shares no token with the query at all).
+    """
+    basename_tokens = set(_tokens(Path(candidate.relative_path).stem))
+
+    if basename_tokens & tokens:
+        return 1.0
+
     path_tokens = set(_tokens(candidate.relative_path)) | set(
         _tokens(candidate.qualified_name)
     )
     hits = len(path_tokens & tokens)
-    return min(hits / 2.0, 1.0)
+    return min(hits / 4.0, 0.5)
+
+
+def _is_test_or_example(relative_path: str) -> bool:
+    return any(pattern.search(relative_path) for pattern in _TEST_EXAMPLE_PATTERNS)
 
 
 def _graph_distance(

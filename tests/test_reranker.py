@@ -333,9 +333,127 @@ class TestTokenOverlapFeature(unittest.TestCase):
 
         # connectDatabase overlaps on nothing but the query's raw "token"
         # substring via path_match; its boost is entirely path_match, never
-        # token_overlap.
+        # token_overlap. "token.ts"'s basename ("token") is itself a query
+        # token, so it earns the full basename-match credit, not the
+        # capped generic-directory-overlap credit.
         loser = next(c for c in ranked if c.symbol_name == "connectDatabase")
-        self.assertAlmostEqual(loser.score, 0.1 + 0.3 * 0.5)
+        self.assertAlmostEqual(loser.score, 0.1 + 0.3 * 1.0)
+
+
+BASE_COMMAND = {
+    "core/management/base.ts": (
+        "export function execute() { return 1; }\n"
+    ),
+    "core/management/commands/testserver.ts": (
+        "export function Command() { return 2; }\n"
+    ),
+}
+
+
+class TestPathMatchBasenameVsDirectory(unittest.TestCase):
+    def setUp(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for relative_path, content in BASE_COMMAND.items():
+                path = root / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            self.result = build_graph(str(root))
+
+        self.graph = self.result.graph
+        self.symbols_by_key = {
+            symbol.stable_key: symbol for symbol in self.result.symbols
+        }
+
+    def _rerank(self, candidates, query):
+        return rerank_candidates(
+            candidates,
+            query,
+            graph=self.graph,
+            symbols_by_key=self.symbols_by_key,
+        )
+
+    def test_basename_match_outranks_generic_directory_match(self):
+        execute = _symbol(self.result, "execute")
+        command = _symbol(self.result, "Command")
+
+        # "base" is core/management/base.py's own basename - a specific
+        # signal this is the named file. "management" is shared by every
+        # file under core/management/, including the unrelated sibling -
+        # a generic signal that must not out-rank the specific one.
+        ranked = self._rerank(
+            [
+                _candidate(command, score=0.1),
+                _candidate(execute, score=0.1),
+            ],
+            "management command base class parse arguments and execute",
+        )
+
+        self.assertEqual([c.symbol_name for c in ranked], ["execute", "Command"])
+
+    def test_generic_directory_overlap_still_contributes_something(self):
+        execute = _symbol(self.result, "execute")
+        command = _symbol(self.result, "Command")
+
+        ranked = self._rerank(
+            [_candidate(execute, score=0.0), _candidate(command, score=0.0)],
+            "management",
+        )
+
+        for candidate in ranked:
+            self.assertGreater(candidate.score, 0.0)
+
+
+TEST_EXAMPLE_FILES = {
+    "middleware/logger/logger.ts": (
+        "export function New() { return 1; }\n"
+    ),
+    "middleware/logger/logger_test.ts": (
+        "export function TestNew() { return 2; }\n"
+    ),
+}
+
+
+class TestTestExamplePenalty(unittest.TestCase):
+    def setUp(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for relative_path, content in TEST_EXAMPLE_FILES.items():
+                path = root / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            self.result = build_graph(str(root))
+
+        self.graph = self.result.graph
+        self.symbols_by_key = {
+            symbol.stable_key: symbol for symbol in self.result.symbols
+        }
+
+    def test_test_file_deprioritized_at_equal_score(self):
+        new = _symbol(self.result, "New")
+        test_new = _symbol(self.result, "TestNew")
+
+        ranked = rerank_candidates(
+            [
+                _candidate(test_new, score=0.1),
+                _candidate(new, score=0.1),
+            ],
+            "logger",
+            graph=self.graph,
+            symbols_by_key=self.symbols_by_key,
+        )
+
+        self.assertEqual([c.symbol_name for c in ranked], ["New", "TestNew"])
+
+    def test_examples_dir_is_deprioritized(self):
+        from retrieval.reranker import _is_test_or_example
+
+        self.assertTrue(_is_test_or_example("_examples/router-walk/main.go"))
+        self.assertTrue(_is_test_or_example("middleware/logger/logger_test.go"))
+        self.assertTrue(_is_test_or_example("tests/test_foo.py"))
+        self.assertTrue(_is_test_or_example("pkg/testdata/fixture.go"))
+        self.assertFalse(_is_test_or_example("middleware/logger/logger.go"))
+        self.assertFalse(_is_test_or_example("core/management/base.py"))
 
 
 if __name__ == "__main__":
