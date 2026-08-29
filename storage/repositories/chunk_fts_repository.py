@@ -59,6 +59,15 @@ def insert_many(conn, chunks: list[SemanticChunk], symbols_by_id: dict[str, Symb
     )
 
 
+# BM25 per-column weights: chunk_id is UNINDEXED (0), then symbol_name,
+# qualified_name, relative_path, chunk_text in schema order.
+BM25_WEIGHT_CHUNK_ID = 0.0
+BM25_WEIGHT_SYMBOL_NAME = 10.0
+BM25_WEIGHT_QUALIFIED_NAME = 5.0
+BM25_WEIGHT_RELATIVE_PATH = 8.0
+BM25_WEIGHT_CHUNK_TEXT = 1.0
+
+
 def search(conn, query: str, *, limit: int = 10) -> list[FtsHit]:
     fts_query = build_fts_query(query)
 
@@ -68,13 +77,21 @@ def search(conn, query: str, *, limit: int = 10) -> list[FtsHit]:
     rows = conn.execute(
         """
         SELECT chunk_id, symbol_name, qualified_name, relative_path,
-               bm25(chunks_fts) AS score
+               bm25(chunks_fts, ?, ?, ?, ?, ?) AS score
         FROM chunks_fts
         WHERE chunks_fts MATCH ?
         ORDER BY score
         LIMIT ?
         """,
-        (fts_query, limit),
+        (
+            BM25_WEIGHT_CHUNK_ID,
+            BM25_WEIGHT_SYMBOL_NAME,
+            BM25_WEIGHT_QUALIFIED_NAME,
+            BM25_WEIGHT_RELATIVE_PATH,
+            BM25_WEIGHT_CHUNK_TEXT,
+            fts_query,
+            limit,
+        ),
     ).fetchall()
 
     return [
