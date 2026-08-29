@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 import mcp_server
+from embeddings.fake_provider import FakeEmbeddingProvider
 
 AUTH = {
     "auth.ts": (
@@ -34,8 +35,16 @@ class TestMcpServer(unittest.IsolatedAsyncioTestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         _write(self.root, AUTH)
+        # Inject a fake embedding provider so the lazy drain in
+        # mcp_server.index_repository never constructs a real
+        # LocalEmbeddingProvider (which would trigger a HuggingFace
+        # download). _get_mcp_provider() memoizes into the global,
+        # so short-circuiting the global is sufficient.
+        self._orig_mcp_provider = mcp_server._mcp_provider
+        mcp_server.set_mcp_provider(FakeEmbeddingProvider(dimension=8))
 
     def tearDown(self):
+        mcp_server.set_mcp_provider(self._orig_mcp_provider)
         self.tmp.cleanup()
 
     async def test_tools_are_registered(self):

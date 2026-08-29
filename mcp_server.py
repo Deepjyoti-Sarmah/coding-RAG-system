@@ -12,6 +12,7 @@ from cli import (
     cmd_search,
     cmd_status,
     default_db_path,
+    has_embeddings,
     resolve_provider,
 )
 
@@ -28,6 +29,12 @@ def _get_mcp_provider():
         except Exception:  # noqa: BLE001
             return None
     return _mcp_provider
+
+
+def set_mcp_provider(provider) -> None:
+    """Inject or clear the memoized MCP embedding provider (for tests)."""
+    global _mcp_provider
+    _mcp_provider = provider
 
 
 mcp = MCPServer(
@@ -186,7 +193,11 @@ def search(query: str, path: str = ".", top_k: int = 5) -> dict:
     if not Path(db_path).exists():
         return _not_indexed(path, db_path)
 
-    provider = resolve_provider(db_path, use_vector=True)
+    # Prefer injected/test provider to avoid constructing real model in tests
+    if _mcp_provider is not None and has_embeddings(db_path):
+        provider = _mcp_provider
+    else:
+        provider = resolve_provider(db_path, use_vector=True)
     retrieval = cmd_search(db_path, query, provider=provider, top_k=top_k)
     # pending count for self-diagnosis
     try:
@@ -226,7 +237,10 @@ def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 
     if not Path(db_path).exists():
         return _not_indexed(path, db_path)
 
-    provider = resolve_provider(db_path, use_vector=True)
+    if _mcp_provider is not None and has_embeddings(db_path):
+        provider = _mcp_provider
+    else:
+        provider = resolve_provider(db_path, use_vector=True)
     pack = cmd_context(db_path, query, token_budget=token_budget, provider=provider, top_k=top_k)
     try:
         from indexing.embedding_queue import queue_status
