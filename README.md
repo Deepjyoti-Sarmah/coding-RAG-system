@@ -1481,3 +1481,14 @@ python scripts/release_smoke.py
 ```
 
 The smoke test creates a temporary environment outside the checkout, installs the wheel, checks its metadata and packaged `session_memory`/dashboard modules, then exercises the CKG CLI, session commands, dashboard help, indexing, status, search, and `ckg-mcp` startup. It does not load embeddings, contact a hosted model, or upload to PyPI. Offline installation requires runtime dependency wheels in the local uv cache; otherwise it reports the exact missing dependency.
+
+## Task-level A/B evaluation
+
+The reproducible harness in `evaluation/tasks.json` defines 20 cross-language tasks. Run it with the deterministic adapter or provide a command template for a real agent:
+
+```bash
+ckg eval-ab --manifest evaluation/tasks.json --condition both --output results/
+ckg eval-ab --dry-run
+```
+
+It creates isolated paired worktrees and writes JSONL runs, aggregate JSON, and Markdown reports with success-aware token and latency comparisons. Token values are null when an agent does not report them. This is an evaluation harness only; it does not publish results or make productivity claims.

@@ -715,6 +715,13 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard.add_argument("--no-browser", action="store_true")
     dashboard.add_argument("--allow-remote", action="store_true", help="allow non-local binding (unsafe)")
 
+    ab = subparsers.add_parser("eval-ab", help="run the task-level CKG A/B harness")
+    ab.add_argument("--manifest", default="evaluation/tasks.json")
+    ab.add_argument("--condition", choices=("with_ckg", "without_ckg", "both"), default="both")
+    ab.add_argument("--output", default="results/")
+    ab.add_argument("--dry-run", action="store_true")
+    ab.add_argument("--agent-command")
+
     return parser
 
 
@@ -735,6 +742,10 @@ def main(argv: list[str] | None = None) -> int:
             _require_dir(args.path)
         elif args.command not in ("eval",) and hasattr(args, "path"):
             _require_dir(args.path)
+
+        if args.command == "eval-ab":
+            from evaluation.ab_runner import main as ab_main
+            return ab_main(["--manifest", args.manifest, "--condition", args.condition, "--output", args.output] + (["--dry-run"] if args.dry_run else []) + (["--agent-command", args.agent_command] if args.agent_command else []))
 
         if args.command == "dashboard":
             if args.host not in ("127.0.0.1", "localhost", "::1") and not args.allow_remote:
