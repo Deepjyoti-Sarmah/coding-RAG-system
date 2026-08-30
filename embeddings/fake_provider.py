@@ -6,12 +6,17 @@ from embeddings.provider import EmbeddingProvider
 
 
 class FakeEmbeddingProvider(EmbeddingProvider):
-    def __init__(self, dimension: int = 8) -> None:
+    def __init__(self, dimension: int = 8, model_name: str = "fake") -> None:
         self._dimension = dimension
+        self._model_name = model_name
 
     @property
     def dimension(self) -> int:
         return self._dimension
+
+    @property
+    def model_id(self) -> str:
+        return f"fake:{self._model_name}:{self._dimension}"
 
     def embed(self, text: str) -> np.ndarray:
         return self._normalize(self._vector(text))

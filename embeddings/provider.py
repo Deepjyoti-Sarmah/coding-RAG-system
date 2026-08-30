@@ -9,6 +9,12 @@ class EmbeddingProvider(ABC):
     def dimension(self) -> int:
         ...
 
+    @property
+    @abstractmethod
+    def model_id(self) -> str:
+        """Stable identifier for the model/backend (e.g. 'local:all-MiniLM-L6-v2' or 'ollama:nomic-embed-text')."""
+        ...
+
     @abstractmethod
     def embed(self, text: str) -> np.ndarray:
         ...

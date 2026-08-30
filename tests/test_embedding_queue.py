@@ -33,6 +33,10 @@ class FailingProvider(EmbeddingProvider):
     def dimension(self) -> int:
         return 8
 
+    @property
+    def model_id(self) -> str:
+        return "fake:fake:8"
+
     def embed(self, text: str) -> np.ndarray:
         raise RuntimeError("embedding backend unavailable")
 

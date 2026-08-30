@@ -23,9 +23,10 @@ def _get_mcp_provider():
     global _mcp_provider
     if _mcp_provider is None:
         try:
-            from embeddings.local_provider import LocalEmbeddingProvider
+            # Auto-detect: Ollama if reachable, then local
+            from ckg.cli import _detect_provider
 
-            _mcp_provider = LocalEmbeddingProvider()
+            _mcp_provider = _detect_provider()
         except Exception:  # noqa: BLE001
             return None
     return _mcp_provider

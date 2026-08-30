@@ -1,15 +1,24 @@
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 from embeddings.provider import EmbeddingProvider
 
 
 class LocalEmbeddingProvider(EmbeddingProvider):
+    """Sentence-transformers backend. Optional — requires `pip install code-knowledge-graph[local]`."""
+
     def __init__(
         self,
         model_name: str = "all-MiniLM-L6-v2",
         device: str | None = None,
     ) -> None:
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:
+            raise RuntimeError(
+                "Local embeddings require 'sentence-transformers'. "
+                "Install with: pip install code-knowledge-graph[local]"
+            ) from exc
+        self._model_name = model_name
         self._model = SentenceTransformer(model_name, device=device)
         dimension = self._model.get_embedding_dimension()
         if dimension is None:
@@ -19,6 +28,10 @@ class LocalEmbeddingProvider(EmbeddingProvider):
     @property
     def dimension(self) -> int:
         return self._dimension
+
+    @property
+    def model_id(self) -> str:
+        return f"local:{self._model_name}:{self._dimension}"
 
     def embed(self, text: str) -> np.ndarray:
         return self.embed_batch([text])[0]

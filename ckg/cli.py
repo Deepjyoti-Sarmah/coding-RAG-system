@@ -205,13 +205,91 @@ def cmd_watch(
     )
 
 
+def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | None:
+    """Auto-detect: Ollama if reachable, then local sentence-transformers if importable, else None.
+
+    Respects CKG_EMBED_BACKEND (ollama/local) and CKG_OLLAMA_URL/MODEL env vars.
+    Local import is lazy so core install never touches torch.
+    """
+    import os
+
+    forced = os.environ.get("CKG_EMBED_BACKEND", "").strip().lower()
+    if forced and forced not in ("ollama", "local", "", "auto"):
+        raise RuntimeError(
+            f"Unknown embedding backend '{forced}'. Expected 'ollama' or 'local'. "
+            "Unset CKG_EMBED_BACKEND or set to 'ollama'/'local'."
+        )
+
+    # Ollama first (unless forced to local)
+    if forced != "local":
+        try:
+            from embeddings.ollama_provider import OllamaEmbeddingProvider, ollama_available
+
+            # ollama_available uses env-var resolved URL internally
+            if ollama_available():
+                try:
+                    return OllamaEmbeddingProvider(model_name=forced_model) if forced_model else OllamaEmbeddingProvider()
+                except Exception:
+                    if forced == "ollama":
+                        raise
+                    # fall through to local
+                    pass
+            elif forced == "ollama":
+                raise RuntimeError(
+                    "Ollama backend forced via CKG_EMBED_BACKEND=ollama but no Ollama server reachable at "
+                    f"{os.environ.get('CKG_OLLAMA_URL', os.environ.get('OLLAMA_HOST', 'http://localhost:11434'))}. "
+                    "Start Ollama or unset CKG_EMBED_BACKEND."
+                )
+        except ImportError:
+            pass
+
+    if forced != "ollama":
+        try:
+            import importlib.util
+
+            if importlib.util.find_spec("sentence_transformers") is not None:
+                from embeddings.local_provider import LocalEmbeddingProvider
+
+                return LocalEmbeddingProvider(model_name=forced_model) if forced_model else LocalEmbeddingProvider()
+            elif forced == "local":
+                raise RuntimeError(
+                    "Local embeddings forced via CKG_EMBED_BACKEND=local but 'sentence-transformers' not installed. "
+                    "Install with: pip install code-knowledge-graph[local]"
+                )
+        except RuntimeError:
+            raise
+        except Exception:
+            if forced == "local":
+                raise RuntimeError(
+                    "Local embeddings require 'sentence-transformers'. "
+                    "Install with: pip install code-knowledge-graph[local]"
+                )
+            pass
+    return None
+
+
 def resolve_provider(db_path: str, *, use_vector: bool) -> EmbeddingProvider | None:
-    if not use_vector or not has_embeddings(db_path):
+    if not use_vector:
+        return None
+    # Default to no embeddings if none available — FTS+graph is out-of-box (0.83/0.78 fixture)
+    # Caller decides legibility when vector was explicitly requested.
+    try:
+        return _detect_provider()
+    except RuntimeError:
+        raise
+    except Exception:
         return None
 
-    from embeddings.local_provider import LocalEmbeddingProvider
 
-    return LocalEmbeddingProvider()
+def _require_provider_or_explain() -> EmbeddingProvider:
+    provider = _detect_provider()
+    if provider is None:
+        raise RuntimeError(
+            "No embedding backend available. Either:\n"
+            "  1. Install local embeddings: pip install code-knowledge-graph[local]\n"
+            "  2. Start an Ollama server at http://localhost:11434 and pull nomic-embed-text (ollama pull nomic-embed-text)"
+        )
+    return provider
 
 
 def _ensure_mcp_entry(path: Path, container_key: str) -> str:
@@ -276,9 +354,7 @@ def cmd_embed(
     limit: int | None = None,
 ):
     if provider is None:
-        from embeddings.local_provider import LocalEmbeddingProvider
-
-        provider = LocalEmbeddingProvider()
+        provider = _require_provider_or_explain()
     if limit is None:
         # when no explicit limit, drain in batches with periodic progress
         total = 0
@@ -349,16 +425,18 @@ def _maybe_spawn_background_embed(db_path: str) -> None:
         return
     if not _try_acquire_embed_lock(db_path):
         return
+    # Auto-detect backend for background drain; core install may have none
     code = (
         "import sys\n"
         "from pathlib import Path\n"
         "db_path=sys.argv[1]\n"
         "lock=Path(db_path).parent / f'.{Path(db_path).name}.embed.lock'\n"
         "try:\n"
-        "    from embeddings.local_provider import LocalEmbeddingProvider\n"
+        "    from ckg.cli import _detect_provider\n"
         "    from indexing.embedding_queue import run_embedding_worker\n"
-        "    provider=LocalEmbeddingProvider()\n"
-        "    run_embedding_worker(db_path, provider)\n"
+        "    provider=_detect_provider()\n"
+        "    if provider is not None:\n"
+        "        run_embedding_worker(db_path, provider)\n"
         "except Exception:\n"
         "    pass\n"
         "finally:\n"
@@ -645,9 +723,7 @@ def main(argv: list[str] | None = None) -> int:
             provider = None
 
             if args.embed:
-                from embeddings.local_provider import LocalEmbeddingProvider
-
-                provider = LocalEmbeddingProvider()
+                provider = _require_provider_or_explain()
 
             report = cmd_index(args.path, db_path, provider=provider)
             _print_index_report(report, db_path)
@@ -659,9 +735,7 @@ def main(argv: list[str] | None = None) -> int:
             provider = None
 
             if args.embed:
-                from embeddings.local_provider import LocalEmbeddingProvider
-
-                provider = LocalEmbeddingProvider()
+                provider = _require_provider_or_explain()
 
             _print_eval_report(cmd_eval(provider=provider, top_k=args.top_k))
             return 0
@@ -686,9 +760,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.no_embed:
                 provider = None
             else:
-                from embeddings.local_provider import LocalEmbeddingProvider
-
-                provider = LocalEmbeddingProvider()
+                provider = _detect_provider()
 
             Path(db_path).parent.mkdir(parents=True, exist_ok=True)
             print(f"Watching {args.path} (index: {db_path})")
@@ -706,18 +778,29 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
         if args.command == "embed":
+            # cmd_embed will auto-detect; if no backend, it raises legible error
             report = cmd_embed(db_path, limit=args.limit)
             _print_embed_report(report)
         elif args.command == "status":
             _print_status(cmd_status(db_path), oneline=getattr(args, "oneline", False))
         elif args.command == "search":
             provider = resolve_provider(db_path, use_vector=not args.no_vector)
-            if provider is None:
+            if provider is None and not args.no_vector:
+                # Legible failure when no backend at all
                 try:
-                    qs = queue_status(db_path)
-                    pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
-                    if pending > 0:
-                        print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
+                    backend = _detect_provider()
+                    if backend is None:
+                        print(
+                            "Vector search disabled: no embedding backend available. "
+                            "Install with 'pip install code-knowledge-graph[local]' "
+                            "or start Ollama at http://localhost:11434 (ollama pull nomic-embed-text).",
+                            file=sys.stderr,
+                        )
+                    else:
+                        qs = queue_status(db_path)
+                        pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+                        if pending > 0:
+                            print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
                 except Exception:  # noqa: BLE001, S110
                     pass
             _print_candidates(
@@ -733,12 +816,21 @@ def main(argv: list[str] | None = None) -> int:
             _print_imports(cmd_imports(db_path, args.file))
         elif args.command == "context":
             provider = resolve_provider(db_path, use_vector=not args.no_vector)
-            if provider is None:
+            if provider is None and not args.no_vector:
                 try:
-                    qs = queue_status(db_path)
-                    pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
-                    if pending > 0:
-                        print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
+                    backend = _detect_provider()
+                    if backend is None:
+                        print(
+                            "Vector search disabled: no embedding backend available. "
+                            "Install with 'pip install code-knowledge-graph[local]' "
+                            "or start Ollama at http://localhost:11434 (ollama pull nomic-embed-text).",
+                            file=sys.stderr,
+                        )
+                    else:
+                        qs = queue_status(db_path)
+                        pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+                        if pending > 0:
+                            print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
                 except Exception:  # noqa: BLE001, S110
                     pass
             _print_context_pack(
