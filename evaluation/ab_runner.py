@@ -1,49 +1,73 @@
+"""Task-level A/B runner using a file-based real-agent protocol."""
 from __future__ import annotations
-import argparse,json,shutil,subprocess,tempfile,time
+import argparse,json,os,shutil,subprocess,tempfile,time
 from pathlib import Path
 from .ab_metrics import score,summarize,write_report
 
+MAX_OUTPUT=8000; METRICS=("input_tokens","output_tokens","total_tokens","tool_calls")
 class AgentRunner:
-    def run(self, task, condition, worktree): raise NotImplementedError
+    def run(self,task,condition,worktree): raise NotImplementedError
+
+def _metric(value,name):
+    if value is None:return None
+    if isinstance(value,bool) or not isinstance(value,int) or value<0:raise ValueError(f"{name} must be a non-negative integer or null")
+    return value
+def parse_result(path):
+    try:data=json.loads(Path(path).read_text(encoding="utf-8"))
+    except FileNotFoundError as e:raise ValueError("agent did not create result file") from e
+    except (json.JSONDecodeError,OSError) as e:raise ValueError(f"malformed result JSON: {e}") from e
+    if not isinstance(data,dict) or data.get("status") not in ("success","failure"):raise ValueError("result status must be success or failure")
+    for key in ("changed_files","symbols_found"):
+        if key not in data or not isinstance(data[key],list) or not all(isinstance(x,str) for x in data[key]):raise ValueError(f"{key} must be an array of strings")
+    for key in METRICS:data[key]=_metric(data.get(key),key)
+    if "tests_passed" in data and not isinstance(data["tests_passed"],bool):raise ValueError("tests_passed must be boolean")
+    data["notes"]=str(data.get("notes",""))[:2000];return data
 
 class SubprocessAgentRunner(AgentRunner):
-    def __init__(self, template): self.template=template
+    def __init__(self,template):self.template=template
     def run(self,task,condition,worktree):
-        command=self.template.format(prompt=task["prompt"],worktree=str(worktree),condition=condition)
-        started=time.monotonic()
+        run_dir=Path(tempfile.mkdtemp(prefix="agent-run-",dir=worktree));prompt=run_dir/"prompt.txt";result_file=run_dir/"result.json";prompt.write_text(task["prompt"],encoding="utf-8")
+        env=os.environ.copy();env.update(CKG_AB_TASK_ID=task["id"],CKG_AB_CONDITION=condition,CKG_AB_WORKTREE=str(worktree),CKG_AB_PROMPT_FILE=str(prompt),CKG_AB_RESULT_FILE=str(result_file),CKG_AB_PROJECT=str(worktree));started=time.monotonic()
+        base={"files_changed":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"stdout":"","stderr":"","timed_out":False}
         try:
-            p=subprocess.run(command,shell=True,cwd=worktree,text=True,capture_output=True,timeout=task["timeout"])
-            return {"exit_code":p.returncode,"stdout":p.stdout[-8000:],"stderr":p.stderr[-8000:],"elapsed_seconds":time.monotonic()-started,"files_changed":[],"symbols_found":[]}
-        except subprocess.TimeoutExpired as e: return {"exit_code":None,"timed_out":True,"stdout":str(e.stdout or '')[-8000:],"stderr":str(e.stderr or '')[-8000:],"elapsed_seconds":time.monotonic()-started,"files_changed":[],"symbols_found":[]}
+            p=subprocess.run(self.template,shell=True,cwd=worktree,env=env,text=True,capture_output=True,timeout=task["timeout"]);base.update(exit_code=p.returncode,stdout=p.stdout[-MAX_OUTPUT:],stderr=p.stderr[-MAX_OUTPUT:])
+            if result_file.exists():base.update(parse_result(result_file))
+            else:base.update(status="failure",failure_reason="agent did not create result file")
+        except subprocess.TimeoutExpired as e:base.update(exit_code=None,timed_out=True,status="failure",failure_reason="agent timed out",stdout=str(e.stdout or "")[-MAX_OUTPUT:],stderr=str(e.stderr or "")[-MAX_OUTPUT:])
+        except ValueError as e:base.update(exit_code=locals().get("p",None) and p.returncode,status="failure",failure_reason=str(e))
+        base["elapsed_seconds"]=time.monotonic()-started
+        base["files_changed"]=_git_changed(worktree) if not base.get("changed_files") else base["changed_files"];shutil.rmtree(run_dir,ignore_errors=True);return base
+def _git_changed(worktree):
+    try:return subprocess.run(["git","-C",str(worktree),"diff","--name-only"],text=True,capture_output=True,timeout=10).stdout.splitlines()
+    except (OSError,subprocess.SubprocessError):return []
 
 class FakeAgentRunner(AgentRunner):
     def run(self,task,condition,worktree):
-        ok=condition=="with_ckg" or task["id"] in {"py-auth","js-auth","go-auth"}
-        return {"exit_code":0 if ok else 1,"elapsed_seconds":0.01,"input_tokens":100,"output_tokens":30,"total_tokens":130,"tool_calls":2 if condition=="with_ckg" else 0,"files_changed":task["expected_files"] if ok else [],"symbols_found":task["expected_symbols"] if ok else [],"ckg_retrieval":{"enabled":condition=="with_ckg","results":len(task["expected_symbols"])}}
-
+        ok=condition=="with_ckg" or task["id"] in {"py-auth","js-auth","go-auth"};data={"status":"success" if ok else "failure","changed_files":task["expected_files"] if ok else [],"symbols_found":task["expected_symbols"] if ok else [],"input_tokens":100,"output_tokens":30,"total_tokens":130,"tool_calls":2 if condition=="with_ckg" else 0,"tests_passed":ok,"notes":"deterministic fake"};path=Path(worktree)/"fake-result.json";path.write_text(json.dumps(data));parsed=parse_result(path);parsed["files_changed"]=parsed["changed_files"];return dict(parsed,exit_code=0 if ok else 1,elapsed_seconds=.01)
 def load_tasks(path):
-    tasks=json.loads(Path(path).read_text()); assert len(tasks)==20, "manifest must contain exactly 20 tasks"; return tasks
+    tasks=json.loads(Path(path).read_text());assert len(tasks)==20,"manifest must contain exactly 20 tasks";return tasks
+def _provision_ckg(worktree):
+    db=worktree/".ckg"/"index.sqlite";subprocess.run([os.environ.get("PYTHON","python"),"-m","ckg.cli","index",str(worktree)],cwd=worktree,capture_output=True,timeout=120,check=True);config=worktree/".ckg"/"ab-mcp.json";config.write_text(json.dumps({"command":"ckg-mcp","project":str(worktree)}));return db,config
 def run(tasks,runner,conditions,output,dry_run=False):
-    output.mkdir(parents=True,exist_ok=True); raw=output/"runs.jsonl"; done={}
+    output.mkdir(parents=True,exist_ok=True);raw=output/"runs.jsonl";done={}
     if raw.exists():
         for line in raw.read_text().splitlines():
-            if line:
-                x=json.loads(line); done[(x["task_id"],x["condition"])]=x
+            if line:x=json.loads(line);done[(x["task_id"],x["condition"])] = x
     results=list(done.values())
     with raw.open("a",encoding="utf-8") as fh:
         for task in tasks:
             for condition in conditions:
-                if (task["id"],condition) in done: continue
-                if dry_run: print(f"{task['id']} {condition} fixture={task['fixture']}"); continue
+                if (task["id"],condition) in done:continue
+                if dry_run:print(f"{task['id']} {condition} fixture={task['fixture']}");continue
                 with tempfile.TemporaryDirectory(prefix="ckg-ab-") as td:
-                    work=Path(td)/"repo"; shutil.copytree(task["fixture"],work)
-                    result=runner.run(task,condition,work); result.update(task_id=task["id"],language=task["language"],condition=condition); result=score(task,result)
-                fh.write(json.dumps(result,separators=(",",":"))+"\n"); fh.flush(); results.append(result)
-    if not dry_run:
-        summary=summarize(results); (output/"summary.json").write_text(json.dumps(summary,indent=2)+"\n"); write_report(results,summary,output/"report.md")
+                    work=Path(td)/"repo";shutil.copytree(task["fixture"],work);ckg=None
+                    if condition=="with_ckg":
+                        try:db,config=_provision_ckg(work);ckg={"enabled":True,"index":str(db),"mcp_config":str(config)}
+                        except Exception as e:ckg={"enabled":False,"error":str(e)}
+                    result=runner.run(task,condition,work);result.update(task_id=task["id"],language=task["language"],condition=condition,ckg_retrieval=ckg);result=score(task,result)
+                fh.write(json.dumps(result,separators=(",",":"))+"\n");fh.flush();results.append(result)
+    if not dry_run:summary=summarize(results);(output/"summary.json").write_text(json.dumps(summary,indent=2)+"\n");write_report(results,summary,output/"report.md")
     return results
-
 def main(argv=None):
-    p=argparse.ArgumentParser(); p.add_argument("--manifest",default="evaluation/tasks.json"); p.add_argument("--condition",choices=("with_ckg","without_ckg","both"),default="both"); p.add_argument("--output",default="results/"); p.add_argument("--dry-run",action="store_true"); p.add_argument("--agent-command"); a=p.parse_args(argv)
-    conditions=("with_ckg","without_ckg") if a.condition=="both" else (a.condition,); runner=SubprocessAgentRunner(a.agent_command) if a.agent_command else FakeAgentRunner(); run(load_tasks(a.manifest),runner,conditions,Path(a.output),a.dry_run); return 0
-if __name__=="__main__": raise SystemExit(main())
+    p=argparse.ArgumentParser();p.add_argument("--manifest",default="evaluation/tasks.json");p.add_argument("--condition",choices=("with_ckg","without_ckg","both"),default="both");p.add_argument("--output",default="results/");p.add_argument("--dry-run",action="store_true");p.add_argument("--agent-command");a=p.parse_args(argv);conditions=("with_ckg","without_ckg") if a.condition=="both" else (a.condition,);run(load_tasks(a.manifest),SubprocessAgentRunner(a.agent_command) if a.agent_command else FakeAgentRunner(),conditions,Path(a.output),a.dry_run);return 0
+if __name__=="__main__":raise SystemExit(main())

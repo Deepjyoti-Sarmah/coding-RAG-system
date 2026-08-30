@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from evaluation.ab_metrics import score, summarize
-from evaluation.ab_runner import FakeAgentRunner, load_tasks, run
+from evaluation.ab_runner import FakeAgentRunner, SubprocessAgentRunner, load_tasks, parse_result, run
 
 
 class AbEvaluationTests(unittest.TestCase):
@@ -38,6 +38,22 @@ class AbEvaluationTests(unittest.TestCase):
     def test_metrics_do_not_fabricate_missing_tokens(self):
         summary = summarize([{"task_id":"x","language":"python","condition":"with_ckg","success":True,"elapsed_seconds":1,"total_tokens":None,"tool_calls":None}])
         self.assertIsNone(summary["all"]["tokens"]["mean"])
+
+    def test_result_protocol_validation_and_nullable_metrics(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "result.json"
+            path.write_text(json.dumps({"status":"failure", "changed_files":[], "symbols_found":[], "input_tokens":None, "output_tokens":None, "total_tokens":None, "tool_calls":None}))
+            self.assertIsNone(parse_result(path)["total_tokens"])
+            path.write_text("not json")
+            with self.assertRaises(ValueError): parse_result(path)
+            path.write_text(json.dumps({"status":"success", "changed_files":[], "symbols_found":[], "input_tokens":-1}))
+            with self.assertRaises(ValueError): parse_result(path)
+
+    def test_missing_result_and_timeout_are_explicit(self):
+        task = load_tasks("evaluation/tasks.json")[0]
+        with tempfile.TemporaryDirectory() as d:
+            result = SubprocessAgentRunner("true").run(task, "without_ckg", Path(d))
+            self.assertIn("result file", result["failure_reason"])
 
 
 if __name__ == "__main__": unittest.main()

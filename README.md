@@ -1492,3 +1492,23 @@ ckg eval-ab --dry-run
 ```
 
 It creates isolated paired worktrees and writes JSONL runs, aggregate JSON, and Markdown reports with success-aware token and latency comparisons. Token values are null when an agent does not report them. This is an evaluation harness only; it does not publish results or make productivity claims.
+
+### Real-agent protocol
+
+The canonical command template is:
+
+```bash
+AGENT_CMD='my-agent \
+  --worktree "$CKG_AB_WORKTREE" \
+  --prompt-file "$CKG_AB_PROMPT_FILE" \
+  --result-file "$CKG_AB_RESULT_FILE"'
+ckg eval-ab --agent-command "$AGENT_CMD" --condition both --output results/
+```
+
+The runner sets `CKG_AB_TASK_ID`, `CKG_AB_CONDITION`, `CKG_AB_WORKTREE`, `CKG_AB_PROMPT_FILE`, `CKG_AB_RESULT_FILE`, and `CKG_AB_PROJECT`. The agent must write this JSON object to the result file:
+
+```json
+{"status":"success","changed_files":["src/auth.py"],"symbols_found":["login"],"input_tokens":1200,"output_tokens":350,"total_tokens":1550,"tool_calls":8,"tests_passed":true,"notes":"Located login and its caller."}
+```
+
+`status` is required (`success` or `failure`); file and symbol fields are string arrays; metric fields are nullable non-negative integers; notes are bounded. The runner never infers tokens, symbols, or tool calls. It uses `git diff --name-only` only as a changed-file fallback. For `with_ckg`, it indexes the isolated worktree and writes `.ckg/ab-mcp.json`; agents should discover CKG using `CKG_AB_PROJECT` and invoke `ckg-mcp` from the supplied configuration. `without_ckg` creates neither index nor MCP configuration. No benchmark result exists until a real agent is run, and no productivity claim is made.
