@@ -1,10 +1,11 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from evaluation.ab_metrics import score, summarize
-from evaluation.ab_runner import FakeAgentRunner, SubprocessAgentRunner, _provision_ckg, load_tasks, parse_result, run
+from evaluation.ab_runner import FakeAgentRunner, SubprocessAgentRunner, _provision_ckg, _validate_condition, load_tasks, parse_result, run
 
 
 class AbEvaluationTests(unittest.TestCase):
@@ -68,6 +69,21 @@ class AbEvaluationTests(unittest.TestCase):
         tasks = load_tasks("evaluation/tasks.json")
         selected = [next(x for x in tasks if x["language"] == language) for language in ("python", "javascript")]
         self.assertEqual(len(selected), 2)
+
+    def test_provision_failure_is_infrastructure_failure_and_skips_agent(self):
+        class Agent(FakeAgentRunner):
+            called = False
+            def run(self, *args): self.called = True; return super().run(*args)
+        agent = Agent()
+        with tempfile.TemporaryDirectory() as d, patch("evaluation.ab_runner._provision_ckg", side_effect=RuntimeError("bad index")):
+            result = run(load_tasks("evaluation/tasks.json")[:1], agent, ("with_ckg",), Path(d))[0]
+        self.assertFalse(agent.called); self.assertTrue(result["infrastructure_failure"]); self.assertFalse(result["success"]); self.assertFalse(result["ckg_retrieval"]["enabled"])
+
+    def test_without_ckg_validation_and_malformed_config_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            work=Path(d); _validate_condition(work,"without_ckg")
+            (work/".mcp.json").write_text("{")
+            with self.assertRaises(ValueError): _validate_condition(work,"with_ckg")
 
 
 if __name__ == "__main__": unittest.main()

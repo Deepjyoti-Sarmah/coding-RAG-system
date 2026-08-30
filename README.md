@@ -1513,3 +1513,5 @@ The runner sets `CKG_AB_TASK_ID`, `CKG_AB_CONDITION`, `CKG_AB_WORKTREE`, `CKG_AB
 ```
 
 `status` is required (`success` or `failure`); file and symbol fields are string arrays; metric fields are nullable non-negative integers; notes are bounded. The runner never infers tokens, symbols or tool calls. It uses `git diff --name-only` only as a changed-file fallback. For `with_ckg`, it indexes the isolated worktree and creates this standard configuration at `$CKG_AB_MCP_CONFIG` (also discoverable as `$CKG_AB_WORKTREE/.mcp.json`): `{ "mcpServers": { "ckg": { "command": "ckg-mcp" } } }`. The agent can use `$CKG_AB_PROJECT` and `$CKG_AB_INDEX` to target the indexed project. `without_ckg` exposes neither those variables nor an index/config. Use `--pilot` for exactly one Python and one JavaScript task per condition. No benchmark result exists until a real agent is run, and no productivity claim is made.
+
+Use `ckg eval-ab --pilot --preflight` to validate both isolated conditions without launching an agent. A provisioning error is an infrastructure failure: the with-CKG agent is not invoked and the run cannot be scored as a successful agent attempt.

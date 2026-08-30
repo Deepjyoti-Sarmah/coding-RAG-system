@@ -53,6 +53,15 @@ def load_tasks(path):
 def _provision_ckg(worktree):
     db=worktree/".ckg"/"index.sqlite";subprocess.run([sys.executable,"-m","ckg.cli","index",str(worktree)],cwd=Path(__file__).resolve().parents[1],capture_output=True,timeout=120,check=True);config=worktree/".mcp.json";config.write_text(json.dumps({"mcpServers":{"ckg":{"command":"ckg-mcp"}}}));
     parsed=json.loads(config.read_text());assert parsed["mcpServers"]["ckg"]["command"]=="ckg-mcp" and db.exists();return db,config
+def _validate_condition(worktree, condition):
+    db=worktree/".ckg"/"index.sqlite";config=worktree/".mcp.json"
+    if condition=="without_ckg":
+        if db.exists() or config.exists(): raise ValueError("without_ckg must not contain CKG index or MCP config")
+        return None
+    if not db.exists() or not config.exists(): raise ValueError("CKG index or .mcp.json is missing")
+    parsed=json.loads(config.read_text(encoding="utf-8"))
+    if parsed.get("mcpServers",{}).get("ckg",{}).get("command")!="ckg-mcp": raise ValueError(".mcp.json has invalid mcpServers.ckg.command")
+    return db,config
 def run(tasks,runner,conditions,output,dry_run=False):
     output.mkdir(parents=True,exist_ok=True);raw=output/"runs.jsonl";done={}
     if raw.exists():
@@ -67,18 +76,36 @@ def run(tasks,runner,conditions,output,dry_run=False):
                 with tempfile.TemporaryDirectory(prefix="ckg-ab-") as td:
                     work=Path(td)/"repo";shutil.copytree(task["fixture"],work);ckg=None
                     if condition=="with_ckg":
-                        try:db,config=_provision_ckg(work);ckg={"enabled":True,"index":str(db),"mcp_config":str(config)}
-                        except Exception as e:ckg={"enabled":False,"error":str(e)}
+                        try:
+                            db,config=_provision_ckg(work);_validate_condition(work,condition);ckg={"enabled":True,"index":str(db),"mcp_config":str(config)}
+                        except Exception as e:
+                            result={"status":"failure","exit_code":None,"files_changed":[],"symbols_found":[],"infrastructure_failure":True,"failure_reason":f"CKG provisioning failed: {str(e)[:2000]}","ckg_retrieval":{"enabled":False},"elapsed_seconds":0,"timed_out":False}
+                            result.update(task_id=task["id"],language=task["language"],condition=condition);result["success"]=False
+                            fh.write(json.dumps(result,separators=(",",":"))+"\n");fh.flush();results.append(result);continue
+                    else: _validate_condition(work,condition)
                     result=runner.run(task,condition,work);result.update(task_id=task["id"],language=task["language"],condition=condition,ckg_retrieval=ckg);result=score(task,result)
                 fh.write(json.dumps(result,separators=(",",":"))+"\n");fh.flush();results.append(result)
     if not dry_run:summary=summarize(results);(output/"summary.json").write_text(json.dumps(summary,indent=2)+"\n");write_report(results,summary,output/"report.md")
     return results
 def main(argv=None):
-    p=argparse.ArgumentParser();p.add_argument("--manifest",default="evaluation/tasks.json");p.add_argument("--condition",choices=("with_ckg","without_ckg","both"),default="both");p.add_argument("--output",default="results/");p.add_argument("--dry-run",action="store_true");p.add_argument("--agent-command");p.add_argument("--pilot",action="store_true");a=p.parse_args(argv);tasks=load_tasks(a.manifest)
+    p=argparse.ArgumentParser();p.add_argument("--manifest",default="evaluation/tasks.json");p.add_argument("--condition",choices=("with_ckg","without_ckg","both"),default="both");p.add_argument("--output",default="results/");p.add_argument("--dry-run",action="store_true");p.add_argument("--agent-command");p.add_argument("--pilot",action="store_true");p.add_argument("--preflight",action="store_true");a=p.parse_args(argv);tasks=load_tasks(a.manifest)
     if a.pilot:
         pilot=[]
         for language in ("python","javascript"):
             pilot.append(next(x for x in tasks if x["language"]==language))
         tasks=pilot
-    conditions=("with_ckg","without_ckg") if a.condition=="both" else (a.condition,);run(tasks,SubprocessAgentRunner(a.agent_command) if a.agent_command else FakeAgentRunner(),conditions,Path(a.output),a.dry_run);return 0
+    conditions=("with_ckg","without_ckg") if a.condition=="both" else (a.condition,)
+    if a.preflight:
+        for task in tasks:
+            statuses=[]
+            for condition in conditions:
+                with tempfile.TemporaryDirectory(prefix="ckg-preflight-") as td:
+                    work=Path(td)/"repo";shutil.copytree(task["fixture"],work)
+                    try:
+                        if condition=="with_ckg": _provision_ckg(work)
+                        _validate_condition(work,condition);statuses.append(f"{condition}=PASS")
+                    except Exception as e:statuses.append(f"{condition}=FAIL ({e})")
+            print(f"{task['id']} fixture={task['fixture']} " + " ".join(statuses))
+        return 0
+    run(tasks,SubprocessAgentRunner(a.agent_command) if a.agent_command else FakeAgentRunner(),conditions,Path(a.output),a.dry_run);return 0
 if __name__=="__main__":raise SystemExit(main())
