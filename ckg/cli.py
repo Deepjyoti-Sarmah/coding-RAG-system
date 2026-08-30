@@ -723,6 +723,7 @@ def build_parser() -> argparse.ArgumentParser:
     ab.add_argument("--agent-command")
     ab.add_argument("--pilot", action="store_true", help="run exactly one Python and one JavaScript task")
     ab.add_argument("--preflight", action="store_true", help="validate paired CKG provisioning without launching an agent")
+    ab.add_argument("--timeout", type=int, help="per-run timeout in seconds, overriding each task's manifest value")
 
     return parser
 
@@ -747,7 +748,7 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.command == "eval-ab":
             from evaluation.ab_runner import main as ab_main
-            return ab_main(["--manifest", args.manifest, "--condition", args.condition, "--output", args.output] + (["--dry-run"] if args.dry_run else []) + (["--pilot"] if args.pilot else []) + (["--preflight"] if args.preflight else []) + (["--agent-command", args.agent_command] if args.agent_command else []))
+            return ab_main(["--manifest", args.manifest, "--condition", args.condition, "--output", args.output] + (["--dry-run"] if args.dry_run else []) + (["--pilot"] if args.pilot else []) + (["--preflight"] if args.preflight else []) + (["--agent-command", args.agent_command] if args.agent_command else []) + (["--timeout", str(args.timeout)] if args.timeout else []))
 
         if args.command == "dashboard":
             if args.host not in ("127.0.0.1", "localhost", "::1") and not args.allow_remote:

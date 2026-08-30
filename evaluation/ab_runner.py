@@ -20,11 +20,11 @@ def parse_result(path):
     for key in ("changed_files","files_found","symbols_found"):
         if key not in data or not isinstance(data[key],list) or not all(isinstance(x,str) for x in data[key]):raise ValueError(f"{key} must be an array of strings")
     for key in METRICS:data[key]=_metric(data.get(key),key)
-    if "tests_passed" in data and not isinstance(data["tests_passed"],bool):raise ValueError("tests_passed must be boolean")
+    if "tests_passed" in data and data["tests_passed"] is not None and not isinstance(data["tests_passed"],bool):raise ValueError("tests_passed must be boolean or null")
     data["notes"]=str(data.get("notes",""))[:2000];return data
 
 class SubprocessAgentRunner(AgentRunner):
-    def __init__(self,template):self.template=template
+    def __init__(self,template,timeout=None):self.template=template;self.timeout=timeout
     def run(self,task,condition,worktree):
         run_dir=Path(tempfile.mkdtemp(prefix="agent-run-",dir=worktree));prompt=run_dir/"prompt.txt";result_file=run_dir/"result.json";prompt.write_text(task["prompt"],encoding="utf-8")
         env=os.environ.copy();env.update(CKG_AB_TASK_ID=task["id"],CKG_AB_CONDITION=condition,CKG_AB_WORKTREE=str(worktree),CKG_AB_PROMPT_FILE=str(prompt),CKG_AB_RESULT_FILE=str(result_file),CKG_AB_PROJECT=str(worktree))
@@ -34,7 +34,7 @@ class SubprocessAgentRunner(AgentRunner):
         started=time.monotonic()
         base={"files_changed":[],"files_found":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"ckg_tools_used":None,"ckg_queries":None,"stdout":"","stderr":"","timed_out":False}
         try:
-            p=subprocess.run(self.template,shell=True,cwd=worktree,env=env,text=True,capture_output=True,timeout=task["timeout"]);base.update(exit_code=p.returncode,stdout=p.stdout[-MAX_OUTPUT:],stderr=p.stderr[-MAX_OUTPUT:])
+            p=subprocess.run(self.template,shell=True,cwd=worktree,env=env,text=True,capture_output=True,timeout=self.timeout or task["timeout"]);base.update(exit_code=p.returncode,stdout=p.stdout[-MAX_OUTPUT:],stderr=p.stderr[-MAX_OUTPUT:])
             if result_file.exists():base.update(parse_result(result_file))
             else:base.update(status="failure",failure_reason="agent did not create result file")
         except subprocess.TimeoutExpired as e:base.update(exit_code=None,timed_out=True,status="failure",failure_reason="agent timed out",stdout=str(e.stdout or "")[-MAX_OUTPUT:],stderr=str(e.stderr or "")[-MAX_OUTPUT:])
@@ -88,7 +88,7 @@ def run(tasks,runner,conditions,output,dry_run=False):
     if not dry_run:summary=summarize(results);(output/"summary.json").write_text(json.dumps(summary,indent=2)+"\n");write_report(results,summary,output/"report.md")
     return results
 def main(argv=None):
-    p=argparse.ArgumentParser();p.add_argument("--manifest",default="evaluation/tasks.json");p.add_argument("--condition",choices=("with_ckg","without_ckg","both"),default="both");p.add_argument("--output",default="results/");p.add_argument("--dry-run",action="store_true");p.add_argument("--agent-command");p.add_argument("--pilot",action="store_true");p.add_argument("--preflight",action="store_true");a=p.parse_args(argv);tasks=load_tasks(a.manifest)
+    p=argparse.ArgumentParser();p.add_argument("--manifest",default="evaluation/tasks.json");p.add_argument("--condition",choices=("with_ckg","without_ckg","both"),default="both");p.add_argument("--output",default="results/");p.add_argument("--dry-run",action="store_true");p.add_argument("--agent-command");p.add_argument("--pilot",action="store_true");p.add_argument("--preflight",action="store_true");p.add_argument("--timeout",type=int,help="per-run timeout in seconds, overriding each task's manifest value");a=p.parse_args(argv);tasks=load_tasks(a.manifest)
     if a.pilot:
         pilot=[]
         for language in ("python","javascript"):
@@ -107,5 +107,5 @@ def main(argv=None):
                     except Exception as e:statuses.append(f"{condition}=FAIL ({e})")
             print(f"{task['id']} fixture={task['fixture']} " + " ".join(statuses))
         return 0
-    run(tasks,SubprocessAgentRunner(a.agent_command) if a.agent_command else FakeAgentRunner(),conditions,Path(a.output),a.dry_run);return 0
+    run(tasks,SubprocessAgentRunner(a.agent_command,a.timeout) if a.agent_command else FakeAgentRunner(),conditions,Path(a.output),a.dry_run);return 0
 if __name__=="__main__":raise SystemExit(main())

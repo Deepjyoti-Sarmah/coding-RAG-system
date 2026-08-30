@@ -46,6 +46,8 @@ class AbEvaluationTests(unittest.TestCase):
             path = Path(d) / "result.json"
             path.write_text(json.dumps({"status":"failure", "changed_files":[], "files_found":[], "symbols_found":[], "input_tokens":None, "output_tokens":None, "total_tokens":None, "tool_calls":None}))
             self.assertIsNone(parse_result(path)["total_tokens"])
+            path.write_text(json.dumps({"status":"success", "changed_files":[], "files_found":[], "symbols_found":[], "tests_passed":None}))
+            self.assertIsNone(parse_result(path)["tests_passed"])
             path.write_text("not json")
             with self.assertRaises(ValueError): parse_result(path)
             path.write_text(json.dumps({"status":"success", "changed_files":[], "files_found":[], "symbols_found":[], "input_tokens":-1}))
