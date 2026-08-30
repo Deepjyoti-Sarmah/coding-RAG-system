@@ -510,11 +510,7 @@ def _print_eval_report(report: EvaluationReport) -> None:
     print(f"import resolution accuracy: {report.import_resolution_accuracy:.2f}")
     print(f"mean recall@k:              {report.mean_recall_at_k:.2f}")
     print(f"mean reciprocal rank:       {report.mean_reciprocal_rank:.2f}")
-    print(
-        f"context tokens:             {report.context_tokens} "
-        f"(baseline {report.baseline_tokens}, "
-        f"{report.token_reduction * 100:.1f}% reduction)"
-    )
+    print(f"context tokens:             {report.context_tokens} (baseline {report.baseline_tokens})")
     print(
         f"initial indexing:           {report.initial_indexing_seconds * 1000:.1f} ms"
     )

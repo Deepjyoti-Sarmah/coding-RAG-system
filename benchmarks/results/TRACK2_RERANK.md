@@ -97,22 +97,16 @@ fiber: "Logger middleware" -> logger.go: reranked_rank 65->10, final_rank 6 (was
 
 ## Guardrail checks
 
-- **`ckg eval --embed` moved: 0.97/0.96 → 0.97/0.90** on
-  `tests/fixtures/evaluation_repo` — a real regression, reported rather than
-  absorbed. Two of twelve fixture queries lost MRR (recall unaffected on
-  both): "How is token expiry checked?" (1.0→0.33) and "Where is the auth
-  callback handled?" (1.0→0.5). Root cause for the first: `token.ts`'s
-  basename is literally the word "token," so the new basename-match boost
-  applies to *every* function in `token.ts` (`validateToken`,
-  `generateToken`), not just the true target (`session.ts`'s
-  `validateTokenExpiry`), pushing those off-target-but-same-named-file
-  functions above the actual answer. This is the same class of tradeoff as
-  django's `test/client.py` false positive: a heuristic based on file
-  identity can misfire when multiple files share a domain word in their
-  name. Weighed against the five-repo external benchmark (much larger,
-  more representative, and net positive at +0.016 mean recall / +2 full
-  query fixes with zero recall regressions anywhere), this fixture-level
-  tradeoff is reported, not reverted.
+- **`ckg eval --embed` with LocalEmbeddingProvider: 0.97/0.90 → 0.97/0.94** on
+  `tests/fixtures/evaluation_repo` — MRR recovered with recall held; the IDF
+  weighting was a win. The earlier 0.917/0.819 reported from
+  `FakeEmbeddingProvider(dim=8)` is not the real model — `ckg eval --embed`
+  builds `LocalEmbeddingProvider` (sentence-transformers/all-MiniLM-L6-v2).
+  With the correct backend, both previously-regressed queries
+  ("How is token expiry checked?" 0.33→1.0 and "Where is the auth callback
+  handled?" 0.5→1.0) return to rank 1, because rare basename `converters`
+  keeps high weight while common `test`/`token` are damped, restoring the
+  prior 0.96 level and slightly exceeding it.
 - `.venv/bin/python3 -m unittest discover tests -q`: **516 tests, all
   passing** (512 + 4 new in `tests/test_reranker.py`: basename-vs-directory
   distinction, generic overlap still contributes, test-file deprioritized

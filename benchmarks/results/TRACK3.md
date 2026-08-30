@@ -28,7 +28,7 @@ no chunks, and (unlike a definition-free file) no trace it was ever seen.
    seen at all. The skip *decision* is unchanged (same condition, same
    return value); only a print was added.
 
-## Before → after
+## Before → after (1MB cap, commit f4b6e4f)
 
 | repo | before R@10 | after R@10 | delta | before MRR | after MRR | before index | after index |
 |---|---|---|---|---|---|---|---|
@@ -41,6 +41,14 @@ no chunks, and (unlike a definition-free file) no trace it was ever seen.
 express and chi weren't re-run: neither has any file within 5x of either
 size cap in its benchmarked subtree, so there is nothing for this change to
 affect.
+
+## Correction: 500KB cap (current)
+
+Re-measured at `MAX_FILE_SIZE_BYTES = 500_000` (commit dedf4ce):
+
+- **fastapi holds 0.925** — routing.py (256KB) still comfortably indexed, +0.100 retained.
+- **fiber unchanged at ~158s**, **2.5× the 63.5s recorded at the 1MB cap in a clean run** — 500KB was chosen to keep the FastAPI gain, and it did not help fiber because `ctx_test.go` (330KB) remains under the limit and is still parsed. The earlier “return toward ~35s” prediction was incorrect; 500KB does not exclude the file that caused the +86% cost at 1MB.
+- No other repo affected (no files between 500KB and 1M in benchmarked subtrees).
 
 **FastAPI: a real, substantial recovery**, exactly as the task predicted
 ("expect this to recover one FastAPI query and part of a second").
