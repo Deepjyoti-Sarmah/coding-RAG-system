@@ -1,6 +1,6 @@
 """Task-level A/B runner using a file-based real-agent protocol."""
 from __future__ import annotations
-import argparse,json,os,shutil,subprocess,tempfile,time
+import argparse,json,os,shutil,subprocess,tempfile,time,sys
 from pathlib import Path
 from .ab_metrics import score,summarize,write_report
 
@@ -27,14 +27,18 @@ class SubprocessAgentRunner(AgentRunner):
     def __init__(self,template):self.template=template
     def run(self,task,condition,worktree):
         run_dir=Path(tempfile.mkdtemp(prefix="agent-run-",dir=worktree));prompt=run_dir/"prompt.txt";result_file=run_dir/"result.json";prompt.write_text(task["prompt"],encoding="utf-8")
-        env=os.environ.copy();env.update(CKG_AB_TASK_ID=task["id"],CKG_AB_CONDITION=condition,CKG_AB_WORKTREE=str(worktree),CKG_AB_PROMPT_FILE=str(prompt),CKG_AB_RESULT_FILE=str(result_file),CKG_AB_PROJECT=str(worktree));started=time.monotonic()
+        env=os.environ.copy();env.update(CKG_AB_TASK_ID=task["id"],CKG_AB_CONDITION=condition,CKG_AB_WORKTREE=str(worktree),CKG_AB_PROMPT_FILE=str(prompt),CKG_AB_RESULT_FILE=str(result_file),CKG_AB_PROJECT=str(worktree))
+        config=worktree/".mcp.json"; index=worktree/".ckg"/"index.sqlite"
+        if condition=="with_ckg" and config.exists() and index.exists(): env.update(CKG_AB_MCP_CONFIG=str(config),CKG_AB_INDEX=str(index))
+        else: env.pop("CKG_AB_MCP_CONFIG",None);env.pop("CKG_AB_INDEX",None)
+        started=time.monotonic()
         base={"files_changed":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"stdout":"","stderr":"","timed_out":False}
         try:
             p=subprocess.run(self.template,shell=True,cwd=worktree,env=env,text=True,capture_output=True,timeout=task["timeout"]);base.update(exit_code=p.returncode,stdout=p.stdout[-MAX_OUTPUT:],stderr=p.stderr[-MAX_OUTPUT:])
             if result_file.exists():base.update(parse_result(result_file))
             else:base.update(status="failure",failure_reason="agent did not create result file")
         except subprocess.TimeoutExpired as e:base.update(exit_code=None,timed_out=True,status="failure",failure_reason="agent timed out",stdout=str(e.stdout or "")[-MAX_OUTPUT:],stderr=str(e.stderr or "")[-MAX_OUTPUT:])
-        except ValueError as e:base.update(exit_code=locals().get("p",None) and p.returncode,status="failure",failure_reason=str(e))
+        except ValueError as e:base.update(exit_code=p.returncode if "p" in locals() else None,status="failure",failure_reason=str(e))
         base["elapsed_seconds"]=time.monotonic()-started
         base["files_changed"]=_git_changed(worktree) if not base.get("changed_files") else base["changed_files"];shutil.rmtree(run_dir,ignore_errors=True);return base
 def _git_changed(worktree):
@@ -47,7 +51,8 @@ class FakeAgentRunner(AgentRunner):
 def load_tasks(path):
     tasks=json.loads(Path(path).read_text());assert len(tasks)==20,"manifest must contain exactly 20 tasks";return tasks
 def _provision_ckg(worktree):
-    db=worktree/".ckg"/"index.sqlite";subprocess.run([os.environ.get("PYTHON","python"),"-m","ckg.cli","index",str(worktree)],cwd=worktree,capture_output=True,timeout=120,check=True);config=worktree/".ckg"/"ab-mcp.json";config.write_text(json.dumps({"command":"ckg-mcp","project":str(worktree)}));return db,config
+    db=worktree/".ckg"/"index.sqlite";subprocess.run([sys.executable,"-m","ckg.cli","index",str(worktree)],cwd=Path(__file__).resolve().parents[1],capture_output=True,timeout=120,check=True);config=worktree/".mcp.json";config.write_text(json.dumps({"mcpServers":{"ckg":{"command":"ckg-mcp"}}}));
+    parsed=json.loads(config.read_text());assert parsed["mcpServers"]["ckg"]["command"]=="ckg-mcp" and db.exists();return db,config
 def run(tasks,runner,conditions,output,dry_run=False):
     output.mkdir(parents=True,exist_ok=True);raw=output/"runs.jsonl";done={}
     if raw.exists():
@@ -69,5 +74,11 @@ def run(tasks,runner,conditions,output,dry_run=False):
     if not dry_run:summary=summarize(results);(output/"summary.json").write_text(json.dumps(summary,indent=2)+"\n");write_report(results,summary,output/"report.md")
     return results
 def main(argv=None):
-    p=argparse.ArgumentParser();p.add_argument("--manifest",default="evaluation/tasks.json");p.add_argument("--condition",choices=("with_ckg","without_ckg","both"),default="both");p.add_argument("--output",default="results/");p.add_argument("--dry-run",action="store_true");p.add_argument("--agent-command");a=p.parse_args(argv);conditions=("with_ckg","without_ckg") if a.condition=="both" else (a.condition,);run(load_tasks(a.manifest),SubprocessAgentRunner(a.agent_command) if a.agent_command else FakeAgentRunner(),conditions,Path(a.output),a.dry_run);return 0
+    p=argparse.ArgumentParser();p.add_argument("--manifest",default="evaluation/tasks.json");p.add_argument("--condition",choices=("with_ckg","without_ckg","both"),default="both");p.add_argument("--output",default="results/");p.add_argument("--dry-run",action="store_true");p.add_argument("--agent-command");p.add_argument("--pilot",action="store_true");a=p.parse_args(argv);tasks=load_tasks(a.manifest)
+    if a.pilot:
+        pilot=[]
+        for language in ("python","javascript"):
+            pilot.append(next(x for x in tasks if x["language"]==language))
+        tasks=pilot
+    conditions=("with_ckg","without_ckg") if a.condition=="both" else (a.condition,);run(tasks,SubprocessAgentRunner(a.agent_command) if a.agent_command else FakeAgentRunner(),conditions,Path(a.output),a.dry_run);return 0
 if __name__=="__main__":raise SystemExit(main())

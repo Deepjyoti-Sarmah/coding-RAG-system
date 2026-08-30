@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from evaluation.ab_metrics import score, summarize
-from evaluation.ab_runner import FakeAgentRunner, SubprocessAgentRunner, load_tasks, parse_result, run
+from evaluation.ab_runner import FakeAgentRunner, SubprocessAgentRunner, _provision_ckg, load_tasks, parse_result, run
 
 
 class AbEvaluationTests(unittest.TestCase):
@@ -54,6 +54,20 @@ class AbEvaluationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             result = SubprocessAgentRunner("true").run(task, "without_ckg", Path(d))
             self.assertIn("result file", result["failure_reason"])
+
+    def test_ckg_provisioning_is_standard_and_external(self):
+        with tempfile.TemporaryDirectory() as d:
+            work = Path(d) / "repo"
+            import shutil
+            shutil.copytree("tests/fixtures/session_repo", work)
+            index, config = _provision_ckg(work)
+            self.assertTrue(index.exists())
+            self.assertEqual(json.loads(config.read_text()), {"mcpServers": {"ckg": {"command": "ckg-mcp"}}})
+
+    def test_pilot_selects_exactly_python_and_javascript(self):
+        tasks = load_tasks("evaluation/tasks.json")
+        selected = [next(x for x in tasks if x["language"] == language) for language in ("python", "javascript")]
+        self.assertEqual(len(selected), 2)
 
 
 if __name__ == "__main__": unittest.main()

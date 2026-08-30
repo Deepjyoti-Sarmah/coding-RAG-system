@@ -1501,7 +1501,8 @@ The canonical command template is:
 AGENT_CMD='my-agent \
   --worktree "$CKG_AB_WORKTREE" \
   --prompt-file "$CKG_AB_PROMPT_FILE" \
-  --result-file "$CKG_AB_RESULT_FILE"'
+  --result-file "$CKG_AB_RESULT_FILE" \
+  --mcp-config "$CKG_AB_MCP_CONFIG"'
 ckg eval-ab --agent-command "$AGENT_CMD" --condition both --output results/
 ```
 
@@ -1511,4 +1512,4 @@ The runner sets `CKG_AB_TASK_ID`, `CKG_AB_CONDITION`, `CKG_AB_WORKTREE`, `CKG_AB
 {"status":"success","changed_files":["src/auth.py"],"symbols_found":["login"],"input_tokens":1200,"output_tokens":350,"total_tokens":1550,"tool_calls":8,"tests_passed":true,"notes":"Located login and its caller."}
 ```
 
-`status` is required (`success` or `failure`); file and symbol fields are string arrays; metric fields are nullable non-negative integers; notes are bounded. The runner never infers tokens, symbols, or tool calls. It uses `git diff --name-only` only as a changed-file fallback. For `with_ckg`, it indexes the isolated worktree and writes `.ckg/ab-mcp.json`; agents should discover CKG using `CKG_AB_PROJECT` and invoke `ckg-mcp` from the supplied configuration. `without_ckg` creates neither index nor MCP configuration. No benchmark result exists until a real agent is run, and no productivity claim is made.
+`status` is required (`success` or `failure`); file and symbol fields are string arrays; metric fields are nullable non-negative integers; notes are bounded. The runner never infers tokens, symbols or tool calls. It uses `git diff --name-only` only as a changed-file fallback. For `with_ckg`, it indexes the isolated worktree and creates this standard configuration at `$CKG_AB_MCP_CONFIG` (also discoverable as `$CKG_AB_WORKTREE/.mcp.json`): `{ "mcpServers": { "ckg": { "command": "ckg-mcp" } } }`. The agent can use `$CKG_AB_PROJECT` and `$CKG_AB_INDEX` to target the indexed project. `without_ckg` exposes neither those variables nor an index/config. Use `--pilot` for exactly one Python and one JavaScript task per condition. No benchmark result exists until a real agent is run, and no productivity claim is made.
