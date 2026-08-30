@@ -6,3 +6,4 @@ class RelationshipKind(Enum):
     EXTENDS = "extends"
     IMPLEMENTS = "implements"
     DECLARES = "declares"
+    DEFINITION_OF = "definition_of"

@@ -17,5 +17,7 @@ def build_stable_key(
     language: str,
     qualified_name: str,
     kind: SymbolKind,
+    identity_discriminator: str = "",
 ) -> str:
-    return f"{relative_path}|{language}|{qualified_name}|{kind.value}"
+    suffix = f"|{identity_discriminator}" if identity_discriminator else ""
+    return f"{relative_path}|{language}|{qualified_name}|{kind.value}{suffix}"

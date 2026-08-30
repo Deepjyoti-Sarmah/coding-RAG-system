@@ -22,6 +22,7 @@ def build_symbol(
     kind: SymbolKind,
     document: Document,
     owner: Symbol | None = None,
+    identity_discriminator: str = "",
 ) -> Symbol:
 
     content = node_text(node)
@@ -54,5 +55,6 @@ def build_symbol(
             language=document.language,
             qualified_name=qualified_name,
             kind=kind,
+            identity_discriminator=identity_discriminator,
         ),
     )
