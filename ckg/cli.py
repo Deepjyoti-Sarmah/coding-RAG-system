@@ -708,6 +708,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = session_sub.add_parser("export"); p.add_argument("path", nargs="?", default="."); p.add_argument("session_id", nargs="?"); p.add_argument("--format", choices=("json", "markdown"), default="json")
     p = session_sub.add_parser("prune"); p.add_argument("path", nargs="?", default="."); p.add_argument("--days", type=int, required=True)
 
+    dashboard = subparsers.add_parser("dashboard", help="serve the local read-only dashboard")
+    dashboard.add_argument("path", nargs="?", default=".")
+    dashboard.add_argument("--host", default="127.0.0.1")
+    dashboard.add_argument("--port", type=int, default=8765)
+    dashboard.add_argument("--no-browser", action="store_true")
+    dashboard.add_argument("--allow-remote", action="store_true", help="allow non-local binding (unsafe)")
+
     return parser
 
 
@@ -728,6 +735,20 @@ def main(argv: list[str] | None = None) -> int:
             _require_dir(args.path)
         elif args.command not in ("eval",) and hasattr(args, "path"):
             _require_dir(args.path)
+
+        if args.command == "dashboard":
+            if args.host not in ("127.0.0.1", "localhost", "::1") and not args.allow_remote:
+                print("Refusing remote dashboard binding without --allow-remote", file=sys.stderr); return 1
+            from ckg.dashboard.server import create_server
+            import webbrowser
+            server = create_server(args.path, args.host, args.port)
+            print(f"CKG dashboard: http://{args.host}:{args.port}/ (local read-only; do not expose publicly)")
+            if not args.no_browser:
+                webbrowser.open(f"http://{args.host}:{args.port}/")
+            try: server.serve_forever()
+            except KeyboardInterrupt: pass
+            finally: server.server_close()
+            return 0
 
         if args.command == "sessions":
             service = SessionService(args.path)

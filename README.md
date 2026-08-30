@@ -1459,3 +1459,14 @@ ckg sessions prune . --days 30
 MCP clients can use `session_start`, `session_status`, `session_recall`, `session_timeline`, `record_decision`, and `record_code_area`; `session_end` closes the active session. Omitting a session ID resumes or creates the active session for that normalized project path.
 
 Only bounded explicit text and compact retrieval identifiers/metrics are stored. Raw source, complete tool output, transcripts, secrets, and environment variables are not stored. Use `ckg sessions prune` for age-based retention, or delete `.ckg/session.sqlite` to remove the local memory entirely.
+
+## Local dashboard
+
+Start the read-only dashboard from an indexed or unindexed project:
+
+```bash
+ckg dashboard . --no-browser
+# open http://127.0.0.1:8765/
+```
+
+It shows index health and counts, recent sessions, decisions, code areas, retrieval activity, token comparisons, and compact symbol search results. It uses only Python’s standard-library HTTP server and keeps session memory in `.ckg/session.sqlite`. The server binds to localhost by default; stop it with Ctrl-C and do not expose it publicly. Remote binding requires the explicit `--allow-remote` flag and is unsafe without additional access controls. Token savings are observational dashboard metrics, not an A/B productivity claim.
