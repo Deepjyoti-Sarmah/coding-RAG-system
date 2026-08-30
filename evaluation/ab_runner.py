@@ -4,7 +4,7 @@ import argparse,json,os,shutil,subprocess,tempfile,time,sys
 from pathlib import Path
 from .ab_metrics import score,summarize,write_report
 
-MAX_OUTPUT=8000; METRICS=("input_tokens","output_tokens","total_tokens","tool_calls")
+MAX_OUTPUT=8000; METRICS=("input_tokens","output_tokens","total_tokens","tool_calls","ckg_tools_used","ckg_queries")
 class AgentRunner:
     def run(self,task,condition,worktree): raise NotImplementedError
 
@@ -17,7 +17,7 @@ def parse_result(path):
     except FileNotFoundError as e:raise ValueError("agent did not create result file") from e
     except (json.JSONDecodeError,OSError) as e:raise ValueError(f"malformed result JSON: {e}") from e
     if not isinstance(data,dict) or data.get("status") not in ("success","failure"):raise ValueError("result status must be success or failure")
-    for key in ("changed_files","symbols_found"):
+    for key in ("changed_files","files_found","symbols_found"):
         if key not in data or not isinstance(data[key],list) or not all(isinstance(x,str) for x in data[key]):raise ValueError(f"{key} must be an array of strings")
     for key in METRICS:data[key]=_metric(data.get(key),key)
     if "tests_passed" in data and not isinstance(data["tests_passed"],bool):raise ValueError("tests_passed must be boolean")
@@ -32,7 +32,7 @@ class SubprocessAgentRunner(AgentRunner):
         if condition=="with_ckg" and config.exists() and index.exists(): env.update(CKG_AB_MCP_CONFIG=str(config),CKG_AB_INDEX=str(index))
         else: env.pop("CKG_AB_MCP_CONFIG",None);env.pop("CKG_AB_INDEX",None)
         started=time.monotonic()
-        base={"files_changed":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"stdout":"","stderr":"","timed_out":False}
+        base={"files_changed":[],"files_found":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"ckg_tools_used":None,"ckg_queries":None,"stdout":"","stderr":"","timed_out":False}
         try:
             p=subprocess.run(self.template,shell=True,cwd=worktree,env=env,text=True,capture_output=True,timeout=task["timeout"]);base.update(exit_code=p.returncode,stdout=p.stdout[-MAX_OUTPUT:],stderr=p.stderr[-MAX_OUTPUT:])
             if result_file.exists():base.update(parse_result(result_file))
@@ -47,7 +47,7 @@ def _git_changed(worktree):
 
 class FakeAgentRunner(AgentRunner):
     def run(self,task,condition,worktree):
-        ok=condition=="with_ckg" or task["id"] in {"py-auth","js-auth","go-auth"};data={"status":"success" if ok else "failure","changed_files":task["expected_files"] if ok else [],"symbols_found":task["expected_symbols"] if ok else [],"input_tokens":100,"output_tokens":30,"total_tokens":130,"tool_calls":2 if condition=="with_ckg" else 0,"tests_passed":ok,"notes":"deterministic fake"};path=Path(worktree)/"fake-result.json";path.write_text(json.dumps(data));parsed=parse_result(path);parsed["files_changed"]=parsed["changed_files"];return dict(parsed,exit_code=0 if ok else 1,elapsed_seconds=.01)
+        ok=condition=="with_ckg" or task["id"] in {"py-auth","js-auth","go-auth"};data={"status":"success" if ok else "failure","changed_files":[],"files_found":task["expected_files"] if ok else [],"symbols_found":task["expected_symbols"] if ok else [],"input_tokens":100,"output_tokens":30,"total_tokens":130,"tool_calls":2 if condition=="with_ckg" else 0,"ckg_tools_used":None,"ckg_queries":None,"tests_passed":ok,"notes":"deterministic fake"};path=Path(worktree)/"fake-result.json";path.write_text(json.dumps(data));parsed=parse_result(path);parsed["files_changed"]=parsed["changed_files"];return dict(parsed,exit_code=0 if ok else 1,elapsed_seconds=.01)
 def load_tasks(path):
     tasks=json.loads(Path(path).read_text());assert len(tasks)==20,"manifest must contain exactly 20 tasks";return tasks
 def _provision_ckg(worktree):
@@ -79,7 +79,7 @@ def run(tasks,runner,conditions,output,dry_run=False):
                         try:
                             db,config=_provision_ckg(work);_validate_condition(work,condition);ckg={"enabled":True,"index":str(db),"mcp_config":str(config)}
                         except Exception as e:
-                            result={"status":"failure","exit_code":None,"files_changed":[],"symbols_found":[],"infrastructure_failure":True,"failure_reason":f"CKG provisioning failed: {str(e)[:2000]}","ckg_retrieval":{"enabled":False},"elapsed_seconds":0,"timed_out":False}
+                            result={"status":"failure","exit_code":None,"files_changed":[],"files_found":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"ckg_tools_used":None,"ckg_queries":None,"infrastructure_failure":True,"failure_reason":f"CKG provisioning failed: {str(e)[:2000]}","ckg_retrieval":{"enabled":False},"elapsed_seconds":0,"timed_out":False}
                             result.update(task_id=task["id"],language=task["language"],condition=condition);result["success"]=False
                             fh.write(json.dumps(result,separators=(",",":"))+"\n");fh.flush();results.append(result);continue
                     else: _validate_condition(work,condition)

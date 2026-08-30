@@ -21,6 +21,7 @@ class AbEvaluationTests(unittest.TestCase):
             results = run(tasks, FakeAgentRunner(), ("with_ckg", "without_ckg"), out)
             self.assertEqual(len(results), 4)
             self.assertTrue(any(x["success"] for x in results))
+            self.assertTrue(all("files_found" in x and x["changed_files"] == [] for x in results))
             self.assertTrue((out / "summary.json").exists())
             resumed = run(tasks, FakeAgentRunner(), ("with_ckg", "without_ckg"), out)
             self.assertEqual(len(resumed), 4)
@@ -33,7 +34,7 @@ class AbEvaluationTests(unittest.TestCase):
 
     def test_scoring_requires_files_and_symbols(self):
         task = load_tasks("evaluation/tasks.json")[0]
-        result = score(task, {"exit_code": 0, "files_changed": [], "symbols_found": []})
+        result = score(task, {"exit_code": 0, "files_changed": [], "files_found": [], "symbols_found": []})
         self.assertFalse(result["success"])
 
     def test_metrics_do_not_fabricate_missing_tokens(self):
@@ -43,11 +44,11 @@ class AbEvaluationTests(unittest.TestCase):
     def test_result_protocol_validation_and_nullable_metrics(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "result.json"
-            path.write_text(json.dumps({"status":"failure", "changed_files":[], "symbols_found":[], "input_tokens":None, "output_tokens":None, "total_tokens":None, "tool_calls":None}))
+            path.write_text(json.dumps({"status":"failure", "changed_files":[], "files_found":[], "symbols_found":[], "input_tokens":None, "output_tokens":None, "total_tokens":None, "tool_calls":None}))
             self.assertIsNone(parse_result(path)["total_tokens"])
             path.write_text("not json")
             with self.assertRaises(ValueError): parse_result(path)
-            path.write_text(json.dumps({"status":"success", "changed_files":[], "symbols_found":[], "input_tokens":-1}))
+            path.write_text(json.dumps({"status":"success", "changed_files":[], "files_found":[], "symbols_found":[], "input_tokens":-1}))
             with self.assertRaises(ValueError): parse_result(path)
 
     def test_missing_result_and_timeout_are_explicit(self):
