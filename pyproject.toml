@@ -12,7 +12,6 @@ dependencies = [
     "mcp>=2.0.0",
     "numpy>=2.0",
     "pathspec>=1.1.1",
-    "sentence-transformers>=3.0",
     "sqlite-vec>=0.1.9",
     "tiktoken>=0.14",
     "tree-sitter>=0.25.2",
@@ -22,22 +21,23 @@ dependencies = [
     "watchdog>=6.0",
 ]
 
+[project.optional-dependencies]
+local = ["sentence-transformers>=3.0"]
+
 [project.scripts]
-ckg = "cli:main"
-ckg-mcp = "mcp_server:main"
+ckg = "ckg.cli:main"
+ckg-mcp = "ckg.mcp_server:main"
 
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
 ]
 
-[tool.hatch.build]
-force-include = { "cli.py" = "cli.py", "mcp_server.py" = "mcp_server.py", "config.py" = "config.py" }
-
 [tool.hatch.build.targets.wheel]
 packages = [
     "analysis",
     "chunking",
+    "ckg",
     "embeddings",
     "evaluation",
     "graph",

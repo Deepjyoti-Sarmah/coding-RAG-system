@@ -2,7 +2,7 @@ from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 
-from cli import (
+from ckg.cli import (
     cmd_callees,
     cmd_callers,
     cmd_context,

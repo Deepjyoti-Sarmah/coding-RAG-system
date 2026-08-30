@@ -1,6 +1,6 @@
 import unittest
 
-from config import INCLUDE_EXTENSIONS
+from ckg.config import INCLUDE_EXTENSIONS
 from ingestion.language import detect_language
 from parsing.registry import PARSER
 

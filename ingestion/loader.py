@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from uuid import uuid4
 
-from config import (
+from ckg.config import (
     EXCLUDE_DIRS,
     INCLUDE_EXTENSIONS,
     MAX_FILE_SIZE_BYTES,

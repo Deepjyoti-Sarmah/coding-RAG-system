@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from cli import (
+from ckg.cli import (
     build_parser,
     cmd_callees,
     cmd_callers,

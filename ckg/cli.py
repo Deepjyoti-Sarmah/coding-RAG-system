@@ -36,7 +36,7 @@ def _get_version() -> str:
     try:
         import tomllib  # Python 3.11+
 
-        pyproject = Path(__file__).with_name("pyproject.toml")
+        pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
         if pyproject.exists():
             with pyproject.open("rb") as fh:
                 data = tomllib.load(fh)

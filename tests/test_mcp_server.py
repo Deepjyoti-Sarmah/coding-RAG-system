@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import mcp_server
+import ckg.mcp_server as mcp_server
 from embeddings.fake_provider import FakeEmbeddingProvider
 
 AUTH = {
