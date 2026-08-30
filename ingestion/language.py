@@ -8,6 +8,14 @@ EXTENSION_TO_LANGUAGE = {
     ".java": "java",
     ".rs": "rust",
     ".cs": "csharp",
+    ".c": "c",
+    ".h": "c",
+    ".cpp": "cpp",
+    ".cc": "cpp",
+    ".cxx": "cpp",
+    ".hpp": "cpp",
+    ".hh": "cpp",
+    ".hxx": "cpp",
 }
 
 

@@ -12,6 +12,8 @@ Resolver = Callable[[str, str], list[str]]
 
 _TYPESCRIPT_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx")
 _PYTHON_EXTENSIONS = (".py",)
+_C_EXTENSIONS = (".h", ".c")
+_CPP_EXTENSIONS = (".hpp", ".hh", ".hxx", ".cpp", ".cc", ".cxx")
 
 
 def _resolve_typescript(module_path: str, importing_directory: str) -> list[str]:
@@ -65,6 +67,15 @@ def _resolve_go(module_path: str, importing_directory: str) -> list[str]:
         return []
 
     return [module_path + ".go"]
+
+
+def _resolve_c_include(module_path: str, importing_directory: str, extensions: tuple[str, ...]) -> list[str]:
+    if not module_path or module_path.startswith("<"):
+        return []
+    joined = posixpath.normpath(posixpath.join(importing_directory, module_path))
+    if posixpath.splitext(joined)[1]:
+        return [joined]
+    return [joined + extension for extension in extensions] + [module_path + extension for extension in extensions]
 
 
 _JAVA_SOURCE_ROOTS = ("src/main/java/", "src/test/java/", "")
@@ -154,6 +165,8 @@ RESOLVERS: dict[str, Resolver] = {
     "go": _resolve_go,
     "java": _resolve_java,
     "rust": _resolve_rust,
+    "c": lambda module_path, importing_directory: _resolve_c_include(module_path, importing_directory, _C_EXTENSIONS),
+    "cpp": lambda module_path, importing_directory: _resolve_c_include(module_path, importing_directory, _CPP_EXTENSIONS + _C_EXTENSIONS),
 }
 
 

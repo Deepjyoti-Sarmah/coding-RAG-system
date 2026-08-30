@@ -193,6 +193,36 @@ _PROFILES["csharp"] = LanguageProfile(
     ),
 )
 
+_C_PROFILE = dict(
+    member_node="field_expression",
+    member_object_field="argument",
+    member_property_field="field",
+    identifier_nodes=frozenset({"identifier", "field_identifier", "type_identifier"}),
+    heritage_only_nodes=frozenset(),
+    extends_parents=frozenset(),
+    implements_parents=frozenset(),
+    call_parent="call_expression",
+    call_function_field="function",
+    declaration_member_types=frozenset({"field_declaration"}),
+)
+
+_PROFILES["c"] = LanguageProfile(
+    language="c", symbol_handlers=symbol_handlers_for("c"),
+    import_handlers=import_handlers_for("c"), export_handlers=export_handlers_for("c"),
+    **_C_PROFILE,
+)
+
+_PROFILES["cpp"] = LanguageProfile(
+    language="cpp", symbol_handlers=symbol_handlers_for("cpp"),
+    import_handlers=import_handlers_for("cpp"), export_handlers=export_handlers_for("cpp"),
+    member_node="field_expression", member_object_field="argument", member_property_field="field",
+    identifier_nodes=frozenset({"identifier", "field_identifier", "type_identifier", "namespace_identifier"}),
+    heritage_only_nodes=frozenset({"type_identifier"}),
+    extends_parents=frozenset({"base_class_clause"}),
+    implements_parents=frozenset(), call_parent="call_expression", call_function_field="function",
+    declaration_member_types=frozenset({"field_declaration", "declaration"}),
+)
+
 
 def profile_for(language: str) -> LanguageProfile | None:
     return _PROFILES.get(language)

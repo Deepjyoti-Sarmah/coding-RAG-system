@@ -8,6 +8,14 @@ INCLUDE_EXTENSIONS = {
     ".java",
     ".rs",
     ".cs",
+    ".c",
+    ".h",
+    ".cpp",
+    ".cc",
+    ".cxx",
+    ".hpp",
+    ".hh",
+    ".hxx",
 }
 
 EXCLUDE_DIRS = {

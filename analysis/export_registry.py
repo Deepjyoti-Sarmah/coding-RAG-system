@@ -2,6 +2,7 @@ from collections.abc import Callable
 
 from analysis.export_handlers.declaration import handle_export_statement
 from analysis.export_handlers.cs_exports import handle_cs_exports
+from analysis.export_handlers.c_local import handle_c_export
 from analysis.export_handlers.go_exports import handle_go_exports
 from analysis.export_handlers.java_exports import handle_java_exports
 from analysis.export_handlers.python_exports import handle_python_top_level
@@ -55,6 +56,23 @@ EXPORT_HANDLERS_BY_LANGUAGE["rust"] = {
     "type_item": handle_rust_exports,
     "const_item": handle_rust_exports,
     "mod_item": handle_rust_exports,
+}
+
+EXPORT_HANDLERS_BY_LANGUAGE["c"] = {
+    "function_definition": handle_c_export,
+    "declaration": handle_c_export,
+    "struct_specifier": handle_c_export,
+    "enum_specifier": handle_c_export,
+    "union_specifier": handle_c_export,
+    "type_definition": handle_c_export,
+}
+EXPORT_HANDLERS_BY_LANGUAGE["cpp"] = {
+    "function_definition": handle_c_export,
+    "declaration": handle_c_export,
+    "class_specifier": handle_c_export,
+    "struct_specifier": handle_c_export,
+    "enum_specifier": handle_c_export,
+    "namespace_definition": handle_c_export,
 }
 
 

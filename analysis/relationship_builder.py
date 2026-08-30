@@ -38,6 +38,9 @@ def build_relationships(
     for relationship in build_declares_relationships(symbols=symbols or []):
         _accumulate(relationships, relationship)
 
+    for relationship in build_definition_relationships(symbols=symbols or []):
+        _accumulate(relationships, relationship)
+
     return list(relationships.values())
 
 
@@ -73,6 +76,31 @@ def build_declares_relationships(*, symbols: list[Symbol]) -> list[Relationship]
         if symbol.parent_symbol_id is not None
         and symbol.parent_symbol_id in symbol_ids
     ]
+
+
+def build_definition_relationships(*, symbols: list[Symbol]) -> list[Relationship]:
+    """Link C/C++ function bodies to matching header declarations.
+
+    The stable-key suffix deliberately excludes the source path, while still
+    retaining language, ownership, kind, and callable discriminator.
+    """
+    declarations = {
+        symbol.stable_key.split("|", 1)[1]: symbol
+        for symbol in symbols
+        if symbol.stable_key.split("|", 1)[0].endswith((".h", ".hpp", ".hh", ".hxx"))
+        and "{" not in symbol.content
+    }
+    links: list[Relationship] = []
+    for symbol in symbols:
+        if not symbol.stable_key.split("|", 1)[0].endswith((".c", ".cpp", ".cc", ".cxx")):
+            continue
+        if "{" not in symbol.content:
+            continue
+        suffix = symbol.stable_key.split("|", 1)[1]
+        declaration = declarations.get(suffix)
+        if declaration is not None:
+            links.append(Relationship(symbol.symbol_id, declaration.symbol_id, RelationshipKind.DEFINITION_OF))
+    return links
 
 
 def build_relationship(

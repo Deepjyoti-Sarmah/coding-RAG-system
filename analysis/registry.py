@@ -1,6 +1,12 @@
 from collections.abc import Callable
 
 from analysis.symbol_handlers.classes import handle_class
+from analysis.symbol_handlers.c_callable import (
+    handle_declaration as handle_c_declaration,
+    handle_function as handle_c_function,
+    handle_method as handle_c_method,
+)
+from analysis.symbol_handlers.c_types import handle_namespace, handle_type, handle_variable
 from analysis.symbol_handlers.cs_class import handle_cs_class
 from analysis.symbol_handlers.cs_interface import handle_cs_interface
 from analysis.symbol_handlers.cs_method import handle_cs_method
@@ -101,6 +107,26 @@ SYMBOL_HANDLERS_BY_LANGUAGE["rust"] = {
     "type_item": handle_rust_type,
     "const_item": handle_rust_const,
     "mod_item": handle_rust_mod,
+}
+
+SYMBOL_HANDLERS_BY_LANGUAGE["c"] = {
+    "function_definition": handle_c_function,
+    "declaration": handle_c_declaration,
+    "struct_specifier": handle_type,
+    "enum_specifier": handle_type,
+    "union_specifier": handle_type,
+    "type_definition": handle_type,
+    "init_declarator": handle_variable,
+}
+
+SYMBOL_HANDLERS_BY_LANGUAGE["cpp"] = {
+    "function_definition": handle_c_function,
+    "declaration": handle_c_declaration,
+    "class_specifier": handle_type,
+    "struct_specifier": handle_type,
+    "enum_specifier": handle_type,
+    "namespace_definition": handle_namespace,
+    "field_declaration": handle_c_method,
 }
 
 

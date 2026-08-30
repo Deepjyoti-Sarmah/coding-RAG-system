@@ -2,6 +2,7 @@ from collections.abc import Callable
 
 from analysis.import_handlers.default import handle_default_import
 from analysis.import_handlers.cs_imports import handle_cs_using
+from analysis.import_handlers.c_include import handle_c_include
 from analysis.import_handlers.go_imports import handle_go_import
 from analysis.import_handlers.java_imports import handle_java_import
 from analysis.import_handlers.named import handle_import_specifier
@@ -48,6 +49,9 @@ IMPORT_HANDLERS_BY_LANGUAGE["rust"] = {
 IMPORT_HANDLERS_BY_LANGUAGE["csharp"] = {
     "using_directive": handle_cs_using,
 }
+
+IMPORT_HANDLERS_BY_LANGUAGE["c"] = {"preproc_include": handle_c_include}
+IMPORT_HANDLERS_BY_LANGUAGE["cpp"] = {"preproc_include": handle_c_include}
 
 
 def import_handlers_for(language: str) -> dict[str, ImportHandler]:
