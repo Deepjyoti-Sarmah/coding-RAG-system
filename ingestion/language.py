@@ -7,6 +7,7 @@ EXTENSION_TO_LANGUAGE = {
     ".go": "go",
     ".java": "java",
     ".rs": "rust",
+    ".cs": "csharp",
 }
 
 

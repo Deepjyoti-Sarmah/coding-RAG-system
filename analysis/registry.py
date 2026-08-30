@@ -1,6 +1,10 @@
 from collections.abc import Callable
 
 from analysis.symbol_handlers.classes import handle_class
+from analysis.symbol_handlers.cs_class import handle_cs_class
+from analysis.symbol_handlers.cs_interface import handle_cs_interface
+from analysis.symbol_handlers.cs_method import handle_cs_method
+from analysis.symbol_handlers.cs_property import handle_cs_field, handle_cs_property
 from analysis.symbol_handlers.function import handle_function
 from analysis.symbol_handlers.go_function import (
     handle_go_function,
@@ -76,6 +80,18 @@ SYMBOL_HANDLERS_BY_LANGUAGE["java"] = {
 # registered but returning None) block the reference walker from
 # descending into its methods. Its IMPLEMENTS relationship is produced
 # by a dedicated pass (see `analysis.languages.LanguageProfile.impl_node`).
+SYMBOL_HANDLERS_BY_LANGUAGE["csharp"] = {
+    "class_declaration": handle_cs_class,
+    "struct_declaration": handle_cs_class,
+    "enum_declaration": handle_cs_class,
+    "record_declaration": handle_cs_class,
+    "interface_declaration": handle_cs_interface,
+    "method_declaration": handle_cs_method,
+    "constructor_declaration": handle_cs_method,
+    "property_declaration": handle_cs_property,
+    "field_declaration": handle_cs_field,
+}
+
 SYMBOL_HANDLERS_BY_LANGUAGE["rust"] = {
     "function_item": handle_rust_function,
     "function_signature_item": handle_rust_function,

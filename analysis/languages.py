@@ -62,6 +62,14 @@ class LanguageProfile:
     impl_trait_field: str | None = None
     impl_type_field: str | None = None
 
+    # C#'s `using Ns;` names a namespace, not a file: any number of
+    # files may declare types in it, so import resolution for these
+    # languages consults `NamespaceIndex` instead of guessing paths
+    # (see `analysis.semantic.import_resolver`). Non-empty only for
+    # namespace-indexed languages.
+    namespace_nodes: frozenset[str] = frozenset()
+    namespace_name_field: str = "name"
+
 
 _PROFILES: dict[str, LanguageProfile] = {
     language: LanguageProfile(
@@ -151,6 +159,38 @@ _PROFILES["rust"] = LanguageProfile(
     impl_node="impl_item",
     impl_trait_field="trait",
     impl_type_field="type",
+)
+
+
+_PROFILES["csharp"] = LanguageProfile(
+    language="csharp",
+    symbol_handlers=symbol_handlers_for("csharp"),
+    import_handlers=import_handlers_for("csharp"),
+    export_handlers=export_handlers_for("csharp"),
+    member_node="member_access_expression",
+    member_object_field="expression",
+    member_property_field="name",
+    identifier_nodes=frozenset({"identifier"}),
+    # C# has no separate `type_identifier` node -- class/interface names
+    # are plain `identifier`, same as every other position. Gating
+    # extraction on heritage_only_nodes would suppress ordinary
+    # identifier references everywhere, not just type positions (see
+    # `analysis.semantic.reference_kind`), so it is left empty here,
+    # same as Python's `identifier`-everywhere grammar.
+    heritage_only_nodes=frozenset(),
+    extends_parents=frozenset(),
+    # `class X : Base, IStore` puts base class and interfaces in one
+    # untyped list; there's no syntactic way to tell which is which
+    # without resolving each name's kind first, which reference
+    # extraction can't do. All `base_list` entries are recorded as
+    # IMPLEMENTS -- inheritance-vs-implementation is not distinguished.
+    implements_parents=frozenset({"base_list"}),
+    call_parent="invocation_expression",
+    call_function_field="function",
+    declaration_member_types=frozenset(),
+    namespace_nodes=frozenset(
+        {"namespace_declaration", "file_scoped_namespace_declaration"}
+    ),
 )
 
 

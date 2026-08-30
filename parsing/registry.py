@@ -1,4 +1,5 @@
 from tree_sitter import Language
+from tree_sitter_c_sharp import language as language_csharp
 from tree_sitter_go import language as language_go
 from tree_sitter_java import language as language_java
 from tree_sitter_python import language as language_python
@@ -35,5 +36,8 @@ PARSER: dict[str, BaseParser] = {
     ),
     "rust": TreeSitterParser(
         Language(language_rust()),
+    ),
+    "csharp": TreeSitterParser(
+        Language(language_csharp()),
     ),
 }

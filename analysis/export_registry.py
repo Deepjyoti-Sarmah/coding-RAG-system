@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from analysis.export_handlers.declaration import handle_export_statement
+from analysis.export_handlers.cs_exports import handle_cs_exports
 from analysis.export_handlers.go_exports import handle_go_exports
 from analysis.export_handlers.java_exports import handle_java_exports
 from analysis.export_handlers.python_exports import handle_python_top_level
@@ -36,6 +37,14 @@ EXPORT_HANDLERS_BY_LANGUAGE["java"] = {
     "interface_declaration": handle_java_exports,
     "enum_declaration": handle_java_exports,
     "record_declaration": handle_java_exports,
+}
+
+EXPORT_HANDLERS_BY_LANGUAGE["csharp"] = {
+    "class_declaration": handle_cs_exports,
+    "struct_declaration": handle_cs_exports,
+    "enum_declaration": handle_cs_exports,
+    "record_declaration": handle_cs_exports,
+    "interface_declaration": handle_cs_exports,
 }
 
 EXPORT_HANDLERS_BY_LANGUAGE["rust"] = {

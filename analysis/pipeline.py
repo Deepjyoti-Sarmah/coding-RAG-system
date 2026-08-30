@@ -15,6 +15,7 @@ from analysis.passes.impl_pass import run_impl_pass
 from analysis.passes.import_pass import run_import_pass
 from analysis.passes.import_resolver_pass import run_import_resolver_pass
 from analysis.passes.module_symbol_pass import run_module_symbol_pass
+from analysis.passes.namespace_pass import run_namespace_pass
 from analysis.passes.parse_pass import run_parse_pass
 from analysis.passes.reference_pass import run_reference_pass
 from analysis.passes.relationship_pass import run_relationship_pass
@@ -45,6 +46,7 @@ def run_extraction_passes(
             result=result,
         )
 
+    run_namespace_pass(context=context, result=result)
     run_import_pass(context=context, result=result)
     run_export_pass(context=context, result=result)
     run_module_symbol_pass(context=context, result=result)

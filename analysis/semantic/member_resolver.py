@@ -4,6 +4,7 @@ from analysis.semantic.name_resolver import (
     resolve_in_scope,
     resolve_name_in_scopes,
     resolve_via_import,
+    resolve_via_wildcard_import,
 )
 from indexing.export_index import ExportIndex
 from indexing.symbol_index import SymbolIndex
@@ -76,6 +77,15 @@ def resolve_member_reference(
             resolved_import_references=resolved_import_references,
         )
 
+    if base_result is None:
+        base_result = resolve_via_wildcard_import(
+            name=base,
+            reference=reference,
+            resolved_import_references=resolved_import_references,
+            export_index=export_index,
+            symbol_index=symbol_index,
+        )
+
     if base_result is not None:
         status, base_symbol = base_result
 
@@ -86,7 +96,7 @@ def resolve_member_reference(
             member_result = resolve_in_scope(
                 name=member,
                 parent_symbol_id=base_symbol.symbol_id,
-                document_id=reference.document_id,
+                document_id=base_symbol.document_id,
                 symbol_index=symbol_index,
             )
 

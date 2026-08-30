@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from analysis.semantic.namespace_index import NamespaceIndex
 from indexing.document_index import DocumentIndex
 from indexing.export_index import ExportIndex
 from indexing.symbol_index import SymbolIndex
@@ -14,6 +15,8 @@ class IndexingContext:
     symbol_index: SymbolIndex = field(default_factory=SymbolIndex)
 
     export_index: ExportIndex = field(default_factory=ExportIndex)
+
+    namespace_index: NamespaceIndex = field(default_factory=NamespaceIndex)
 
     parsed_documents: list[ParsedDocument] = field(default_factory=list)
 

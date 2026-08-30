@@ -22,6 +22,7 @@ def run_reference_resolver_pass(
                 reference=reference,
                 symbol_index=context.symbol_index,
                 resolved_import_references=result.resolved_import_references,
+                export_index=context.export_index,
             )
 
         result.resolved_references.append(resolved)

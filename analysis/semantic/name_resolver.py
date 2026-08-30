@@ -1,3 +1,5 @@
+from analysis.semantic.import_symbol_resolver import resolve_exported_symbol
+from indexing.export_index import ExportIndex
 from indexing.symbol_index import SymbolIndex
 from models.entities.references import Reference
 from models.entities.resolved_import_reference import ResolvedImportReference
@@ -10,6 +12,7 @@ def resolve_symbol(
     reference: Reference,
     symbol_index: SymbolIndex,
     resolved_import_references: list[ResolvedImportReference],
+    export_index: ExportIndex | None = None,
 ) -> ResolvedReference:
     result = resolve_name_in_scopes(
         name=reference.name,
@@ -28,6 +31,18 @@ def resolve_symbol(
 
     if import_result is not None:
         return build_resolved_reference(reference, import_result)
+
+    if export_index is not None:
+        wildcard_result = resolve_via_wildcard_import(
+            name=reference.name,
+            reference=reference,
+            resolved_import_references=resolved_import_references,
+            export_index=export_index,
+            symbol_index=symbol_index,
+        )
+
+        if wildcard_result is not None:
+            return build_resolved_reference(reference, wildcard_result)
 
     return ResolvedReference(
         reference=reference,
@@ -99,6 +114,43 @@ def resolve_via_import(
 
     if len(candidates) > 1:
         return (ResolutionStatus.AMBIGUOUS, next(iter(candidates.values())))
+
+    return None
+
+
+def resolve_via_wildcard_import(
+    *,
+    name: str,
+    reference: Reference,
+    resolved_import_references: list[ResolvedImportReference],
+    export_index: ExportIndex,
+    symbol_index: SymbolIndex,
+) -> tuple[ResolutionStatus, Symbol] | None:
+    """Plain-identifier fallback for whole-namespace/module imports
+    (C#'s `using App.Auth;`, JS's `import * as ns`): these bind
+    everything the target exports rather than one name, so simple
+    identifiers used unqualified need every wildcard import's target
+    document checked for a matching export, not just an exact
+    `local_name` match like `resolve_via_import` does.
+    """
+    for resolved_import in resolved_import_references:
+        import_reference = resolved_import.import_reference
+
+        if import_reference.document_id != reference.document_id:
+            continue
+
+        if import_reference.imported_name != "*":
+            continue
+
+        target = resolve_exported_symbol(
+            document_id=resolved_import.target_document.document_id,
+            exported_name=name,
+            export_index=export_index,
+            symbol_index=symbol_index,
+        )
+
+        if target is not None:
+            return (ResolutionStatus.RESOLVED, target)
 
     return None
 

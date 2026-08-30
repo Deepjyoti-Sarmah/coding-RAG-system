@@ -7,6 +7,7 @@ INCLUDE_EXTENSIONS = {
     ".go",
     ".java",
     ".rs",
+    ".cs",
 }
 
 EXCLUDE_DIRS = {

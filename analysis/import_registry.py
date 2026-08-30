@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from analysis.import_handlers.default import handle_default_import
+from analysis.import_handlers.cs_imports import handle_cs_using
 from analysis.import_handlers.go_imports import handle_go_import
 from analysis.import_handlers.java_imports import handle_java_import
 from analysis.import_handlers.named import handle_import_specifier
@@ -42,6 +43,10 @@ IMPORT_HANDLERS_BY_LANGUAGE["java"] = {
 
 IMPORT_HANDLERS_BY_LANGUAGE["rust"] = {
     "use_declaration": handle_rust_use,
+}
+
+IMPORT_HANDLERS_BY_LANGUAGE["csharp"] = {
+    "using_directive": handle_cs_using,
 }
 
 

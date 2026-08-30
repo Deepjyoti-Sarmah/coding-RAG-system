@@ -19,24 +19,28 @@ def run_import_resolver_pass(
         if importing_document is None:
             continue
 
-        document = resolve_import(
+        documents = resolve_import(
             import_reference=import_reference,
             importing_document=importing_document,
             document_index=context.document_index,
+            namespace_index=context.namespace_index,
         )
 
-        if document is None:
-            continue
+        if documents is None:
+            documents = []
+        elif not isinstance(documents, list):
+            documents = [documents]
 
-        resolved_import = build_resolved_import(
-            import_reference=import_reference,
-            target_document=document,
-        )
+        for document in documents:
+            resolved_import = build_resolved_import(
+                import_reference=import_reference,
+                target_document=document,
+            )
 
-        resolved_import.target_symbol = resolve_imported_symbol(
-            resolved_import=resolved_import,
-            export_index=context.export_index,
-            symbol_index=context.symbol_index,
-        )
+            resolved_import.target_symbol = resolve_imported_symbol(
+                resolved_import=resolved_import,
+                export_index=context.export_index,
+                symbol_index=context.symbol_index,
+            )
 
-        result.resolved_import_references.append(resolved_import)
+            result.resolved_import_references.append(resolved_import)
