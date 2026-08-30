@@ -23,11 +23,12 @@ def build_symbol(
     document: Document,
     owner: Symbol | None = None,
     identity_discriminator: str = "",
+    qualified_name_override: str | None = None,
 ) -> Symbol:
 
     content = node_text(node)
 
-    qualified_name = (
+    qualified_name = qualified_name_override or (
         f"{owner.qualified_name}.{name}" if owner is not None else name
     )
 

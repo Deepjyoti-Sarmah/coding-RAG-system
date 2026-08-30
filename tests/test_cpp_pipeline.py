@@ -34,6 +34,9 @@ class TestCppPipeline(unittest.TestCase):
         overloads = self._symbols("add", "function")
         self.assertEqual(len(overloads), 4)
         self.assertEqual(len({s.stable_key for s in overloads}), 4)
+        methods = self._symbols("login", "method")
+        self.assertEqual(len(methods), 4)
+        self.assertEqual(len({s.stable_key for s in methods}), 4)
 
     def test_include_and_declaration_definition_links(self):
         includes = [i for i in self.result.resolved_import_references if i.import_reference.module_path == "auth.hpp"]
@@ -42,7 +45,23 @@ class TestCppPipeline(unittest.TestCase):
 
     def test_inheritance_and_calls_are_extracted(self):
         self.assertTrue(self._relationship("Auth", "extends", "Base"))
-        self.assertTrue(self._relationship("Auth::login", "calls", "add_int"))
+        self.assertTrue(self._relationship("login", "calls", "add_int"))
+
+    def test_literal_overloads_resolve_and_unknown_argument_stays_ambiguous(self):
+        add_edges = [
+            edge for edge in self.result.graph.relationships()
+            if edge.kind.value == "calls"
+            and self.by_id[edge.source_symbol_id].name == "choose"
+            and self.by_id[edge.target_symbol_id].name == "add"
+        ]
+        self.assertEqual(len(add_edges), 2)
+        self.assertFalse(self._relationship("ambiguous", "calls", "add"))
+
+    def test_basic_template_has_stable_declaration_and_definition(self):
+        templates = self._symbols("identity", "function")
+        self.assertEqual(len(templates), 2)
+        self.assertEqual(len({symbol.stable_key for symbol in templates}), 2)
+        self.assertTrue(self._relationship("choose", "calls", "identity"))
 
 
 if __name__ == "__main__":

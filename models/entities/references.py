@@ -19,3 +19,5 @@ class Reference:
     owner_symbol_id: str
 
     path: tuple[str, ...]
+    call_argument_count: int | None = None
+    call_argument_kinds: tuple[str, ...] = ()

@@ -1,4 +1,5 @@
 from analysis.semantic.import_symbol_resolver import resolve_exported_symbol
+from analysis.semantic.cpp_overload import candidate_compatible, is_cpp_symbol
 from analysis.semantic.name_resolver import (
     build_resolved_reference,
     resolve_in_scope,
@@ -93,6 +94,25 @@ def resolve_member_reference(
             status == ResolutionStatus.RESOLVED
             and base_symbol.kind == SymbolKind.CLASS
         ):
+            children = [
+                child for child in symbol_index.lookup_children(base_symbol.symbol_id)
+                if child.name == member and child.document_id == base_symbol.document_id
+            ]
+            if children and is_cpp_symbol(base_symbol):
+                compatible = [child for child in children if candidate_compatible(child, reference)]
+                groups: dict[str, list[Symbol]] = {}
+                for child in compatible:
+                    groups.setdefault(child.stable_key.split("|", 1)[1], []).append(child)
+                compatible = [
+                    next((candidate for candidate in group if "{" not in candidate.content), group[0])
+                    for group in groups.values()
+                ]
+                if len(compatible) == 1:
+                    return build_resolved_reference(
+                        reference, (ResolutionStatus.RESOLVED, compatible[0])
+                    )
+                return _unresolved(reference)
+
             member_result = resolve_in_scope(
                 name=member,
                 parent_symbol_id=base_symbol.symbol_id,

@@ -5,6 +5,7 @@ from models.entities.references import Reference
 from models.entities.resolved_import_reference import ResolvedImportReference
 from models.entities.resolved_reference import ResolutionStatus, ResolvedReference
 from models.entities.symbols import Symbol
+from analysis.semantic.cpp_overload import candidate_compatible, is_cpp_symbol
 
 
 def resolve_symbol(
@@ -14,6 +15,11 @@ def resolve_symbol(
     resolved_import_references: list[ResolvedImportReference],
     export_index: ExportIndex | None = None,
 ) -> ResolvedReference:
+    owner = symbol_index.lookup_by_id(reference.owner_symbol_id)
+    if reference.kind.value == "call" and owner is not None and is_cpp_symbol(owner):
+        cpp_result = resolve_cpp_call(reference, symbol_index, resolved_import_references)
+        if cpp_result is not None:
+            return build_resolved_reference(reference, cpp_result)
     result = resolve_name_in_scopes(
         name=reference.name,
         reference=reference,
@@ -48,6 +54,40 @@ def resolve_symbol(
         reference=reference,
         status=ResolutionStatus.UNRESOLVED,
     )
+
+
+def resolve_cpp_call(reference, symbol_index, resolved_import_references):
+    candidates: dict[str, Symbol] = {}
+    owner = symbol_index.lookup_by_id(reference.owner_symbol_id)
+    current = owner
+    while current is not None:
+        for symbol in symbol_index.lookup_children(current.symbol_id):
+            if symbol.name == reference.name and is_cpp_symbol(symbol):
+                candidates[symbol.symbol_id] = symbol
+        current = symbol_index.lookup_by_id(current.parent_symbol_id) if current.parent_symbol_id else None
+    for resolved in resolved_import_references:
+        imp = resolved.import_reference
+        if imp.document_id != reference.document_id or imp.imported_name != "*":
+            continue
+        for symbol in symbol_index.lookup_by_name(reference.name):
+            if symbol.document_id == resolved.target_document.document_id and is_cpp_symbol(symbol):
+                candidates[symbol.symbol_id] = symbol
+    compatible = [symbol for symbol in candidates.values() if candidate_compatible(symbol, reference)]
+    # A header declaration and its source definition are one overload
+    # candidate for call selection. Prefer the declaration as the canonical
+    # target; DEFINITION_OF exposes the implementation separately.
+    grouped: dict[str, list[Symbol]] = {}
+    for symbol in compatible:
+        grouped.setdefault(symbol.stable_key.split("|", 1)[1], []).append(symbol)
+    compatible = [
+        next((candidate for candidate in group if "{" not in candidate.content), group[0])
+        for group in grouped.values()
+    ]
+    if len(compatible) == 1:
+        return (ResolutionStatus.RESOLVED, compatible[0])
+    if compatible:
+        return (ResolutionStatus.AMBIGUOUS, compatible[0])
+    return (ResolutionStatus.UNRESOLVED, owner) if candidates else None
 
 
 def resolve_name_in_scopes(

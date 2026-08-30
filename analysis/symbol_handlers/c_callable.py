@@ -31,7 +31,28 @@ def callable_name(node: Node) -> str | None:
             if child.type in ("identifier", "field_identifier", "destructor_name", "qualified_identifier"):
                 name = child
                 break
-    return node_text(name) if name is not None else None
+    if name is None:
+        return None
+    text = node_text(name)
+    return text.split("::")[-1]
+
+
+def callable_qualifier(node: Node) -> str | None:
+    declarator = function_declarator(node)
+    if declarator is None:
+        return None
+    name = declarator.child_by_field_name("declarator") or declarator.child_by_field_name("name")
+    if name is None:
+        for child in declarator.children:
+            if child.type in ("qualified_identifier", "destructor_name"):
+                name = child
+                break
+    if name is None:
+        return None
+    text = node_text(name)
+    if "::" not in text:
+        return None
+    return text.rsplit("::", 1)[0]
 
 
 def callable_identity(node: Node) -> str:
@@ -50,8 +71,18 @@ def handle_function(*, node: Node, document: Document, owner: Symbol | None) -> 
     name = callable_name(node)
     if name is None:
         return None
-    return build_symbol(node=node, name=name, kind=SymbolKind.FUNCTION, document=document,
-                        owner=owner, identity_discriminator=callable_identity(node))
+    qualifier = callable_qualifier(node)
+    qualified = None
+    if qualifier is not None:
+        owner_prefix = owner.qualified_name + "." if owner is not None else ""
+        qualified = qualifier.replace("::", ".")
+        if owner_prefix and not qualified.startswith(owner_prefix):
+            qualified = owner_prefix + qualified
+        qualified += "." + name
+    kind = SymbolKind.METHOD if qualifier is not None else SymbolKind.FUNCTION
+    return build_symbol(node=node, name=name, kind=kind, document=document,
+                        owner=owner, identity_discriminator=callable_identity(node),
+                        qualified_name_override=qualified)
 
 
 def handle_method(*, node: Node, document: Document, owner: Symbol | None) -> Symbol | None:
