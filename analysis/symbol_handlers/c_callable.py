@@ -66,6 +66,6 @@ def handle_declaration(*, node: Node, document: Document, owner: Symbol | None) 
     name = callable_name(node)
     if name is None:
         return None
-    kind = SymbolKind.METHOD if owner is not None else SymbolKind.FUNCTION
+    kind = SymbolKind.METHOD if owner is not None and owner.kind == SymbolKind.CLASS else SymbolKind.FUNCTION
     return build_symbol(node=node, name=name, kind=kind, document=document, owner=owner,
                         identity_discriminator=callable_identity(node))
