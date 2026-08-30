@@ -61,6 +61,13 @@ class TestMcpServer(unittest.IsolatedAsyncioTestCase):
                 "search",
                 "imports",
                 "context",
+                "session_start",
+                "session_end",
+                "session_status",
+                "session_recall",
+                "session_timeline",
+                "record_decision",
+                "record_code_area",
             },
         )
 

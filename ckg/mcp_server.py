@@ -1,4 +1,5 @@
 from pathlib import Path
+from time import perf_counter
 
 from mcp.server.mcpserver import MCPServer
 
@@ -15,6 +16,7 @@ from ckg.cli import (
     has_embeddings,
     resolve_provider,
 )
+from session_memory import SessionService
 
 _mcp_provider = None
 
@@ -199,6 +201,7 @@ async def search(query: str, path: str = ".", top_k: int = 5) -> dict:
         provider = _mcp_provider
     else:
         provider = resolve_provider(db_path, use_vector=True)
+    started = perf_counter()
     retrieval = cmd_search(db_path, query, provider=provider, top_k=top_k)
     # pending count for self-diagnosis
     try:
@@ -209,11 +212,17 @@ async def search(query: str, path: str = ".", top_k: int = 5) -> dict:
     except Exception:  # noqa: BLE001
         pending = 0
 
-    return {
+    result = {
         "results": [_candidate_dict(c) for c in retrieval.candidates],
         "vector_search_used": provider is not None,
         "pending_embeddings": pending,
     }
+    if result["results"]:
+        try:
+            SessionService(path).retrieval(query, [f"{x['relative_path']}:{x['qualified_name']}" for x in result["results"]], 0, 0, (perf_counter()-started)*1000)
+        except Exception:
+            pass
+    return result
 
 
 @mcp.tool()
@@ -242,6 +251,7 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
         provider = _mcp_provider
     else:
         provider = resolve_provider(db_path, use_vector=True)
+    started = perf_counter()
     pack = cmd_context(db_path, query, token_budget=token_budget, provider=provider, top_k=top_k)
     try:
         from indexing.embedding_queue import queue_status
@@ -251,7 +261,7 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
     except Exception:  # noqa: BLE001
         pending = 0
 
-    return {
+    result = {
         "query": pack.query,
         "token_budget": pack.token_budget,
         "total_tokens": pack.total_tokens,
@@ -262,6 +272,56 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
         "vector_search_used": provider is not None,
         "pending_embeddings": pending,
     }
+    selected = result["primary_definitions"] + result["supporting_definitions"]
+    if selected:
+        try:
+            SessionService(path).retrieval(query, [f"{x['relative_path']}:{x['qualified_name']}" for x in selected], pack.total_tokens, getattr(pack, "baseline_tokens", 0), (perf_counter()-started)*1000)
+        except Exception:
+            pass
+    return result
+
+
+def _session_error(error: Exception) -> dict:
+    return {"error": str(error)}
+
+
+@mcp.tool()
+async def session_start(path: str = ".") -> dict:
+    return {"session": SessionService(path).start()}
+
+
+@mcp.tool()
+async def session_end(path: str, session_id: str) -> dict:
+    session = SessionService(path).end(session_id)
+    return {"session": session} if session else _session_error(ValueError("session not found for project"))
+
+
+@mcp.tool()
+async def session_status(path: str, session_id: str | None = None) -> dict:
+    return {"session": SessionService(path).status(session_id)}
+
+
+@mcp.tool()
+async def session_recall(path: str, query: str, limit: int = 10) -> dict:
+    return {"results": SessionService(path).recall(query, limit)}
+
+
+@mcp.tool()
+async def session_timeline(path: str, session_id: str, limit: int = 50) -> dict:
+    try: return {"session_id": session_id, "events": SessionService(path).timeline(session_id, limit)}
+    except ValueError as error: return _session_error(error)
+
+
+@mcp.tool()
+async def record_decision(path: str, decision: str, reason: str = "", session_id: str | None = None) -> dict:
+    try: return {"decision": SessionService(path).decision(decision, reason, session_id)}
+    except ValueError as error: return _session_error(error)
+
+
+@mcp.tool()
+async def record_code_area(path: str, file_path: str, description: str = "", session_id: str | None = None) -> dict:
+    try: return {"code_area": SessionService(path).code_area(file_path, description, session_id)}
+    except ValueError as error: return _session_error(error)
 
 
 def main() -> None:

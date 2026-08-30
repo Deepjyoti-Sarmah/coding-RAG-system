@@ -20,6 +20,7 @@ from retrieval.index_queries import (
     build_hybrid_retriever,
 )
 from storage.index_store import count_rows, current_generation
+from session_memory import SessionService
 
 DEFAULT_DB_DIRNAME = ".ckg"
 DEFAULT_DB_FILENAME = "index.sqlite"
@@ -697,6 +698,16 @@ def build_parser() -> argparse.ArgumentParser:
     embed_parser.add_argument("path", nargs="?", default=".")
     embed_parser.add_argument("--limit", type=int, default=None)
 
+    sessions = subparsers.add_parser("sessions", help="manage local project session memory")
+    session_sub = sessions.add_subparsers(dest="sessions_command", required=True)
+    for name in ("start", "list"):
+        p = session_sub.add_parser(name); p.add_argument("path", nargs="?", default=".")
+    p = session_sub.add_parser("status"); p.add_argument("path", nargs="?", default="."); p.add_argument("session_id", nargs="?")
+    p = session_sub.add_parser("timeline"); p.add_argument("path", nargs="?", default="."); p.add_argument("session_id", nargs="?"); p.add_argument("--limit", type=int, default=50)
+    p = session_sub.add_parser("recall"); p.add_argument("query"); p.add_argument("path", nargs="?", default="."); p.add_argument("--limit", type=int, default=10)
+    p = session_sub.add_parser("export"); p.add_argument("path", nargs="?", default="."); p.add_argument("session_id", nargs="?"); p.add_argument("--format", choices=("json", "markdown"), default="json")
+    p = session_sub.add_parser("prune"); p.add_argument("path", nargs="?", default="."); p.add_argument("--days", type=int, required=True)
+
     return parser
 
 
@@ -717,6 +728,20 @@ def main(argv: list[str] | None = None) -> int:
             _require_dir(args.path)
         elif args.command not in ("eval",) and hasattr(args, "path"):
             _require_dir(args.path)
+
+        if args.command == "sessions":
+            service = SessionService(args.path)
+            command = args.sessions_command
+            if command == "start": result = service.start()
+            elif command == "list": result = service.list()
+            elif command == "status": result = service.status(args.session_id)
+            elif command == "timeline": result = service.timeline(args.session_id, args.limit)
+            elif command == "recall": result = service.recall(args.query, args.limit)
+            elif command == "export":
+                output = service.export(args.session_id, args.format)
+                print(output); return 0
+            else: result = service.prune(args.days)
+            print(json.dumps(result, indent=2, sort_keys=True)); return 0
 
         if args.command == "index":
             db_path = args.db or default_db_path(args.path)

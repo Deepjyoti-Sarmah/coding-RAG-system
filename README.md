@@ -1444,3 +1444,18 @@ Do not optimize indexing before incremental updates are correct.
 The central idea remains:
 
 > **Understand the repository first. Retrieve only what matters. Then let the LLM reason over that context.**
+## Session memory
+
+CKG can keep a small, project-local memory of explicit decisions, code areas, and retrieval history so work can resume after an MCP restart. It is stored in `<project>/.ckg/session.sqlite` and is never synchronized to the cloud.
+
+```bash
+ckg sessions start .
+ckg sessions list .
+ckg sessions recall authentication .
+ckg sessions export . --format markdown
+ckg sessions prune . --days 30
+```
+
+MCP clients can use `session_start`, `session_status`, `session_recall`, `session_timeline`, `record_decision`, and `record_code_area`; `session_end` closes the active session. Omitting a session ID resumes or creates the active session for that normalized project path.
+
+Only bounded explicit text and compact retrieval identifiers/metrics are stored. Raw source, complete tool output, transcripts, secrets, and environment variables are not stored. Use `ckg sessions prune` for age-based retention, or delete `.ckg/session.sqlite` to remove the local memory entirely.
