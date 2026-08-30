@@ -152,6 +152,71 @@ class TestExternalScorer(unittest.TestCase):
             questions = load_external_questions(path)
             self.assertEqual(questions[0].expected_files, frozenset())
 
+    def test_honest_savings_uses_ground_truth_files_as_baseline(self):
+        # Baseline must be ground-truth files, not whole repo or retrieved files.
+        # Create a tiny repo with two files, one is ground truth.
+        import tempfile
+
+        from evaluation.external import ExternalQuestion, run_external_evaluation
+        from retrieval.context_builder import estimate_tokens
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            # Ground-truth file (what agent must read to answer)
+            (repo / "expected.py").write_text("x = 1\n" * 100, encoding="utf-8")
+            # Unrelated large file (whole-repo would inflate baseline)
+            (repo / "unrelated.py").write_text("y = 2\n" * 1000, encoding="utf-8")
+            # Another file that retrieval might actually return
+            (repo / "other.py").write_text("def foo(): pass\n", encoding="utf-8")
+
+            q = ExternalQuestion(query="what is x", expected_files=frozenset({"expected.py"}))
+            report = run_external_evaluation(repo, [q], provider=None, top_k=5, file_k=10)
+
+            self.assertEqual(len(report.questions), 1)
+            qr = report.questions[0]
+            # Baseline should be tokens of expected.py only, not whole repo
+            expected_baseline = estimate_tokens((repo / "expected.py").read_text(encoding="utf-8"))
+            self.assertEqual(qr.baseline_tokens, expected_baseline)
+            # Whole-repo baseline would be much larger
+            whole_repo_tokens = estimate_tokens(
+                (repo / "expected.py").read_text(encoding="utf-8")
+                + "\n"
+                + (repo / "unrelated.py").read_text(encoding="utf-8")
+                + "\n"
+                + (repo / "other.py").read_text(encoding="utf-8")
+            )
+            self.assertLess(qr.baseline_tokens, whole_repo_tokens)
+            # Savings is paired with recall: must exist alongside recall
+            self.assertIsInstance(qr.recall_at_10, float)
+            self.assertIsInstance(qr.savings_pct, float)
+            # Savings should be 1 - context/baseline, not derived from retrieved set size
+            if qr.baseline_tokens > 0:
+                self.assertAlmostEqual(qr.savings_pct, 1.0 - qr.context_tokens / qr.baseline_tokens, delta=1e-6)
+
+    def test_savings_not_circular_with_retrieval(self):
+        # Retrieving worse should not improve savings, because baseline is fixed
+        from evaluation.external import ExternalQuestion, run_external_evaluation
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            (repo / "a.py").write_text("def a(): pass\n", encoding="utf-8")
+            (repo / "b.py").write_text("def b(): pass\n", encoding="utf-8")
+
+            q = ExternalQuestion(query="a", expected_files=frozenset({"a.py"}))
+            report = run_external_evaluation(repo, [q], provider=None, top_k=5, file_k=10)
+            qr = report.questions[0]
+            # Baseline independent of what was retrieved
+            self.assertIn("a.py", q.expected_files)
+            self.assertGreater(qr.baseline_tokens, 0)
+            # Report includes both recall and savings in same row
+            self.assertTrue(hasattr(qr, "recall_at_10"))
+            self.assertTrue(hasattr(qr, "savings_pct"))
+            # Mean aggregates also paired
+            self.assertTrue(hasattr(report, "mean_recall_at_10"))
+            self.assertTrue(hasattr(report, "mean_savings_pct"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -181,6 +181,11 @@ def run_evaluation_on_repo(
                 )
             )
 
+        # Whole-repo baseline — not a savings denominator. Reporting
+        # 1 - context/whole_repo would be ~99% and is indefensible; the
+        # honest baseline is ground-truth files, which the fixture doesn't
+        # have per query (unlike external.py where expected_files provides it).
+        # Keep raw counts but do not claim savings.
         baseline_tokens = estimate_tokens(
             "\n".join(document.content for document in result.documents)
         )
@@ -195,7 +200,7 @@ def run_evaluation_on_repo(
             mean_reciprocal_rank=mean(r.reciprocal_rank for r in question_results),
             context_tokens=context_tokens,
             baseline_tokens=baseline_tokens,
-            token_reduction=token_reduction(context_tokens, baseline_tokens),
+            token_reduction=0.0,
             initial_indexing_seconds=initial_indexing_seconds,
             incremental_indexing_seconds=incremental_indexing_seconds,
             embedding_cache_hit_rate=embedding_cache_hit_rate,

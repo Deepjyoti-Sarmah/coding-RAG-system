@@ -12,9 +12,10 @@ from pathlib import Path
 import statistics
 
 from embeddings.provider import EmbeddingProvider
-from evaluation.metrics import mean, recall_at_k, reciprocal_rank
+from evaluation.metrics import mean, recall_at_k, reciprocal_rank, token_reduction
 from indexing.embedding_queue import run_embedding_worker
 from indexing.indexer import reindex_index
+from retrieval.context_builder import build_context_pack, estimate_tokens
 from retrieval.index_queries import build_hybrid_retriever
 from storage.index_store import load_index
 
@@ -39,6 +40,10 @@ class ExternalQuestionResult:
     precision_ceiling_at_10: float = 0.0
     precision_at_10_normalized: float = 0.0
     precision_over_returned: float = 0.0
+    # honest token-savings: baseline is ground-truth files, actual is context pack
+    baseline_tokens: int = 0
+    context_tokens: int = 0
+    savings_pct: float = 0.0
 
 
 @dataclass(slots=True)
@@ -57,6 +62,10 @@ class ExternalReport:
     p95_latency_seconds: float = 0.0
     index_seconds: float = 0.0
     total_questions: int = 0
+    # honest token-savings aggregates (paired with recall)
+    mean_baseline_tokens: float = 0.0
+    mean_context_tokens: float = 0.0
+    mean_savings_pct: float = 0.0
 
 
 def load_external_questions(path: str | Path) -> list[ExternalQuestion]:
@@ -119,6 +128,7 @@ def run_external_evaluation(
     top_k: int = 30,
     file_k: int = 10,
     db_path: str | Path | None = None,
+    token_budget: int = 800,
 ) -> ExternalReport:
     """Run file-level evaluation over a materialized repo directory.
 
@@ -144,10 +154,13 @@ def run_external_evaluation(
     if provider is not None:
         run_embedding_worker(db_path, provider)
 
-    # Load index to verify but retriever handles its own DB connection
-    # We don't need load_index for retrieval, but useful for sanity.
-    _ = load_index(db_path)
-    retriever = build_hybrid_retriever(db_path, provider=provider)
+    # Load index for baseline computation and context packing
+    index_result = load_index(db_path)
+    retriever = build_hybrid_retriever(db_path, provider=provider, result=index_result)
+
+    # Map relative_path -> document content for honest baseline
+    docs_by_path = {d.relative_path: d for d in index_result.documents}
+    symbols_by_key = {s.stable_key: s for s in index_result.symbols}
 
     results: list[ExternalQuestionResult] = []
     latencies: list[float] = []
@@ -167,6 +180,30 @@ def run_external_evaluation(
         normalized = (prec / ceiling) if ceiling > 0 else 0.0
         over_ret = _precision_over_returned(q.expected_files, ranked_files)
 
+        # Honest token-savings: baseline is ground-truth files, actual is context pack
+        baseline_texts: list[str] = []
+        for fp in q.expected_files:
+            doc = docs_by_path.get(fp)
+            if doc is not None:
+                baseline_texts.append(doc.content)
+            else:
+                # Fallback: read directly from repo_dir if not indexed (e.g., size-capped)
+                try:
+                    baseline_texts.append((repo_path / fp).read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+        baseline_tokens = estimate_tokens("\n".join(baseline_texts)) if baseline_texts else 0
+
+        pack = build_context_pack(
+            retrieval.candidates,
+            query=q.query,
+            graph=index_result.graph,
+            symbols_by_key=symbols_by_key,
+            token_budget=token_budget,
+        )
+        context_tokens = pack.total_tokens
+        savings = token_reduction(context_tokens, baseline_tokens) if baseline_tokens else 0.0
+
         results.append(
             ExternalQuestionResult(
                 query=q.query,
@@ -180,6 +217,9 @@ def run_external_evaluation(
                 precision_ceiling_at_10=ceiling,
                 precision_at_10_normalized=normalized,
                 precision_over_returned=over_ret,
+                baseline_tokens=baseline_tokens,
+                context_tokens=context_tokens,
+                savings_pct=savings,
             )
         )
 
@@ -189,6 +229,9 @@ def run_external_evaluation(
     mean_ceiling = mean(r.precision_ceiling_at_10 for r in results)
     mean_norm = mean(r.precision_at_10_normalized for r in results)
     mean_over = mean(r.precision_over_returned for r in results)
+    mean_baseline = mean(r.baseline_tokens for r in results)
+    mean_context = mean(r.context_tokens for r in results)
+    mean_savings = mean(r.savings_pct for r in results)
     p50 = statistics.median(latencies) if latencies else 0.0
     # p95 as 95th percentile
     p95 = 0.0
@@ -213,4 +256,7 @@ def run_external_evaluation(
         repo="",
         source_dir=str(repo_path),
         commit=None,
+        mean_baseline_tokens=mean_baseline,
+        mean_context_tokens=mean_context,
+        mean_savings_pct=mean_savings,
     )
