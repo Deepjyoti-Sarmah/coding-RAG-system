@@ -1470,3 +1470,14 @@ ckg dashboard . --no-browser
 ```
 
 It shows index health and counts, recent sessions, decisions, code areas, retrieval activity, token comparisons, and compact symbol search results. It uses only Python’s standard-library HTTP server and keeps session memory in `.ckg/session.sqlite`. The server binds to localhost by default; stop it with Ctrl-C and do not expose it publicly. Remote binding requires the explicit `--allow-remote` flag and is unsafe without additional access controls. Token savings are observational dashboard metrics, not an A/B productivity claim.
+
+## Release smoke test
+
+Build and check the distributable wheel without publishing it:
+
+```bash
+uv build
+python scripts/release_smoke.py
+```
+
+The smoke test creates a temporary environment outside the checkout, installs the wheel, checks its metadata and packaged `session_memory`/dashboard modules, then exercises the CKG CLI, session commands, dashboard help, indexing, status, search, and `ckg-mcp` startup. It does not load embeddings, contact a hosted model, or upload to PyPI. Offline installation requires runtime dependency wheels in the local uv cache; otherwise it reports the exact missing dependency.

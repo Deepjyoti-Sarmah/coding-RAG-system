@@ -52,6 +52,7 @@ packages = [
     "parsing",
     "retrieval",
     "storage",
+    "session_memory",
 ]
 
 [tool.hatch.build.targets.sdist]
