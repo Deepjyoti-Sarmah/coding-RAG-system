@@ -97,7 +97,7 @@ def _context_entry_dict(entry) -> dict:
 
 
 @mcp.tool()
-def index_repository(path: str, embed: bool = False) -> dict:
+async def index_repository(path: str, embed: bool = False) -> dict:
     """Build or update the semantic index for a repository at `path`.
 
     Must be called (once) before any other tool is used against that path.
@@ -136,7 +136,7 @@ def index_repository(path: str, embed: bool = False) -> dict:
 
 
 @mcp.tool()
-def repository_status(path: str = ".") -> dict:
+async def repository_status(path: str = ".") -> dict:
     """Report index generation and document/symbol/chunk/embedding counts for `path`."""
     db_path = default_db_path(path)
 
@@ -147,7 +147,7 @@ def repository_status(path: str = ".") -> dict:
 
 
 @mcp.tool()
-def definition(name: str, path: str = ".") -> dict:
+async def definition(name: str, path: str = ".") -> dict:
     """Find the exact definition site(s) of a symbol by name."""
     db_path = default_db_path(path)
 
@@ -159,7 +159,7 @@ def definition(name: str, path: str = ".") -> dict:
 
 
 @mcp.tool()
-def callers(name: str, path: str = ".") -> dict:
+async def callers(name: str, path: str = ".") -> dict:
     """Find every symbol that calls `name` (1-hop incoming graph neighborhood)."""
     db_path = default_db_path(path)
 
@@ -171,7 +171,7 @@ def callers(name: str, path: str = ".") -> dict:
 
 
 @mcp.tool()
-def callees(name: str, path: str = ".") -> dict:
+async def callees(name: str, path: str = ".") -> dict:
     """Find every symbol that `name` calls (1-hop outgoing graph neighborhood)."""
     db_path = default_db_path(path)
 
@@ -183,7 +183,7 @@ def callees(name: str, path: str = ".") -> dict:
 
 
 @mcp.tool()
-def search(query: str, path: str = ".", top_k: int = 5) -> dict:
+async def search(query: str, path: str = ".", top_k: int = 5) -> dict:
     """Hybrid search: lexical (FTS) + exact-symbol + graph expansion + reranking;
     vector similarity is used when embeddings are available (run `ckg embed`
     to generate them). Use for open-ended questions; use definition/callers/callees
@@ -217,7 +217,7 @@ def search(query: str, path: str = ".", top_k: int = 5) -> dict:
 
 
 @mcp.tool()
-def imports(file: str, path: str = ".") -> dict:
+async def imports(file: str, path: str = ".") -> dict:
     """List a file's own import statements and where each one resolves to."""
     db_path = default_db_path(path)
 
@@ -228,7 +228,7 @@ def imports(file: str, path: str = ".") -> dict:
 
 
 @mcp.tool()
-def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 5) -> dict:
+async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 5) -> dict:
     """Build a token-budgeted context pack: primary/supporting definitions
     with source excerpts and relationships. Uses vector search when embeddings
     are available (run `ckg embed` otherwise).
