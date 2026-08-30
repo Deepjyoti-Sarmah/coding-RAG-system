@@ -33,7 +33,7 @@ def in_extends_clause(node: Node, profile: LanguageProfile) -> bool:
     if profile.superclass_field is not None:
         return _in_superclass_chain(node, profile.superclass_field)
 
-    parent = node.parent
+    parent = _skip_type_list(node.parent)
 
     # `class X extends Y` is an extends_clause; `interface X extends Y`
     # is an extends_type_clause.
@@ -64,9 +64,18 @@ def _in_superclass_chain(node: Node, superclass_field: str) -> bool:
 
 
 def in_implements_clause(node: Node, profile: LanguageProfile) -> bool:
-    parent = node.parent
+    parent = _skip_type_list(node.parent)
 
     return parent is not None and parent.type in profile.implements_parents
+
+
+def _skip_type_list(node: Node | None) -> Node | None:
+    """Java wraps multi-name heritage lists (`implements A, B`) in an
+    intermediate `type_list` node; climb past it to reach the clause."""
+    if node is not None and node.type == "type_list":
+        return node.parent
+
+    return node
 
 
 def is_call_target(node: Node, profile: LanguageProfile) -> bool:

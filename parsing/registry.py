@@ -1,5 +1,6 @@
 from tree_sitter import Language
 from tree_sitter_go import language as language_go
+from tree_sitter_java import language as language_java
 from tree_sitter_python import language as language_python
 from tree_sitter_typescript import (
     language_tsx,
@@ -27,5 +28,8 @@ PARSER: dict[str, BaseParser] = {
     ),
     "go": TreeSitterParser(
         Language(language_go()),
+    ),
+    "java": TreeSitterParser(
+        Language(language_java()),
     ),
 }

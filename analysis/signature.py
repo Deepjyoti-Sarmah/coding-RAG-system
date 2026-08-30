@@ -46,6 +46,7 @@ def _callable_signature(
             if child.type not in (
                 "required_parameter",
                 "optional_parameter",
+                "formal_parameter",
             ):
                 continue
 
@@ -53,7 +54,11 @@ def _callable_signature(
 
     parts = [f"{kind.value}({','.join(parameter_types)})"]
 
-    return_type = node.child_by_field_name("return_type")
+    # TypeScript/JS use a `return_type` field; Java's method return type
+    # lives on the `type` field instead (there is no `return_type`).
+    return_type = node.child_by_field_name(
+        "return_type"
+    ) or node.child_by_field_name("type")
 
     if return_type is not None:
         parts.append(_annotation_text(return_type))
@@ -75,6 +80,8 @@ def _annotation_text(type_annotation: Node) -> str:
 
 
 def _class_signature(node: Node) -> str:
+    # Java expresses extends/implements as direct children (`superclass`,
+    # `super_interfaces`); TS nests them under a `class_heritage` node.
     heritage = next(
         (
             child
@@ -83,6 +90,14 @@ def _class_signature(node: Node) -> str:
         ),
         None,
     )
+
+    # Java has no `class_heritage` wrapper: `extends`/`implements` are
+    # direct `superclass`/`super_interfaces` children of the class node.
+    if heritage is None and any(
+        child.type in ("superclass", "super_interfaces")
+        for child in node.children
+    ):
+        return _java_class_signature(node)
 
     if heritage is None:
         return "class"
@@ -106,7 +121,44 @@ def _class_signature(node: Node) -> str:
     return f"class:{extends_text}"
 
 
+def _java_class_signature(node: Node) -> str:
+    superclass = next(
+        (child for child in node.children if child.type == "superclass"),
+        None,
+    )
+    super_interfaces = next(
+        (child for child in node.children if child.type == "super_interfaces"),
+        None,
+    )
+
+    parts: list[str] = []
+
+    if superclass is not None:
+        parts.append(node_text(superclass).replace("extends", "").strip())
+
+    if super_interfaces is not None:
+        parts.append(node_text(super_interfaces).replace("implements", "").strip())
+
+    if not parts:
+        return "class"
+
+    return f"class:{','.join(parts)}"
+
+
 def _interface_signature(node: Node) -> str:
+    # Java's `interface_declaration` uses `extends_interfaces` +
+    # `method_declaration` members; TS's uses `extends_type_clause` +
+    # `property_signature`/`method_signature`. Field/child-type presence
+    # disambiguates without depending on the (shared) node type name.
+    body = node.child_by_field_name("body")
+    is_java = any(child.type == "extends_interfaces" for child in node.children) or (
+        body is not None
+        and any(child.type == "method_declaration" for child in body.children)
+    )
+
+    if is_java:
+        return _java_interface_signature(node)
+
     parts = ["interface"]
 
     extends_text = _interface_extends_text(node)
@@ -117,6 +169,38 @@ def _interface_signature(node: Node) -> str:
     # Member names are part of an interface's public surface (unlike
     # parameter names), so renaming one must move the signature hash.
     parts.append(f"{{{','.join(_interface_members(node))}}}")
+
+    return "".join(parts)
+
+
+def _java_interface_signature(node: Node) -> str:
+    parts = ["interface"]
+
+    extends = next(
+        (child for child in node.children if child.type == "extends_interfaces"),
+        None,
+    )
+
+    if extends is not None:
+        extends_text = node_text(extends).replace("extends", "").strip()
+        parts.append(f":{extends_text}")
+
+    body = node.child_by_field_name("body")
+    members: list[str] = []
+
+    if body is not None:
+        for child in body.children:
+            if child.type != "method_declaration":
+                continue
+
+            name = child.child_by_field_name("name")
+
+            if name is None:
+                continue
+
+            members.append(f"{node_text(name)}:{_callable_signature(node=child, kind=SymbolKind.METHOD)}")
+
+    parts.append(f"{{{','.join(sorted(members))}}}")
 
     return "".join(parts)
 

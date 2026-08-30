@@ -102,6 +102,23 @@ _PROFILES["go"] = LanguageProfile(
     call_function_field="function",
 )
 
+_PROFILES["java"] = LanguageProfile(
+    language="java",
+    symbol_handlers=symbol_handlers_for("java"),
+    import_handlers=import_handlers_for("java"),
+    export_handlers=export_handlers_for("java"),
+    member_node="member_expression",
+    member_object_field="object",
+    member_property_field="field",
+    identifier_nodes=frozenset({"identifier", "type_identifier"}),
+    heritage_only_nodes=frozenset({"type_identifier"}),
+    extends_parents=frozenset({"superclass", "extends_interfaces"}),
+    implements_parents=frozenset({"super_interfaces"}),
+    call_parent="method_invocation",
+    call_function_field="name",
+    declaration_member_types=frozenset({"method_declaration", "field_declaration", "constructor_declaration", "enum_constant"}),
+)
+
 
 def profile_for(language: str) -> LanguageProfile | None:
     return _PROFILES.get(language)

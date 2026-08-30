@@ -5,6 +5,7 @@ INCLUDE_EXTENSIONS = {
     ".jsx",
     ".py",
     ".go",
+    ".java",
 }
 
 EXCLUDE_DIRS = {

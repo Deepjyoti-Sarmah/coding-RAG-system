@@ -16,6 +16,7 @@ dependencies = [
     "tiktoken>=0.14",
     "tree-sitter>=0.25.2",
     "tree-sitter-go>=0.25.0",
+    "tree-sitter-java==0.23.5",
     "tree-sitter-python>=0.25.0",
     "tree-sitter-typescript>=0.23.2",
     "watchdog>=6.0",

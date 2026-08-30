@@ -67,6 +67,28 @@ def _resolve_go(module_path: str, importing_directory: str) -> list[str]:
     return [module_path + ".go"]
 
 
+_JAVA_SOURCE_ROOTS = ("src/main/java/", "src/test/java/", "")
+
+
+def _resolve_java(module_path: str, importing_directory: str) -> list[str]:
+    """Import paths are fully-qualified class names: `com.foo.Bar` maps
+    to `com/foo/Bar.java`. Wildcard imports (`com.foo.*`) do not resolve
+    to a single file in v1.
+
+    No knowledge of the *importing* file's source root is available
+    here, so candidates are probed under the conventional Maven/Gradle
+    roots and the repo root, in that order. Multi-module Gradle layouts
+    (root/<module>/src/main/java/...) and jar-packaged dependencies are
+    out of scope; only same-repo, single-module sources resolve.
+    """
+    if not module_path or module_path.endswith("*"):
+        return []
+
+    relative = module_path.replace(".", "/") + ".java"
+
+    return [root + relative for root in _JAVA_SOURCE_ROOTS]
+
+
 RESOLVERS: dict[str, Resolver] = {
     "typescript": _resolve_typescript,
     "tsx": _resolve_typescript,
@@ -74,6 +96,7 @@ RESOLVERS: dict[str, Resolver] = {
     "jsx": _resolve_typescript,
     "python": _resolve_python,
     "go": _resolve_go,
+    "java": _resolve_java,
 }
 
 

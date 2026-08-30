@@ -8,6 +8,12 @@ from analysis.symbol_handlers.go_function import (
     handle_go_type_spec,
 )
 from analysis.symbol_handlers.interface import handle_interface
+from analysis.symbol_handlers.java_enum import handle_java_enum
+from analysis.symbol_handlers.java_field import handle_java_field
+from analysis.symbol_handlers.java_interface import handle_java_interface
+from analysis.symbol_handlers.java_method import handle_java_method
+from analysis.symbol_handlers.java_record import handle_java_record
+from analysis.symbol_handlers.java_class import handle_java_class
 from analysis.symbol_handlers.method import handle_method
 from analysis.symbol_handlers.python_function import handle_python_function
 from analysis.symbol_handlers.type_alias import handle_type_alias
@@ -44,6 +50,16 @@ SYMBOL_HANDLERS_BY_LANGUAGE["go"] = {
 SYMBOL_HANDLERS_BY_LANGUAGE["python"] = {
     "function_definition": handle_python_function,
     "class_definition": handle_class,
+}
+
+SYMBOL_HANDLERS_BY_LANGUAGE["java"] = {
+    "class_declaration": handle_java_class,
+    "interface_declaration": handle_java_interface,
+    "enum_declaration": handle_java_enum,
+    "record_declaration": handle_java_record,
+    "method_declaration": handle_java_method,
+    "constructor_declaration": handle_java_method,
+    "field_declaration": handle_java_field,
 }
 
 

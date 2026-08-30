@@ -115,10 +115,30 @@ def visit(
 
     return build_reference(
         node=node,
-        path=(name,),
+        path=call_target_path(node, name),
         kind=kind,
         owner_symbol=owner_symbol,
     )
+
+
+def call_target_path(node: Node, name: str) -> tuple[str, ...]:
+    """Java's `method_invocation` has no member-expression wrapper: a
+    qualified call's object and method name are sibling fields on the
+    call node itself, unlike JS/Go where the call's function field is a
+    member/selector node. Recover the qualifier here so qualified calls
+    resolve the same way member accesses do elsewhere.
+    """
+    parent = node.parent
+
+    if parent is None:
+        return (name,)
+
+    object_node = parent.child_by_field_name("object")
+
+    if object_node is None or object_node == node:
+        return (name,)
+
+    return (node_text(object_node), name)
 
 
 def in_heritage_clause(node: Node, profile: LanguageProfile) -> bool:

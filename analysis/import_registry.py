@@ -2,6 +2,7 @@ from collections.abc import Callable
 
 from analysis.import_handlers.default import handle_default_import
 from analysis.import_handlers.go_imports import handle_go_import
+from analysis.import_handlers.java_imports import handle_java_import
 from analysis.import_handlers.named import handle_import_specifier
 from analysis.import_handlers.namespace import handle_namespace_import
 from analysis.import_handlers.python_imports import (
@@ -32,6 +33,10 @@ IMPORT_HANDLERS_BY_LANGUAGE["go"] = {
 IMPORT_HANDLERS_BY_LANGUAGE["python"] = {
     "import_statement": handle_python_import,
     "import_from_statement": handle_python_from_import,
+}
+
+IMPORT_HANDLERS_BY_LANGUAGE["java"] = {
+    "import_declaration": handle_java_import,
 }
 
 

@@ -5,6 +5,7 @@ EXTENSION_TO_LANGUAGE = {
     ".jsx": "jsx",
     ".py": "python",
     ".go": "go",
+    ".java": "java",
 }
 
 
