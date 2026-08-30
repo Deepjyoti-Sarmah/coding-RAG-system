@@ -119,12 +119,16 @@ class HybridRetriever:
         fts_search: FtsSearch,
         vector_store: VectorStore | None = None,
         embed: Embed | None = None,
+        basename_token_df: dict[str, int] | None = None,
+        total_docs: int | None = None,
     ) -> None:
         self.symbol_index = symbol_index
         self.graph = graph
         self.fts_search = fts_search
         self.vector_store = vector_store
         self.embed = embed
+        self.basename_token_df = basename_token_df
+        self.total_docs = total_docs
 
     def retrieve(self, query: str, top_k: int = 5, per_file_cap: int = DEFAULT_PER_FILE_CAP) -> HybridRetrieval:
         intent = detect_intent(query)
@@ -330,6 +334,8 @@ class HybridRetriever:
             symbols_by_key=symbols_by_key,
             seed=seed,
             preference=preference,
+            basename_token_df=self.basename_token_df,
+            total_docs=self.total_docs,
         )
 
         return HybridRetrieval(

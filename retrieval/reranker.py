@@ -1,4 +1,7 @@
+import math
 import re
+from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import PurePosixPath as Path
 
@@ -107,6 +110,32 @@ def detect_preference(query: str) -> str | None:
     return None
 
 
+def _idf_weight(df: int, total: int) -> float:
+    """Rarity weight in [0,1]: rare => ~1, ubiquitous => ~0.
+
+    Curve: 1 - log(1+df)/log(1+total). When df==1 of N=900 the token is
+    present in one document: weight ~1 - log2/log901 ~0.9 (strong). When
+    df==N (ubiquitous) weight is 0. When total<=1 return 1.0 (no
+    information to dampen).
+    """
+    if total <= 1:
+        return 1.0
+    # clamp df to [1, total] to keep log domain valid
+    df = max(1, min(df, total))
+    weight = 1.0 - math.log(1 + df) / math.log(1 + total)
+    return max(0.0, min(1.0, weight))
+
+
+def build_basename_token_df(relative_paths: Iterable[str]) -> dict[str, int]:
+    """Document frequency of basename tokens over the indexed corpus."""
+    df: Counter[str] = Counter()
+    for rp in relative_paths:
+        tokens = set(_tokens(Path(rp).stem))
+        for tok in tokens:
+            df[tok] += 1
+    return dict(df)
+
+
 def rerank_candidates(
     candidates: list[HybridCandidate],
     query: str,
@@ -115,9 +144,19 @@ def rerank_candidates(
     symbols_by_key: dict[str, Symbol],
     seed: Symbol | None = None,
     preference: str | None = None,
+    basename_token_df: dict[str, int] | None = None,
+    total_docs: int | None = None,
 ) -> list[HybridCandidate]:
     tokens = set(_tokens(query))
     relevance_tokens = _relevance_tokens(query)
+
+    # kind frequency over this candidate pool (corpus for kind is the pool itself)
+    if candidates:
+        kind_counts: dict[str, int] = dict(Counter(c.symbol_kind for c in candidates))
+        total_candidates = len(candidates)
+    else:
+        kind_counts = {}
+        total_candidates = 0
 
     for candidate in candidates:
         features = _features(
@@ -128,6 +167,10 @@ def rerank_candidates(
             symbols_by_key=symbols_by_key,
             seed=seed,
             preference=preference,
+            basename_token_df=basename_token_df,
+            total_docs=total_docs,
+            kind_counts=kind_counts,
+            total_candidates=total_candidates,
         )
         candidate.score += features.boost()
 
@@ -143,14 +186,37 @@ def _features(
     symbols_by_key: dict[str, Symbol],
     seed: Symbol | None,
     preference: str | None,
+    basename_token_df: dict[str, int] | None = None,
+    total_docs: int | None = None,
+    kind_counts: dict[str, int] | None = None,
+    total_candidates: int | None = None,
 ) -> RerankFeatures:
     symbol = symbols_by_key.get(candidate.chunk_key)
+
+    pm = _path_match(candidate, tokens, basename_token_df, total_docs)
+
+    raw_kind = 1.0 if candidate.symbol_kind in tokens else 0.0
+    if raw_kind and kind_counts is not None and total_candidates and total_candidates >= 5:
+        df_kind = kind_counts.get(candidate.symbol_kind, 1)
+        # Piecewise: if at most half share this kind, keep full signal;
+        # beyond half, linearly damp toward zero (so 90% common => ~0.2).
+        # This preserves the existing unit-test expectation (N=2, df=1 => 1.0)
+        # while still damping the django case (N~90, df~80 => ~0.22).
+        if df_kind * 2 > total_candidates:
+            # damp factor in [0,1) for majority-shared kinds
+            damp = max(0.0, 2 * (1 - df_kind / total_candidates))
+            # also apply IDF shape for extra rarity weighting when very common
+            # blend linear damp with log IDF to keep rare-kind boost high
+            idf = _idf_weight(df_kind, total_candidates)
+            # use the more conservative (smaller) damp so majority is strongly suppressed
+            raw_kind = raw_kind * min(damp, idf) if idf < damp else raw_kind * damp
+        # else keep 1.0
 
     return RerankFeatures(
         exact_symbol=1.0 if candidate.symbol_name.lower() in tokens else 0.0,
         token_overlap=_token_overlap(candidate.symbol_name, relevance_tokens),
-        path_match=_path_match(candidate, tokens),
-        kind_match=1.0 if candidate.symbol_kind in tokens else 0.0,
+        path_match=pm,
+        kind_match=raw_kind,
         fts=_rank_score(candidate.fts_rank),
         vector=_rank_score(candidate.vector_rank),
         graph_distance=_graph_distance(symbol, seed, graph),
@@ -159,12 +225,17 @@ def _features(
     )
 
 
-def _path_match(candidate: HybridCandidate, tokens: set[str]) -> float:
+def _path_match(
+    candidate: HybridCandidate,
+    tokens: set[str],
+    basename_token_df: dict[str, int] | None = None,
+    total_docs: int | None = None,
+) -> float:
     """How well the candidate's file identifies the query, at two strengths.
 
     A hit on the file's own basename (e.g. "base" in "core/management/
     base.py") is a strong, specific signal - the query is plausibly naming
-    this exact file - and gets full credit. A hit only on a directory
+    this exact file - and gets IDF-weighted credit. A hit only on a directory
     segment or the qualified name (e.g. every file under "middleware/"
     matching a query containing "middleware") is a weak, generic signal:
     dozens of unrelated files in the same directory tree share it equally,
@@ -175,7 +246,16 @@ def _path_match(candidate: HybridCandidate, tokens: set[str]) -> float:
     """
     basename_tokens = set(_tokens(Path(candidate.relative_path).stem))
 
-    if basename_tokens & tokens:
+    overlap = basename_tokens & tokens
+    if overlap:
+        if basename_token_df is not None and total_docs is not None and total_docs > 0:
+            best = 0.0
+            for tok in overlap:
+                df = basename_token_df.get(tok, 1)
+                w = _idf_weight(df, total_docs)
+                if w > best:
+                    best = w
+            return best
         return 1.0
 
     path_tokens = set(_tokens(candidate.relative_path)) | set(

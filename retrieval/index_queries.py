@@ -40,6 +40,17 @@ def build_hybrid_retriever(
     vector_store = load_vector_store(db_path) if provider is not None else None
     embed = provider.embed_query if provider is not None else None
 
+    # IDF corpus: basename-token document frequency over relative_paths
+    from retrieval.reranker import build_basename_token_df
+
+    # Prefer real documents; fallback to symbol relative_paths if documents absent
+    if result.documents:
+        relative_paths = [d.relative_path for d in result.documents]
+    else:
+        relative_paths = list({s.relative_path for s in result.symbols})
+    basename_token_df = build_basename_token_df(relative_paths) if relative_paths else None
+    total_docs = len(relative_paths) if relative_paths else None
+
     return HybridRetriever(
         symbol_index=result.symbol_index,
         graph=result.graph,
@@ -48,6 +59,8 @@ def build_hybrid_retriever(
         ),
         vector_store=vector_store,
         embed=embed,
+        basename_token_df=basename_token_df,
+        total_docs=total_docs,
     )
 
 

@@ -456,5 +456,114 @@ class TestTestExamplePenalty(unittest.TestCase):
         self.assertFalse(_is_test_or_example("core/management/base.py"))
 
 
+class TestIDFWeightedPathMatch(unittest.TestCase):
+    def test_rare_basename_outranks_common_basename(self):
+        # Corpus: "converters" appears in 1 of 100 docs (rare), "test" in 60 of 100 (common)
+        from retrieval.reranker import _idf_weight, _path_match, build_basename_token_df
+
+        # build a synthetic df where converters is rare, test is common
+        df = {"converters": 1, "test": 60}
+        total_docs = 100
+
+        # rare should have high weight ~0.9, common low ~0.12
+        self.assertGreater(_idf_weight(1, 100), _idf_weight(60, 100))
+        self.assertGreater(_idf_weight(1, 100), 0.8)
+        self.assertLess(_idf_weight(60, 100), 0.2)
+
+        # Two candidates whose basenames differ, query contains both tokens
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "converters.ts").write_text("export function foo() { return 1; }\n", encoding="utf-8")
+            (root / "test.ts").write_text("export function bar() { return 2; }\n", encoding="utf-8")
+            result = build_graph(str(root))
+        foo = next(s for s in result.symbols if s.name == "foo")
+        bar = next(s for s in result.symbols if s.name == "bar")
+
+        # Query contains both basenames
+        query = "converters test"
+        tokens = set(["converters", "test"])
+        pm_rare = _path_match(_candidate(foo, score=0.0), tokens, df, total_docs)
+        pm_common = _path_match(_candidate(bar, score=0.0), tokens, df, total_docs)
+        # converters.py's basename "converters" maps to foo only if foo's path is converters.py
+        # Adjust: ensure relative_paths align - foo is converters.py, bar is test.py
+        # So rare should score higher than common
+        self.assertGreater(pm_rare, pm_common)
+
+        # End-to-end: rare basename candidate outranks common at equal fused score
+        ranked = rerank_candidates(
+            [_candidate(bar, score=0.1), _candidate(foo, score=0.1)],
+            query,
+            graph=result.graph,
+            symbols_by_key={s.stable_key: s for s in result.symbols},
+            basename_token_df=df,
+            total_docs=total_docs,
+        )
+        self.assertEqual(ranked[0].symbol_name, "foo")
+
+    def test_rare_token_weight_shape(self):
+        from retrieval.reranker import _idf_weight
+
+        # 1 of 900 => strong ~0.9
+        self.assertAlmostEqual(_idf_weight(1, 900), 0.898, delta=0.05)
+        # 1 of 10 => weaker but not zero
+        w = _idf_weight(1, 10)
+        self.assertGreater(w, 0.5)
+        self.assertLess(w, 0.85)
+
+
+class TestIDFWeightedKindMatch(unittest.TestCase):
+    def test_kind_shared_by_most_contributes_nothing(self):
+        # Pool where 9 of 10 candidates are "class", 1 is "function", query says "class"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            parts = []
+            for i in range(9):
+                parts.append(f"export class Cls{i} {{}}\n")
+            parts.append("export function myFunc() { return 1; }\n")
+            (root / "lib.ts").write_text("".join(parts), encoding="utf-8")
+            result = build_graph(str(root))
+
+        symbols = {s.name: s for s in result.symbols}
+        cls0 = symbols["Cls0"]
+        # Create 9 class candidates + 1 function, but we test the class boost is damped
+        candidates = []
+        for i in range(9):
+            candidates.append(_candidate(symbols[f"Cls{i}"], score=0.1))
+        candidates.append(_candidate(symbols["myFunc"], score=0.1))
+
+        # Query contains "class": normally every class gets +0.2, but when 9/10 share it, should be damped
+        ranked = rerank_candidates(
+            candidates,
+            "class",
+            graph=result.graph,
+            symbols_by_key={s.stable_key: s for s in result.symbols},
+        )
+        # The best-ranked candidate should NOT be decisively the first class due to kind boost alone;
+        # kind boost should be near zero when most share it. We verify by checking that
+        # the score increment from kind is minimal.
+        # Measure: if kind were undamped, Cls0 would get +0.2=0.3 total, myFunc 0.1; huge gap.
+        # Damped, gap should be small (<0.05) because weight ~0.2*0.2 ~0.04 or less
+        cls_candidate = next(c for c in ranked if c.symbol_name == "Cls0")
+        func_candidate = next(c for c in ranked if c.symbol_name == "myFunc")
+        # Both started 0.1, class got damped kind boost, func got none. Gap should be small.
+        self.assertLess(cls_candidate.score - func_candidate.score, 0.06)
+
+    def test_kind_rare_not_damped(self):
+        # 1 of 2 share kind -> not "most", should keep full boost (so lookup vs Account case still passes)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "a.ts").write_text("export class Account {}\nexport function lookup() { return 1; }\n", encoding="utf-8")
+            result = build_graph(str(root))
+        account = next(s for s in result.symbols if s.name == "Account")
+        lookup = next(s for s in result.symbols if s.name == "lookup")
+        ranked = rerank_candidates(
+            [_candidate(account, score=0.2), _candidate(lookup, score=0.1)],
+            "function",
+            graph=result.graph,
+            symbols_by_key={s.stable_key: s for s in result.symbols},
+        )
+        self.assertEqual([c.symbol_name for c in ranked], ["lookup", "Account"])
+
+
 if __name__ == "__main__":
     unittest.main()
