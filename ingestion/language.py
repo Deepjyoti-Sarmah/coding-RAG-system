@@ -6,6 +6,7 @@ EXTENSION_TO_LANGUAGE = {
     ".py": "python",
     ".go": "go",
     ".java": "java",
+    ".rs": "rust",
 }
 
 

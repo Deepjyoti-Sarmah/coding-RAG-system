@@ -2,6 +2,7 @@ from tree_sitter import Language
 from tree_sitter_go import language as language_go
 from tree_sitter_java import language as language_java
 from tree_sitter_python import language as language_python
+from tree_sitter_rust import language as language_rust
 from tree_sitter_typescript import (
     language_tsx,
     language_typescript,
@@ -31,5 +32,8 @@ PARSER: dict[str, BaseParser] = {
     ),
     "java": TreeSitterParser(
         Language(language_java()),
+    ),
+    "rust": TreeSitterParser(
+        Language(language_rust()),
     ),
 }

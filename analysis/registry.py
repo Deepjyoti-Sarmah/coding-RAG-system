@@ -16,6 +16,13 @@ from analysis.symbol_handlers.java_record import handle_java_record
 from analysis.symbol_handlers.java_class import handle_java_class
 from analysis.symbol_handlers.method import handle_method
 from analysis.symbol_handlers.python_function import handle_python_function
+from analysis.symbol_handlers.rust_const import handle_rust_const
+from analysis.symbol_handlers.rust_enum import handle_rust_enum
+from analysis.symbol_handlers.rust_function import handle_rust_function
+from analysis.symbol_handlers.rust_mod import handle_rust_mod
+from analysis.symbol_handlers.rust_struct import handle_rust_struct
+from analysis.symbol_handlers.rust_trait import handle_rust_trait
+from analysis.symbol_handlers.rust_type import handle_rust_type
 from analysis.symbol_handlers.type_alias import handle_type_alias
 from analysis.symbol_handlers.variable import handle_variable_declarator
 from models.entities.symbols import Symbol
@@ -60,6 +67,24 @@ SYMBOL_HANDLERS_BY_LANGUAGE["java"] = {
     "method_declaration": handle_java_method,
     "constructor_declaration": handle_java_method,
     "field_declaration": handle_java_field,
+}
+
+# `impl_item` (`impl Trait for Type`) is deliberately absent: it is a
+# standalone top-level node, not a declaration of a new type, so giving
+# it a handler here would either mint a duplicate CLASS symbol
+# colliding on stable_key with the struct/enum declaration, or (if
+# registered but returning None) block the reference walker from
+# descending into its methods. Its IMPLEMENTS relationship is produced
+# by a dedicated pass (see `analysis.languages.LanguageProfile.impl_node`).
+SYMBOL_HANDLERS_BY_LANGUAGE["rust"] = {
+    "function_item": handle_rust_function,
+    "function_signature_item": handle_rust_function,
+    "struct_item": handle_rust_struct,
+    "enum_item": handle_rust_enum,
+    "trait_item": handle_rust_trait,
+    "type_item": handle_rust_type,
+    "const_item": handle_rust_const,
+    "mod_item": handle_rust_mod,
 }
 
 

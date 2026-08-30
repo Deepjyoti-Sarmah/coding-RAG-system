@@ -47,6 +47,7 @@ def _callable_signature(
                 "required_parameter",
                 "optional_parameter",
                 "formal_parameter",
+                "parameter",
             ):
                 continue
 

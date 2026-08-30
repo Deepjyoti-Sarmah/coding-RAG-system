@@ -16,7 +16,7 @@ class TestLanguageParserSupport(unittest.TestCase):
             )
 
     def test_unknown_extension_has_no_parser(self):
-        for extension in (".md", ".rs", ".txt"):
+        for extension in (".md", ".rb", ".txt"):
             language = detect_language(extension)
             self.assertEqual(language, "unknown")
             self.assertNotIn(language, PARSER)

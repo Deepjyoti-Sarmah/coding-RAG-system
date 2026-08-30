@@ -89,6 +89,62 @@ def _resolve_java(module_path: str, importing_directory: str) -> list[str]:
     return [root + relative for root in _JAVA_SOURCE_ROOTS]
 
 
+def _resolve_rust(module_path: str, importing_directory: str) -> list[str]:
+    """`crate::a::b` resolves from the crate root (assumed to be `src/`);
+    `self::a` and `super::a` resolve relative to the importing module's
+    directory, climbing one level per leading `super`. External crates
+    (anything not starting with `crate`, `self`, or `super`) do not
+    resolve -- there is no crate registry here, only this repo's own
+    source tree.
+
+    A path segment can name either a module (its own file) or an item
+    declared inside its parent module's file (`crate::auth::login` is
+    usually `fn login` inside `auth.rs`, not `auth/login.rs`), and
+    nothing here distinguishes the two. Candidates are returned for
+    both readings, full path first: `seg.rs` / `seg/mod.rs` for every
+    segment, and -- when there is more than one segment -- the same
+    pair one segment short, for the "last segment is an item" case.
+    """
+    if not module_path:
+        return []
+
+    segments = module_path.split("::")
+
+    if segments[0] == "crate":
+        base = "src"
+        segments = segments[1:]
+    elif segments[0] == "self":
+        base = importing_directory
+        segments = segments[1:]
+    elif segments[0] == "super":
+        base = importing_directory
+        while segments and segments[0] == "super":
+            base = posixpath.dirname(base)
+            segments = segments[1:]
+    else:
+        return []
+
+    if not segments:
+        return []
+
+    candidates: list[str] = []
+
+    for depth in (len(segments), len(segments) - 1):
+        if depth <= 0:
+            continue
+
+        relative = (
+            posixpath.join(base, *segments[:depth])
+            if base
+            else "/".join(segments[:depth])
+        )
+
+        candidates.append(relative + ".rs")
+        candidates.append(posixpath.join(relative, "mod.rs"))
+
+    return candidates
+
+
 RESOLVERS: dict[str, Resolver] = {
     "typescript": _resolve_typescript,
     "tsx": _resolve_typescript,
@@ -97,6 +153,7 @@ RESOLVERS: dict[str, Resolver] = {
     "python": _resolve_python,
     "go": _resolve_go,
     "java": _resolve_java,
+    "rust": _resolve_rust,
 }
 
 

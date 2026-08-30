@@ -52,6 +52,16 @@ class LanguageProfile:
     # field chain count as EXTENDS references.
     superclass_field: str | None = None
 
+    # Rust's `impl Trait for Type` is a standalone top-level node, not
+    # nested inside either symbol's own node, so the generic reference
+    # walker (which only visits inside an already-extracted symbol's
+    # node) never sees it. When set, a dedicated pass walks the raw tree
+    # for this node type and emits an IMPLEMENTS reference from the
+    # `impl_type_field` symbol to the `impl_trait_field` name.
+    impl_node: str | None = None
+    impl_trait_field: str | None = None
+    impl_type_field: str | None = None
+
 
 _PROFILES: dict[str, LanguageProfile] = {
     language: LanguageProfile(
@@ -117,6 +127,30 @@ _PROFILES["java"] = LanguageProfile(
     call_parent="method_invocation",
     call_function_field="name",
     declaration_member_types=frozenset({"method_declaration", "field_declaration", "constructor_declaration", "enum_constant"}),
+)
+
+
+_PROFILES["rust"] = LanguageProfile(
+    language="rust",
+    symbol_handlers=symbol_handlers_for("rust"),
+    import_handlers=import_handlers_for("rust"),
+    export_handlers=export_handlers_for("rust"),
+    member_node="field_expression",
+    member_object_field="value",
+    member_property_field="field",
+    identifier_nodes=frozenset({"identifier", "type_identifier", "field_identifier"}),
+    # `impl Trait for Type` and struct/enum field types are the only
+    # heritage-adjacent positions; ordinary type annotations elsewhere
+    # are not extracted (same rationale as TS/Go/Java).
+    heritage_only_nodes=frozenset({"type_identifier"}),
+    extends_parents=frozenset(),
+    implements_parents=frozenset(),
+    call_parent="call_expression",
+    call_function_field="function",
+    declaration_member_types=frozenset({"field_declaration", "function_signature_item"}),
+    impl_node="impl_item",
+    impl_trait_field="trait",
+    impl_type_field="type",
 )
 
 

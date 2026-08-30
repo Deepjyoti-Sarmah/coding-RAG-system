@@ -9,6 +9,7 @@ from analysis.import_handlers.python_imports import (
     handle_python_from_import,
     handle_python_import,
 )
+from analysis.import_handlers.rust_imports import handle_rust_use
 from analysis.registry import TYPESCRIPT_FAMILY
 from models.entities.import_references import ImportReference
 
@@ -37,6 +38,10 @@ IMPORT_HANDLERS_BY_LANGUAGE["python"] = {
 
 IMPORT_HANDLERS_BY_LANGUAGE["java"] = {
     "import_declaration": handle_java_import,
+}
+
+IMPORT_HANDLERS_BY_LANGUAGE["rust"] = {
+    "use_declaration": handle_rust_use,
 }
 
 
