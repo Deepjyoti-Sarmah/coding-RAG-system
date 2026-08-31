@@ -1,6 +1,6 @@
 from tree_sitter import Language
-from tree_sitter_c_sharp import language as language_csharp
 from tree_sitter_c import language as language_c
+from tree_sitter_c_sharp import language as language_csharp
 from tree_sitter_cpp import language as language_cpp
 from tree_sitter_go import language as language_go
 from tree_sitter_java import language as language_java

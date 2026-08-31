@@ -253,8 +253,7 @@ def _path_match(
             for tok in overlap:
                 df = basename_token_df.get(tok, 1)
                 w = _idf_weight(df, total_docs)
-                if w > best:
-                    best = w
+                best = max(best, w)
             return best
         return 1.0
 

@@ -6,6 +6,7 @@ import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 MAX_TEXT = 2000
@@ -70,10 +71,10 @@ class SessionService:
                 CREATE INDEX IF NOT EXISTS idx_areas_session ON code_areas(session_id, timestamp);
             """)
 
-    def _session(self, row: sqlite3.Row) -> dict:
+    def _session(self, row: sqlite3.Row) -> dict[str, Any]:
         return dict(row)
 
-    def start(self) -> dict:
+    def start(self) -> dict[str, Any]:
         with self._connect() as conn:
             row = conn.execute(
                 "SELECT * FROM sessions WHERE project_path=? AND status='active' ORDER BY started_at DESC LIMIT 1",
@@ -87,7 +88,7 @@ class SessionService:
                          (session_id, self.project_path, timestamp))
             return self._session(conn.execute("SELECT * FROM sessions WHERE id=?", (session_id,)).fetchone())
 
-    def resume(self, session_id: str | None = None) -> dict | None:
+    def resume(self, session_id: str | None = None) -> dict[str, Any] | None:
         with self._connect() as conn:
             if session_id:
                 row = conn.execute("SELECT * FROM sessions WHERE id=? AND project_path=?", (session_id, self.project_path)).fetchone()
@@ -95,7 +96,7 @@ class SessionService:
                 row = conn.execute("SELECT * FROM sessions WHERE project_path=? AND status='active' ORDER BY started_at DESC LIMIT 1", (self.project_path,)).fetchone()
             return self._session(row) if row else None
 
-    def end(self, session_id: str, status: str = "completed") -> dict | None:
+    def end(self, session_id: str, status: str = "completed") -> dict[str, Any] | None:
         if status not in {"completed", "failed"}:
             raise ValueError("status must be completed or failed")
         with self._connect() as conn:
@@ -104,11 +105,11 @@ class SessionService:
             row = conn.execute("SELECT * FROM sessions WHERE id=? AND project_path=?", (session_id, self.project_path)).fetchone()
             return self._session(row) if row else None
 
-    def list(self) -> list[dict]:
+    def list(self) -> list[dict[str, Any]]:
         with self._connect() as conn:
             return [self._session(row) for row in conn.execute("SELECT * FROM sessions WHERE project_path=? ORDER BY started_at DESC", (self.project_path,))]
 
-    def status(self, session_id: str | None = None) -> dict | None:
+    def status(self, session_id: str | None = None) -> dict[str, Any] | None:
         return self.resume(session_id)
 
     def _require(self, session_id: str | None) -> str:
@@ -119,7 +120,7 @@ class SessionService:
             raise ValueError("session not found for project")
         return session["id"]
 
-    def event(self, event_type: str, metadata: dict | None = None, session_id: str | None = None) -> dict:
+    def event(self, event_type: str, metadata: dict[str, Any] | None = None, session_id: str | None = None) -> dict[str, Any]:
         payload = json.dumps(metadata or {}, separators=(",", ":"))
         if len(payload) > MAX_JSON:
             payload = json.dumps({"truncated": True}, separators=(",", ":"))
@@ -128,28 +129,28 @@ class SessionService:
             conn.execute("INSERT INTO session_events VALUES (?, ?, ?, ?, ?)", (event["id"], event["session_id"], event["event_type"], event["timestamp"], payload))
         return event
 
-    def decision(self, decision: str, reason: str = "", session_id: str | None = None) -> dict:
+    def decision(self, decision: str, reason: str = "", session_id: str | None = None) -> dict[str, Any]:
         item = {"id": str(uuid4()), "session_id": self._require(session_id), "decision": _bounded(decision), "reason": _bounded(reason), "timestamp": _now()}
         with self._connect() as conn:
             conn.execute("INSERT INTO decisions VALUES (?, ?, ?, ?, ?)", (item["id"], item["session_id"], item["decision"], item["reason"], item["timestamp"]))
         self.event("decision_recorded", {"decision_id": item["id"]}, item["session_id"])
         return item
 
-    def code_area(self, file_path: str, description: str = "", session_id: str | None = None) -> dict:
+    def code_area(self, file_path: str, description: str = "", session_id: str | None = None) -> dict[str, Any]:
         item = {"id": str(uuid4()), "session_id": self._require(session_id), "file_path": _bounded(file_path, 500), "description": _bounded(description), "timestamp": _now()}
         with self._connect() as conn:
             conn.execute("INSERT INTO code_areas VALUES (?, ?, ?, ?, ?)", (item["id"], item["session_id"], item["file_path"], item["description"], item["timestamp"]))
         self.event("code_area_recorded", {"code_area_id": item["id"]}, item["session_id"])
         return item
 
-    def retrieval(self, query: str, selected_identifiers: list[str], context_tokens: int, baseline_tokens: int, latency_ms: float, session_id: str | None = None) -> dict:
+    def retrieval(self, query: str, selected_identifiers: list[str], context_tokens: int, baseline_tokens: int, latency_ms: float, session_id: str | None = None) -> dict[str, Any]:
         item = {"id": str(uuid4()), "session_id": self._require(session_id), "query": _bounded(query), "selected_identifiers": [_bounded(str(x), 500) for x in selected_identifiers[:50]], "context_tokens": max(0, int(context_tokens)), "baseline_tokens": max(0, int(baseline_tokens)), "latency_ms": max(0.0, float(latency_ms)), "timestamp": _now()}
         selected = json.dumps(item["selected_identifiers"], separators=(",", ":"))[:MAX_JSON]
         with self._connect() as conn:
             conn.execute("INSERT INTO retrieval_events VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (item["id"], item["session_id"], item["query"], selected, item["context_tokens"], item["baseline_tokens"], item["latency_ms"], item["timestamp"]))
         return item
 
-    def timeline(self, session_id: str | None = None, limit: int = 50) -> list[dict]:
+    def timeline(self, session_id: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
         sid = self._require(session_id)
         limit = max(1, min(int(limit), 500))
         with self._connect() as conn:
@@ -162,9 +163,9 @@ class SessionService:
                 rows.append({"id": row["id"], "session_id": sid, "type": "code_area", "timestamp": row["timestamp"], "file_path": row["file_path"], "description": row["description"]})
             for row in conn.execute("SELECT id, timestamp, query, selected_identifiers_json, context_tokens, baseline_tokens, latency_ms FROM retrieval_events WHERE session_id=?", (sid,)):
                 rows.append({"id": row["id"], "session_id": sid, "type": "retrieval", "timestamp": row["timestamp"], "query": row["query"], "selected_identifiers": json.loads(row["selected_identifiers_json"]), "context_tokens": row["context_tokens"], "baseline_tokens": row["baseline_tokens"], "latency_ms": row["latency_ms"]})
-        return sorted(rows, key=lambda item: (item["timestamp"], item["id"]))[-limit:]
+        return sorted(rows, key=lambda item: (item["timestamp"], item["id"]))[-limit:]  # type: ignore[index]  # pyright: ignore[reportArgumentType]
 
-    def recall(self, query: str, limit: int = 10, session_id: str | None = None) -> list[dict]:
+    def recall(self, query: str, limit: int = 10, session_id: str | None = None) -> list[dict[str, Any]]:
         sid = self._require(session_id)
         terms = [term for term in query.lower().split() if term][:8]
         if not terms:
@@ -173,7 +174,7 @@ class SessionService:
         with self._connect() as conn:
             decisions = [dict(row) | {"type": "decision"} for row in conn.execute("SELECT id, session_id, decision, reason, timestamp FROM decisions WHERE session_id=? AND lower(decision || ' ' || reason) LIKE ? ORDER BY timestamp DESC LIMIT ?", (sid, like, min(max(limit, 1), 100)))]
             areas = [dict(row) | {"type": "code_area"} for row in conn.execute("SELECT id, session_id, file_path, description, timestamp FROM code_areas WHERE session_id=? AND lower(file_path || ' ' || description) LIKE ? ORDER BY timestamp DESC LIMIT ?", (sid, like, min(max(limit, 1), 100)))]
-        return sorted(decisions + areas, key=lambda item: (item["timestamp"], item["id"]), reverse=True)[:max(1, min(limit, 100))]
+        return sorted(decisions + areas, key=lambda item: (item["timestamp"], item["id"]), reverse=True)[:max(1, min(limit, 100))]  # type: ignore[index]  # pyright: ignore[reportArgumentType,reportAttributeAccessIssue]
 
     def prune(self, days: int) -> dict[str, int]:
         cutoff = (datetime.now(UTC) - timedelta(days=max(0, int(days)))).isoformat()
@@ -195,6 +196,6 @@ class SessionService:
             raise ValueError("format must be json or markdown")
         lines = [f"# CKG session {session['id']}", "", f"- Project: `{session['project_path']}`", f"- Status: {session['status']}", "", "## Timeline", ""]
         for item in data["timeline"]:
-            detail = item.get("decision") or item.get("description") or item.get("query") or item.get("type")
-            lines.append(f"- `{item['timestamp']}` **{item['type']}**: {detail}")
+            detail = item.get("decision") or item.get("description") or item.get("query") or item.get("type")  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+            lines.append(f"- `{item['timestamp']}` **{item['type']}**: {detail}")  # pyright: ignore[reportArgumentType]
         return "\n".join(lines) + "\n"

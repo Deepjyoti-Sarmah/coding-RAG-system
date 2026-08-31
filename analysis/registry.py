@@ -1,12 +1,20 @@
 from collections.abc import Callable
 
-from analysis.symbol_handlers.classes import handle_class
 from analysis.symbol_handlers.c_callable import (
     handle_declaration as handle_c_declaration,
+)
+from analysis.symbol_handlers.c_callable import (
     handle_function as handle_c_function,
+)
+from analysis.symbol_handlers.c_callable import (
     handle_method as handle_c_method,
 )
-from analysis.symbol_handlers.c_types import handle_namespace, handle_type, handle_variable
+from analysis.symbol_handlers.c_types import (
+    handle_namespace,
+    handle_type,
+    handle_variable,
+)
+from analysis.symbol_handlers.classes import handle_class
 from analysis.symbol_handlers.cs_class import handle_cs_class
 from analysis.symbol_handlers.cs_interface import handle_cs_interface
 from analysis.symbol_handlers.cs_method import handle_cs_method
@@ -18,12 +26,12 @@ from analysis.symbol_handlers.go_function import (
     handle_go_type_spec,
 )
 from analysis.symbol_handlers.interface import handle_interface
+from analysis.symbol_handlers.java_class import handle_java_class
 from analysis.symbol_handlers.java_enum import handle_java_enum
 from analysis.symbol_handlers.java_field import handle_java_field
 from analysis.symbol_handlers.java_interface import handle_java_interface
 from analysis.symbol_handlers.java_method import handle_java_method
 from analysis.symbol_handlers.java_record import handle_java_record
-from analysis.symbol_handlers.java_class import handle_java_class
 from analysis.symbol_handlers.method import handle_method
 from analysis.symbol_handlers.python_function import handle_python_function
 from analysis.symbol_handlers.rust_const import handle_rust_const

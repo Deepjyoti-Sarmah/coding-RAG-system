@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Where does a target file's chunks get lost during retrieval?
 
 For a repo (an already-indexed sqlite db) + a query + a target relative
@@ -37,6 +36,7 @@ import argparse
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 # Unconditional: a stale editable-install copy of config.py can sit ahead
@@ -44,13 +44,14 @@ ROOT = Path(__file__).resolve().parent.parent
 # further back - see benchmarks/run_external.py for the full story.
 sys.path.insert(0, str(ROOT))
 
-import retrieval.hybrid_retriever as hr_module  # noqa: E402
-from evaluation.external import _dedupe_files  # noqa: E402
-from indexing.indexer import reindex_index  # noqa: E402
-from retrieval.index_queries import build_hybrid_retriever  # noqa: E402
+import retrieval.hybrid_retriever as hr_module
+from embeddings.provider import EmbeddingProvider
+from evaluation.external import _dedupe_files
+from indexing.indexer import reindex_index
+from retrieval.index_queries import build_hybrid_retriever
 
 
-def build_index(repo_dir: str, db_path: str, *, embed: bool) -> object | None:
+def build_index(repo_dir: str, db_path: str, *, embed: bool) -> EmbeddingProvider | None:
     reindex_index(db_path, repo_dir)
 
     if not embed:
@@ -71,13 +72,13 @@ def _first_rank(items, key_fn, target: str) -> int | None:
     return None
 
 
-def diagnose(db_path: str, provider: object | None, query: str, target: str, *, top_k: int = 30) -> dict:
+def diagnose(db_path: str, provider: EmbeddingProvider | None, query: str, target: str, *, top_k: int = 30) -> dict[str, object]:
     retriever = build_hybrid_retriever(db_path, provider=provider)
 
-    raw_fts: list = []
-    raw_vector: list = []
-    fused_holder: dict = {}
-    reranked_holder: list = []
+    raw_fts: list[Any] = []  # type: ignore[type-arg]
+    raw_vector: list[Any] = []  # type: ignore[type-arg]
+    fused_holder: dict[Any, Any] = {}  # type: ignore[type-arg]
+    reranked_holder: list[Any] = []  # type: ignore[type-arg]
 
     orig_fts_search = retriever.fts_search
 
@@ -91,12 +92,12 @@ def diagnose(db_path: str, provider: object | None, query: str, target: str, *, 
     if retriever.vector_store is not None:
         orig_vec_search = retriever.vector_store.search
 
-        def spy_vec(vec, top_k):
+        def spy_vec(vec, top_k=5, **_kw):  # type: ignore[no-untyped-def]  # pyright: ignore[reportUnknownParameterType,reportMissingParameterType]
             hits = orig_vec_search(vec, top_k=top_k)
             raw_vector.extend(hits)
             return hits
 
-        retriever.vector_store.search = spy_vec
+        retriever.vector_store.search = spy_vec  # type: ignore[method-assign,assignment]  # pyright: ignore[reportAttributeAccessIssue]
 
     orig_fusion = hr_module.reciprocal_rank_fusion
     orig_rerank = hr_module.rerank_candidates
@@ -124,12 +125,12 @@ def diagnose(db_path: str, provider: object | None, query: str, target: str, *, 
         symbol.stable_key: symbol.relative_path
         for symbol in retriever.symbol_index.symbols()
     }
-    for hit in raw_fts:
-        key_to_path.setdefault(hit.chunk_key, hit.relative_path)
-    for hit in raw_vector:
-        key_to_path.setdefault(hit.chunk_key, getattr(hit, "relative_path", ""))
+    for hit in raw_fts:  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        key_to_path.setdefault(hit.chunk_key, hit.relative_path)  # type: ignore[attr-defined]
+    for hit in raw_vector:  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        key_to_path.setdefault(hit.chunk_key, getattr(hit, "relative_path", ""))  # type: ignore[attr-defined]
 
-    fused_ordered = sorted(fused_holder.items(), key=lambda item: item[1], reverse=True)
+    fused_ordered = sorted(fused_holder.items(), key=lambda item: item[1], reverse=True)  # type: ignore[arg-type]  # pyright: ignore[reportCallIssue,reportArgumentType]
 
     fts_rank = _first_rank(raw_fts, lambda h: h.relative_path, target)
     vector_rank = _first_rank(raw_vector, lambda h: getattr(h, "relative_path", ""), target)

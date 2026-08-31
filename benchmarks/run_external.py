@@ -12,7 +12,6 @@ import json
 import subprocess
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 # Ensure repo root is on sys.path for imports when run as script
@@ -54,8 +53,12 @@ def clone_repo(repo_url: str, dest: Path, commit: str | None = None) -> str:
 
 def _recompute_file(path: Path) -> None:
     """Recompute ceiling-aware metrics for an existing report in-place."""
-    from evaluation.external import _precision_at_k, _precision_ceiling_at_k, _precision_over_returned
-    from evaluation.metrics import recall_at_k, reciprocal_rank, mean
+    from evaluation.external import (
+        _precision_at_k,
+        _precision_ceiling_at_k,
+        _precision_over_returned,
+    )
+    from evaluation.metrics import mean, recall_at_k, reciprocal_rank
 
     data = json.loads(path.read_text(encoding="utf-8"))
     questions = data.get("questions", [])
@@ -178,7 +181,7 @@ def main() -> int:
 
                 print("Loading embedding model all-MiniLM-L6-v2 ...", file=sys.stderr)
                 provider = LocalEmbeddingProvider()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 -- embedding provider init may raise broad errors; fallback to no embeddings
                 print(f"Failed to load embedding model: {e}", file=sys.stderr)
                 provider = None
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import pathspec
 
@@ -6,7 +7,7 @@ IGNORE_FILE_NAMES = (".gitignore", ".ckgignore")
 
 
 class IgnoreRules:
-    def __init__(self, spec: pathspec.PathSpec) -> None:
+    def __init__(self, spec: pathspec.PathSpec[Any]) -> None:  # type: ignore[type-arg]  # pyright: ignore[reportMissingTypeArgument]
         self._spec = spec
 
     def is_ignored(self, relative_path: str, *, is_dir: bool = False) -> bool:
@@ -37,4 +38,4 @@ def load_ignore_rules(root_dir: str | Path) -> IgnoreRules:
         if ignore_file.is_file():
             lines.extend(ignore_file.read_text(encoding="utf-8").splitlines())
 
-    return IgnoreRules(pathspec.PathSpec.from_lines("gitignore", lines))
+    return IgnoreRules(pathspec.PathSpec.from_lines("gitignore", lines))  # type: ignore[arg-type]

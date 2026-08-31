@@ -64,9 +64,9 @@ def _select_with_per_file_cap(
     if per_file_cap <= 0 or top_k <= 0:
         return candidates[:top_k]
 
-    selected: list["HybridCandidate"] = []
+    selected: list[HybridCandidate] = []
     counts: dict[str, int] = {}
-    skipped: list["HybridCandidate"] = []
+    skipped: list[HybridCandidate] = []
 
     for cand in candidates:
         cnt = counts.get(cand.relative_path, 0)

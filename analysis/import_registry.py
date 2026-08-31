@@ -1,8 +1,8 @@
 from collections.abc import Callable
 
-from analysis.import_handlers.default import handle_default_import
-from analysis.import_handlers.cs_imports import handle_cs_using
 from analysis.import_handlers.c_include import handle_c_include
+from analysis.import_handlers.cs_imports import handle_cs_using
+from analysis.import_handlers.default import handle_default_import
 from analysis.import_handlers.go_imports import handle_go_import
 from analysis.import_handlers.java_imports import handle_java_import
 from analysis.import_handlers.named import handle_import_specifier

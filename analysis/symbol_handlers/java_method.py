@@ -19,9 +19,7 @@ def handle_java_method(
     lives in `identifier`.  Owner (class vs interface) drives
     the kind assignment.
     """
-    if owner is not None and owner.kind == SymbolKind.CLASS:
-        kind = SymbolKind.METHOD
-    elif owner is not None and owner.kind == SymbolKind.INTERFACE:
+    if owner is not None and owner.kind == SymbolKind.CLASS or owner is not None and owner.kind == SymbolKind.INTERFACE:
         kind = SymbolKind.METHOD
     else:
         kind = SymbolKind.FUNCTION

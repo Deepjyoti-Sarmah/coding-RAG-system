@@ -1,7 +1,6 @@
 import contextlib
 import io
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -29,8 +28,7 @@ AUTH = {
         "export function login(name: string) { createAuth(); return name; }\n"
     ),
     "api.ts": (
-        'import { login } from "./auth";\n'
-        'export function run() { login("admin"); }\n'
+        'import { login } from "./auth";\nexport function run() { login("admin"); }\n'
     ),
 }
 
@@ -68,7 +66,9 @@ class TestCliCommands(unittest.TestCase):
         self.assertFalse(has_embeddings(self.db_path))
 
     def test_index_with_provider_embeds_chunks(self):
-        cmd_index(str(self.root), self.db_path, provider=FakeEmbeddingProvider(dimension=8))
+        cmd_index(
+            str(self.root), self.db_path, provider=FakeEmbeddingProvider(dimension=8)
+        )
 
         self.assertTrue(has_embeddings(self.db_path))
 
@@ -234,7 +234,9 @@ class TestCliMain(unittest.TestCase):
         main(["--db", self.db_path, "index", str(self.root)])
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
-            exit_code = main(["--db", self.db_path, "status", "--oneline", str(self.root)])
+            exit_code = main(
+                ["--db", self.db_path, "status", "--oneline", str(self.root)]
+            )
         self.assertEqual(exit_code, 0)
         output = stdout.getvalue().strip()
         lines = [l for l in output.splitlines() if l.strip()]

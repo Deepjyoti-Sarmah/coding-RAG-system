@@ -193,23 +193,23 @@ _PROFILES["csharp"] = LanguageProfile(
     ),
 )
 
-_C_PROFILE = dict(
-    member_node="field_expression",
-    member_object_field="argument",
-    member_property_field="field",
-    identifier_nodes=frozenset({"identifier", "field_identifier", "type_identifier"}),
-    heritage_only_nodes=frozenset(),
-    extends_parents=frozenset(),
-    implements_parents=frozenset(),
-    call_parent="call_expression",
-    call_function_field="function",
-    declaration_member_types=frozenset({"field_declaration"}),
-)
+_C_PROFILE: dict[str, str | frozenset[str]] = {
+    "member_node": "field_expression",
+    "member_object_field": "argument",
+    "member_property_field": "field",
+    "identifier_nodes": frozenset({"identifier", "field_identifier", "type_identifier"}),
+    "heritage_only_nodes": frozenset(),
+    "extends_parents": frozenset(),
+    "implements_parents": frozenset(),
+    "call_parent": "call_expression",
+    "call_function_field": "function",
+    "declaration_member_types": frozenset({"field_declaration"}),
+}
 
 _PROFILES["c"] = LanguageProfile(
     language="c", symbol_handlers=symbol_handlers_for("c"),
     import_handlers=import_handlers_for("c"), export_handlers=export_handlers_for("c"),
-    **_C_PROFILE,
+    **_C_PROFILE,  # type: ignore[arg-type,unused-ignore]  # pyright: ignore[reportArgumentType,reportCallIssue]
 )
 
 _PROFILES["cpp"] = LanguageProfile(

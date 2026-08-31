@@ -1,3 +1,4 @@
+from analysis.semantic.cpp_overload import candidate_compatible, is_cpp_symbol
 from analysis.semantic.import_symbol_resolver import resolve_exported_symbol
 from indexing.export_index import ExportIndex
 from indexing.symbol_index import SymbolIndex
@@ -5,7 +6,6 @@ from models.entities.references import Reference
 from models.entities.resolved_import_reference import ResolvedImportReference
 from models.entities.resolved_reference import ResolutionStatus, ResolvedReference
 from models.entities.symbols import Symbol
-from analysis.semantic.cpp_overload import candidate_compatible, is_cpp_symbol
 
 
 def resolve_symbol(

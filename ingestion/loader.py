@@ -108,7 +108,7 @@ def load_code_files(path: str, *, on_progress=None) -> list[Document]:
         if on_progress is not None and idx % 50 == 0:
             try:
                 on_progress(f"Parsed {idx} files...")
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
                 pass
 
     return documents

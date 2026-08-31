@@ -46,6 +46,8 @@ def run_impl_pass(
         by_name = module_level_by_document.get(parsed.document.document_id, {})
 
         for node in _find_nodes(parsed.tree.root_node, profile.impl_node):
+            if profile.impl_type_field is None or profile.impl_trait_field is None:
+                continue
             type_node = node.child_by_field_name(profile.impl_type_field)
             trait_node = node.child_by_field_name(profile.impl_trait_field)
 

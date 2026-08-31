@@ -1,5 +1,6 @@
 from pathlib import Path
 from time import perf_counter
+from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
@@ -52,13 +53,13 @@ mcp = MCPServer(
 )
 
 
-def _not_indexed(path: str, db_path: str) -> dict:
+def _not_indexed(path: str, db_path: str) -> dict[str, Any]:
     return {
         "error": f'No index found at {db_path}. Call index_repository(path="{path}") first.'
     }
 
 
-def _candidate_dict(candidate) -> dict:
+def _candidate_dict(candidate: Any) -> dict[str, Any]:
     return {
         "symbol_name": candidate.symbol_name,
         "qualified_name": candidate.qualified_name,
@@ -69,9 +70,9 @@ def _candidate_dict(candidate) -> dict:
     }
 
 
-def _import_dict(pair) -> dict:
+def _import_dict(pair: Any) -> dict[str, Any]:
     import_reference, resolved = pair
-    entry: dict = {
+    entry: dict[str, Any] = {
         "module_path": import_reference.module_path,
         "imported_name": import_reference.imported_name,
         "local_name": import_reference.local_name,
@@ -87,7 +88,7 @@ def _import_dict(pair) -> dict:
     return entry
 
 
-def _context_entry_dict(entry) -> dict:
+def _context_entry_dict(entry: Any) -> dict[str, Any]:
     return {
         "qualified_name": entry.qualified_name,
         "kind": entry.symbol_kind,
@@ -99,7 +100,7 @@ def _context_entry_dict(entry) -> dict:
 
 
 @mcp.tool()
-async def index_repository(path: str, embed: bool = False) -> dict:
+async def index_repository(path: str, embed: bool = False) -> dict[str, Any]:
     """Build or update the semantic index for a repository at `path`.
 
     Must be called (once) before any other tool is used against that path.
@@ -138,7 +139,7 @@ async def index_repository(path: str, embed: bool = False) -> dict:
 
 
 @mcp.tool()
-async def repository_status(path: str = ".") -> dict:
+async def repository_status(path: str = ".") -> dict[str, Any]:
     """Report index generation and document/symbol/chunk/embedding counts for `path`."""
     db_path = default_db_path(path)
 
@@ -149,7 +150,7 @@ async def repository_status(path: str = ".") -> dict:
 
 
 @mcp.tool()
-async def definition(name: str, path: str = ".") -> dict:
+async def definition(name: str, path: str = ".") -> dict[str, Any]:
     """Find the exact definition site(s) of a symbol by name."""
     db_path = default_db_path(path)
 
@@ -161,7 +162,7 @@ async def definition(name: str, path: str = ".") -> dict:
 
 
 @mcp.tool()
-async def callers(name: str, path: str = ".") -> dict:
+async def callers(name: str, path: str = ".") -> dict[str, Any]:
     """Find every symbol that calls `name` (1-hop incoming graph neighborhood)."""
     db_path = default_db_path(path)
 
@@ -173,7 +174,7 @@ async def callers(name: str, path: str = ".") -> dict:
 
 
 @mcp.tool()
-async def callees(name: str, path: str = ".") -> dict:
+async def callees(name: str, path: str = ".") -> dict[str, Any]:
     """Find every symbol that `name` calls (1-hop outgoing graph neighborhood)."""
     db_path = default_db_path(path)
 
@@ -185,7 +186,7 @@ async def callees(name: str, path: str = ".") -> dict:
 
 
 @mcp.tool()
-async def search(query: str, path: str = ".", top_k: int = 5) -> dict:
+async def search(query: str, path: str = ".", top_k: int = 5) -> dict[str, Any]:
     """Hybrid search: lexical (FTS) + exact-symbol + graph expansion + reranking;
     vector similarity is used when embeddings are available (run `ckg embed`
     to generate them). Use for open-ended questions; use definition/callers/callees
@@ -212,7 +213,7 @@ async def search(query: str, path: str = ".", top_k: int = 5) -> dict:
     except Exception:  # noqa: BLE001
         pending = 0
 
-    result = {
+    result: dict[str, Any] = {
         "results": [_candidate_dict(c) for c in retrieval.candidates],
         "vector_search_used": provider is not None,
         "pending_embeddings": pending,
@@ -220,13 +221,13 @@ async def search(query: str, path: str = ".", top_k: int = 5) -> dict:
     if result["results"]:
         try:
             SessionService(path).retrieval(query, [f"{x['relative_path']}:{x['qualified_name']}" for x in result["results"]], 0, 0, (perf_counter()-started)*1000)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 -- best-effort session logging must not crash tool
             pass
     return result
 
 
 @mcp.tool()
-async def imports(file: str, path: str = ".") -> dict:
+async def imports(file: str, path: str = ".") -> dict[str, Any]:
     """List a file's own import statements and where each one resolves to."""
     db_path = default_db_path(path)
 
@@ -237,7 +238,7 @@ async def imports(file: str, path: str = ".") -> dict:
 
 
 @mcp.tool()
-async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 5) -> dict:
+async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 5) -> dict[str, Any]:
     """Build a token-budgeted context pack: primary/supporting definitions
     with source excerpts and relationships. Uses vector search when embeddings
     are available (run `ckg embed` otherwise).
@@ -261,7 +262,7 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
     except Exception:  # noqa: BLE001
         pending = 0
 
-    result = {
+    result: dict[str, Any] = {
         "query": pack.query,
         "token_budget": pack.token_budget,
         "total_tokens": pack.total_tokens,
@@ -276,50 +277,50 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
     if selected:
         try:
             SessionService(path).retrieval(query, [f"{x['relative_path']}:{x['qualified_name']}" for x in selected], pack.total_tokens, getattr(pack, "baseline_tokens", 0), (perf_counter()-started)*1000)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 -- best-effort session logging must not crash tool
             pass
     return result
 
 
-def _session_error(error: Exception) -> dict:
+def _session_error(error: Exception) -> dict[str, Any]:
     return {"error": str(error)}
 
 
 @mcp.tool()
-async def session_start(path: str = ".") -> dict:
+async def session_start(path: str = ".") -> dict[str, Any]:
     return {"session": SessionService(path).start()}
 
 
 @mcp.tool()
-async def session_end(path: str, session_id: str) -> dict:
+async def session_end(path: str, session_id: str) -> dict[str, Any]:
     session = SessionService(path).end(session_id)
     return {"session": session} if session else _session_error(ValueError("session not found for project"))
 
 
 @mcp.tool()
-async def session_status(path: str, session_id: str | None = None) -> dict:
+async def session_status(path: str, session_id: str | None = None) -> dict[str, Any]:
     return {"session": SessionService(path).status(session_id)}
 
 
 @mcp.tool()
-async def session_recall(path: str, query: str, limit: int = 10) -> dict:
+async def session_recall(path: str, query: str, limit: int = 10) -> dict[str, Any]:
     return {"results": SessionService(path).recall(query, limit)}
 
 
 @mcp.tool()
-async def session_timeline(path: str, session_id: str, limit: int = 50) -> dict:
+async def session_timeline(path: str, session_id: str, limit: int = 50) -> dict[str, Any]:
     try: return {"session_id": session_id, "events": SessionService(path).timeline(session_id, limit)}
     except ValueError as error: return _session_error(error)
 
 
 @mcp.tool()
-async def record_decision(path: str, decision: str, reason: str = "", session_id: str | None = None) -> dict:
+async def record_decision(path: str, decision: str, reason: str = "", session_id: str | None = None) -> dict[str, Any]:
     try: return {"decision": SessionService(path).decision(decision, reason, session_id)}
     except ValueError as error: return _session_error(error)
 
 
 @mcp.tool()
-async def record_code_area(path: str, file_path: str, description: str = "", session_id: str | None = None) -> dict:
+async def record_code_area(path: str, file_path: str, description: str = "", session_id: str | None = None) -> dict[str, Any]:
     try: return {"code_area": SessionService(path).code_area(file_path, description, session_id)}
     except ValueError as error: return _session_error(error)
 

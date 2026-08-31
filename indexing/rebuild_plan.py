@@ -1,3 +1,5 @@
+from typing import Any
+
 """Deciding what an incremental run must redo.
 
 An incremental rebuild answers two questions before it touches any
@@ -58,12 +60,12 @@ class PreviousSnapshot:
     result: BuildResult
     docs_by_path: dict[str, Document]
     docs_by_id: dict[str, Document]
-    symbols_by_path: dict[str, list]
-    imports_by_path: dict[str, list]
-    exports_by_path: dict[str, list]
-    references_by_path: dict[str, list]
-    resolved_references_by_path: dict[str, list]
-    resolved_imports_by_path: dict[str, list]
+    symbols_by_path: dict[str, list[Any]]
+    imports_by_path: dict[str, list[Any]]
+    exports_by_path: dict[str, list[Any]]
+    references_by_path: dict[str, list[Any]]
+    resolved_references_by_path: dict[str, list[Any]]
+    resolved_imports_by_path: dict[str, list[Any]]
 
 
 def partition_files(scan: ScanResult) -> FilePartition:
@@ -114,8 +116,8 @@ def plan_rebuild(
     snapshot: PreviousSnapshot,
     importers: dict[str, set[str]],
     documents_by_id: dict[str, Document],
-    fresh_exports: list,
-    fresh_symbols: list,
+    fresh_exports: list[Any],
+    fresh_symbols: list[Any],
 ) -> RebuildPlan:
     """Decide which unchanged files still need re-resolution."""
     interface_changed = _interface_changed_paths(
@@ -146,12 +148,12 @@ def plan_rebuild(
 
 
 def group_by_path(
-    entities: list,
+    entities: list[Any],
     docs_by_id: dict[str, Document],
     *,
     document_id=lambda entity: entity.document_id,
-) -> dict[str, list]:
-    grouped: dict[str, list] = defaultdict(list)
+) -> dict[str, list[Any]]:
+    grouped: dict[str, list[Any]] = defaultdict(list)
 
     for entity in entities:
         document = docs_by_id.get(document_id(entity))
@@ -168,8 +170,8 @@ def _interface_changed_paths(
     *,
     changed_paths: frozenset[str],
     snapshot: PreviousSnapshot,
-    fresh_exports: list,
-    fresh_symbols: list,
+    fresh_exports: list[Any],
+    fresh_symbols: list[Any],
 ) -> frozenset[str]:
     changed: set[str] = set()
 

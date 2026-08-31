@@ -11,3 +11,6 @@ wheels/
 
 # Vendored comparison project (untracked nested git repo)
 code-context-engine/
+
+# Local fastapi clone for hard A/B tasks (pinned commit 4903347, not cloned per run)
+local_fastapi/

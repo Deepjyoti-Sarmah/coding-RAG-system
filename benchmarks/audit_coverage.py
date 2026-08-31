@@ -39,11 +39,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # further back - see benchmarks/run_external.py for the full story.
 sys.path.insert(0, str(ROOT))
 
-from ckg.config import INCLUDE_EXTENSIONS, MAX_FILE_SIZE_BYTES  # noqa: E402
-from ingestion.ignore_rules import load_ignore_rules  # noqa: E402
-from ingestion.loader import is_inside_excluded_dir, should_skip_file  # noqa: E402
-from analysis.build_graph import build_graph  # noqa: E402
-
+from analysis.build_graph import build_graph
+from ckg.config import INCLUDE_EXTENSIONS
+from ingestion.ignore_rules import load_ignore_rules
+from ingestion.loader import is_inside_excluded_dir, should_skip_file
 
 SKIP_REASONS = ("excluded_dir", "extension", "size", "ignore_rules")
 

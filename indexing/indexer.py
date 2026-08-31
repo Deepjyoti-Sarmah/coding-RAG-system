@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from analysis.build_graph import build_graph
@@ -57,7 +58,7 @@ def reindex_index(db_path: str, root_dir: str, *, on_progress=None) -> IndexRunR
         if total >= 50:
             try:
                 on_progress(f"Scanning {total} files...")
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
                 pass
 
     if not previous_states:
@@ -197,7 +198,7 @@ def _importers_for(
     *,
     partition: FilePartition,
     snapshot: PreviousSnapshot,
-    fresh_imports: list,
+    fresh_imports: list[Any],
     documents_by_id: dict[str, Document],
 ) -> dict[str, set[str]]:
     """Who imports what, across freshly parsed and carried-over files."""
@@ -228,8 +229,8 @@ def _merge_reused_state(
     references were carried in for re-resolution, which the run report
     counts as work done.
     """
-    reused_symbols: list = []
-    reused_exports: list = []
+    reused_symbols: list[Any] = []
+    reused_exports: list[Any] = []
 
     for path in plan.untouched | plan.reresolve:
         reused_symbols.extend(snapshot.symbols_by_path.get(path, []))
@@ -241,8 +242,8 @@ def _merge_reused_state(
         documents_by_path[path] for path in plan.partition.current
     ]
 
-    reused_imports: list = []
-    reused_references: list = []
+    reused_imports: list[Any] = []
+    reused_references: list[Any] = []
 
     for path in plan.reresolve:
         reused_imports.extend(snapshot.imports_by_path.get(path, []))
@@ -306,7 +307,7 @@ def _build_documents(
         if on_progress is not None and idx % 50 == 0:
             try:
                 on_progress(f"Parsed {idx}/{len(scan.current)} files...")
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
                 pass
 
     return documents_by_path
@@ -317,7 +318,7 @@ def _previous_symbols_for_changed(
     previous: BuildResult,
     changes: dict[str, FileChange],
     prev_docs_by_path: dict[str, Document],
-) -> list:
+) -> list[Any]:
     changed_doc_ids = {
         prev_docs_by_path[path].document_id
         for path, change in changes.items()
@@ -333,8 +334,8 @@ def _previous_symbols_for_changed(
 
 def _reconcile_identity(
     *,
-    previous_symbols: list,
-    new_symbols: list,
+    previous_symbols: list[Any],
+    new_symbols: list[Any],
 ) -> dict[str, str]:
     matches = match_symbols(
         old_symbols=previous_symbols,
@@ -355,7 +356,7 @@ def _reconcile_identity(
     return id_map
 
 
-def _remap_reference_owners(references: list, id_map: dict[str, str]) -> None:
+def _remap_reference_owners(references: list[Any], id_map: dict[str, str]) -> None:
     for reference in references:
         reference.owner_symbol_id = id_map.get(
             reference.owner_symbol_id,

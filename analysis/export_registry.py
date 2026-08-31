@@ -1,8 +1,8 @@
 from collections.abc import Callable
 
-from analysis.export_handlers.declaration import handle_export_statement
-from analysis.export_handlers.cs_exports import handle_cs_exports
 from analysis.export_handlers.c_local import handle_c_export
+from analysis.export_handlers.cs_exports import handle_cs_exports
+from analysis.export_handlers.declaration import handle_export_statement
 from analysis.export_handlers.go_exports import handle_go_exports
 from analysis.export_handlers.java_exports import handle_java_exports
 from analysis.export_handlers.python_exports import handle_python_top_level

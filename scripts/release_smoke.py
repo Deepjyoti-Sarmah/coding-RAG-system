@@ -7,7 +7,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import zipfile
 from pathlib import Path
 
@@ -22,7 +21,7 @@ class SmokeError(RuntimeError):
 def run_command(command, *, cwd=None, timeout=60, env=None):
     try:
         completed = subprocess.run(command, cwd=cwd, env=env, text=True,
-                                   capture_output=True, timeout=timeout)
+                                   capture_output=True, timeout=timeout, check=False)
     except subprocess.TimeoutExpired as exc:
         raise SmokeError(f"timed out after {timeout}s: {' '.join(map(str, command))}") from exc
     if completed.returncode:

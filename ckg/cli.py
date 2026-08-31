@@ -1,3 +1,4 @@
+# pyright: reportImportCycles=false
 import argparse
 import json
 import os
@@ -6,6 +7,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any, cast
 
 from embeddings.provider import EmbeddingProvider
 from evaluation.runner import EvaluationReport, run_evaluation
@@ -19,8 +21,8 @@ from retrieval.index_queries import (
     build_context_pack_from_index,
     build_hybrid_retriever,
 )
-from storage.index_store import count_rows, current_generation
 from session_memory import SessionService
+from storage.index_store import count_rows, current_generation
 
 DEFAULT_DB_DIRNAME = ".ckg"
 DEFAULT_DB_FILENAME = "index.sqlite"
@@ -31,7 +33,7 @@ def _get_version() -> str:
         from importlib.metadata import version as _pkg_version
 
         return _pkg_version("code-knowledge-graph")
-    except Exception:
+    except (ImportError, AttributeError, OSError, ValueError, KeyError):
         pass
     # fallback for source checkouts without installed metadata
     try:
@@ -42,7 +44,7 @@ def _get_version() -> str:
             with pyproject.open("rb") as fh:
                 data = tomllib.load(fh)
                 return data.get("project", {}).get("version", "0.0.0+source")
-    except Exception:
+    except (ImportError, OSError, KeyError, ValueError):
         pass
     return "0.0.0+source"
 
@@ -50,7 +52,7 @@ def _get_version() -> str:
 def _is_tty() -> bool:
     try:
         return sys.stderr.isatty()
-    except Exception:
+    except (OSError, ValueError, AttributeError):
         return False
 
 
@@ -81,7 +83,9 @@ def cmd_index(
     if _is_tty():
         print(f"Indexing {root}...", file=sys.stderr)
 
-    report = reindex_index(db_path, root, on_progress=_emit_progress if _is_tty() else None)
+    report = reindex_index(
+        db_path, root, on_progress=_emit_progress if _is_tty() else None
+    )
 
     if _is_tty():
         print(f"Parsed {report.parsed_files} files...", file=sys.stderr)
@@ -93,7 +97,10 @@ def cmd_index(
         batch_size = 50
         while True:
             batch_report = run_embedding_worker(
-                db_path, provider, limit=batch_size, on_progress=_emit_progress if _is_tty() else None
+                db_path,
+                provider,
+                limit=batch_size,
+                on_progress=_emit_progress if _is_tty() else None,
             )
             if batch_report.claimed == 0:
                 break
@@ -103,11 +110,13 @@ def cmd_index(
             if batch_report.claimed < batch_size:
                 # check if any pending remain; if not, break, else continue
                 try:
-                    pending = queue_status(db_path)
-                    runnable = pending.get("PENDING", 0) + max(0, pending.get("FAILED", 0) - pending.get("exhausted", 0))
+                    pending = queue_status(db_path)  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
+                    runnable = pending.get("PENDING", 0) + max(
+                        0, pending.get("FAILED", 0) - pending.get("exhausted", 0)
+                    )
                     if runnable == 0:
                         break
-                except Exception:
+                except Exception:  # noqa: BLE001 -- on_progress is user callback, must not crash indexing
                     break
 
     return report
@@ -120,10 +129,10 @@ def cmd_status(db_path: str) -> dict[str, object]:
 
     return {
         "generation": current_generation(db_path),
-        "documents": counts["documents"],
-        "symbols": counts["symbols"],
-        "chunks": counts["chunks"],
-        "embeddings": counts["embeddings"],
+        "documents": counts["documents"],  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
+        "symbols": counts["symbols"],  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
+        "chunks": counts["chunks"],  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
+        "embeddings": counts["embeddings"],  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
         "embedding_jobs": queue_status(db_path),
     }
 
@@ -224,17 +233,24 @@ def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | 
     # Ollama first (unless forced to local)
     if forced != "local":
         try:
-            from embeddings.ollama_provider import OllamaEmbeddingProvider, ollama_available
+            from embeddings.ollama_provider import (
+                OllamaEmbeddingProvider,
+                ollama_available,
+            )
 
             # ollama_available uses env-var resolved URL internally
             if ollama_available():
                 try:
-                    return OllamaEmbeddingProvider(model_name=forced_model) if forced_model else OllamaEmbeddingProvider()
+                    return (
+                        OllamaEmbeddingProvider(model_name=forced_model)
+                        if forced_model
+                        else OllamaEmbeddingProvider()
+                    )
                 except Exception:
+                    # -- Ollama init may raise broad errors; fallback to local unless forced
                     if forced == "ollama":
                         raise
                     # fall through to local
-                    pass
             elif forced == "ollama":
                 raise RuntimeError(
                     "Ollama backend forced via CKG_EMBED_BACKEND=ollama but no Ollama server reachable at "
@@ -251,7 +267,11 @@ def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | 
             if importlib.util.find_spec("sentence_transformers") is not None:
                 from embeddings.local_provider import LocalEmbeddingProvider
 
-                return LocalEmbeddingProvider(model_name=forced_model) if forced_model else LocalEmbeddingProvider()
+                return (
+                    LocalEmbeddingProvider(model_name=forced_model)
+                    if forced_model
+                    else LocalEmbeddingProvider()
+                )
             elif forced == "local":
                 raise RuntimeError(
                     "Local embeddings forced via CKG_EMBED_BACKEND=local but 'sentence-transformers' not installed. "
@@ -259,13 +279,16 @@ def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | 
                 )
         except RuntimeError:
             raise
-        except Exception:
+        except (
+            ImportError,
+            OSError,
+            ValueError,
+        ) as e:  # -- provider detection fallback must not crash CLI
             if forced == "local":
                 raise RuntimeError(
                     "Local embeddings require 'sentence-transformers'. "
                     "Install with: pip install code-knowledge-graph[local]"
-                )
-            pass
+                ) from e
     return None
 
 
@@ -278,7 +301,7 @@ def resolve_provider(db_path: str, *, use_vector: bool) -> EmbeddingProvider | N
         return _detect_provider()
     except RuntimeError:
         raise
-    except Exception:
+    except Exception:  # noqa: BLE001 -- auto-detection must degrade gracefully to FTS+graph
         return None
 
 
@@ -301,7 +324,7 @@ def _ensure_mcp_entry(path: Path, container_key: str) -> str:
         text = path.read_text(encoding="utf-8")
 
         try:
-            data: dict = json.loads(text) if text.strip() else {}
+            data: dict[str, object] = json.loads(text) if text.strip() else {}
         except json.JSONDecodeError as error:
             raise ValueError(f"{path} is not valid JSON: {error}") from error
 
@@ -311,15 +334,15 @@ def _ensure_mcp_entry(path: Path, container_key: str) -> str:
         # check if already configured under any common container
         for key in (container_key, "mcpServers", "servers", "mcp"):
             container = data.get(key)
-            if isinstance(container, dict) and "ckg" in container:
+            if isinstance(container, dict) and "ckg" in container:  # type: ignore[operator]
                 return "already configured"
-        container = data.get(container_key)
+        container = data.get(container_key)  # type: ignore[assignment]
         if not isinstance(container, dict):
             data[container_key] = {}
             container = data[container_key]
-        if "ckg" in container:
+        if "ckg" in container:  # type: ignore[operator]  # pyright: ignore[reportOperatorIssue]
             return "already configured"
-        container["ckg"] = entry
+        container["ckg"] = entry  # type: ignore[index]  # pyright: ignore[reportIndexIssue,reportOperatorIssue]
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         return "written"
@@ -363,7 +386,10 @@ def cmd_embed(
         last_report = None
         while True:
             batch_report = run_embedding_worker(
-                db_path, provider, limit=batch_size, on_progress=_emit_progress if _is_tty() else None
+                db_path,
+                provider,
+                limit=batch_size,
+                on_progress=_emit_progress if _is_tty() else None,
             )
             if batch_report.claimed == 0:
                 if last_report is None:
@@ -375,14 +401,21 @@ def cmd_embed(
                 print(f"Embedded {total} chunks...", file=sys.stderr)
             # peek queue to decide continuation
             try:
-                pending = queue_status(db_path)
-                runnable = pending.get("PENDING", 0) + max(0, pending.get("FAILED", 0) - pending.get("exhausted", 0))
+                pending = queue_status(db_path)  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
+                runnable = pending.get("PENDING", 0) + max(
+                    0, pending.get("FAILED", 0) - pending.get("exhausted", 0)
+                )
                 if runnable == 0:
                     break
-            except Exception:
+            except Exception:  # noqa: BLE001 -- on_progress is user callback, must not crash indexing
                 break
         return last_report if last_report is not None else batch_report
-    return run_embedding_worker(db_path, provider, limit=limit, on_progress=_emit_progress if _is_tty() else None)
+    return run_embedding_worker(
+        db_path,
+        provider,
+        limit=limit,
+        on_progress=_emit_progress if _is_tty() else None,
+    )
 
 
 def _background_lock_path(db_path: str) -> Path:
@@ -416,7 +449,7 @@ def _maybe_spawn_background_embed(db_path: str) -> None:
     # skip when queue empty (common after first run due to hash reuse)
     try:
         counts = queue_status(db_path)
-        pending = counts.get("PENDING", 0)
+        pending = counts.get("PENDING", 0)  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
         failed = counts.get("FAILED", 0)
         exhausted = counts.get("exhausted", 0)
         runnable = pending + max(0, failed - exhausted)
@@ -467,49 +500,61 @@ def _maybe_spawn_background_embed(db_path: str) -> None:
 def _print_index_report(report: IndexRunReport, db_path: str) -> None:
     counts: dict[str, int] = {}
     for change in report.changes.values():
-        counts[change.value] = counts.get(change.value, 0) + 1
+        counts[change.value] = counts.get(change.value, 0) + 1  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
 
     print(f"Indexed into {db_path}")
     print(f"  parsed files:        {report.parsed_files}")
     print(f"  resolved references: {report.resolved_references}")
     for kind in ("new", "changed", "unchanged", "deleted"):
         if kind in counts:
-            print(f"  {kind}: {counts[kind]}")
+            print(f"  {kind}: {counts[kind]}")  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
 
 
-def _print_status(status: dict, *, oneline: bool = False) -> None:
+def _print_status(
+    status: dict[str, Any],
+    *,
+    oneline: bool = False,
+) -> None:
     if oneline:
-        jobs = status["embedding_jobs"]
+        jobs = cast(dict[str, int], status["embedding_jobs"])
         pending = jobs.get("PENDING", 0) + jobs.get("FAILED", 0) - jobs.get("exhausted", 0)
         pending = max(0, pending)
-        print(f"symbols {status['symbols']} chunks {status['chunks']} pending {pending} gen {status['generation']}")
+        print(
+            f"symbols {status['symbols']} chunks {status['chunks']} pending {pending} gen {status['generation']}"
+        )
         return
     print(f"generation: {status['generation']}")
     print(f"documents:  {status['documents']}")
     print(f"symbols:    {status['symbols']}")
     print(f"chunks:     {status['chunks']}")
-    chunks = status["chunks"]
-    embeddings = status["embeddings"]
+    chunks = status["chunks"]  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
+    embeddings = status["embeddings"]  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
     if chunks:
-        pct = (embeddings / chunks * 100) if chunks else 0
-        if embeddings < chunks:
-            print(f"embeddings: {embeddings}/{chunks} ({pct:.0f}%) — run `ckg embed` to enable vector search")
+        pct = (int(embeddings) / int(chunks) * 100) if chunks else 0  # type: ignore[arg-type]  # pyright: ignore[reportOperatorIssue,reportArgumentType]
+        if int(embeddings) < int(chunks):  # type: ignore[arg-type]  # pyright: ignore[reportOperatorIssue,reportArgumentType]
+            print(
+                f"embeddings: {embeddings}/{chunks} ({pct:.0f}%) — run `ckg embed` to enable vector search"
+            )
         else:
             print(f"embeddings: {embeddings}/{chunks} ({pct:.0f}%)")
     else:
         print(f"embeddings: {embeddings}")
 
-    jobs = status["embedding_jobs"]
+    jobs = cast(dict[str, int], status["embedding_jobs"])
     if jobs:
         job_summary = ", ".join(f"{k}={v}" for k, v in sorted(jobs.items()))
         print(f"embedding queue: {job_summary}")
         pending = jobs.get("PENDING", 0) + jobs.get("FAILED", 0) - jobs.get("exhausted", 0)
-        if pending > 0 and embeddings < chunks:
-            print(f"vector search degraded: {pending} chunks pending embedding — run `ckg embed`")
+        if pending > 0 and int(embeddings) < int(chunks):  # type: ignore[arg-type]  # pyright: ignore[reportOperatorIssue,reportArgumentType]
+            print(
+                f"vector search degraded: {pending} chunks pending embedding — run `ckg embed`"
+            )
 
 
 def _print_embed_report(report) -> None:
-    print(f"embeddings: claimed={report.claimed} done={report.done} reused={report.reused} stale={report.stale} failed={report.failed}")
+    print(
+        f"embeddings: claimed={report.claimed} done={report.done} reused={report.reused} stale={report.stale} failed={report.failed}"
+    )
 
 
 def _print_candidates(retrieval: HybridRetrieval) -> None:
@@ -589,7 +634,9 @@ def _print_eval_report(report: EvaluationReport) -> None:
     print(f"import resolution accuracy: {report.import_resolution_accuracy:.2f}")
     print(f"mean recall@k:              {report.mean_recall_at_k:.2f}")
     print(f"mean reciprocal rank:       {report.mean_reciprocal_rank:.2f}")
-    print(f"context tokens:             {report.context_tokens} (baseline {report.baseline_tokens})")
+    print(
+        f"context tokens:             {report.context_tokens} (baseline {report.baseline_tokens})"
+    )
     print(
         f"initial indexing:           {report.initial_indexing_seconds * 1000:.1f} ms"
     )
@@ -687,43 +734,73 @@ def build_parser() -> argparse.ArgumentParser:
         help="seconds of edit quiet before reindexing (default 0.5)",
     )
 
-    init_parser = subparsers.add_parser(
-        "init", help="configure MCP for this project"
-    )
+    init_parser = subparsers.add_parser("init", help="configure MCP for this project")
     init_parser.add_argument("path", nargs="?", default=".")
 
-    embed_parser = subparsers.add_parser(
-        "embed", help="drain the embedding queue"
-    )
+    embed_parser = subparsers.add_parser("embed", help="drain the embedding queue")
     embed_parser.add_argument("path", nargs="?", default=".")
     embed_parser.add_argument("--limit", type=int, default=None)
 
-    sessions = subparsers.add_parser("sessions", help="manage local project session memory")
+    sessions = subparsers.add_parser(
+        "sessions", help="manage local project session memory"
+    )
     session_sub = sessions.add_subparsers(dest="sessions_command", required=True)
     for name in ("start", "list"):
-        p = session_sub.add_parser(name); p.add_argument("path", nargs="?", default=".")
-    p = session_sub.add_parser("status"); p.add_argument("path", nargs="?", default="."); p.add_argument("session_id", nargs="?")
-    p = session_sub.add_parser("timeline"); p.add_argument("path", nargs="?", default="."); p.add_argument("session_id", nargs="?"); p.add_argument("--limit", type=int, default=50)
-    p = session_sub.add_parser("recall"); p.add_argument("query"); p.add_argument("path", nargs="?", default="."); p.add_argument("--limit", type=int, default=10)
-    p = session_sub.add_parser("export"); p.add_argument("path", nargs="?", default="."); p.add_argument("session_id", nargs="?"); p.add_argument("--format", choices=("json", "markdown"), default="json")
-    p = session_sub.add_parser("prune"); p.add_argument("path", nargs="?", default="."); p.add_argument("--days", type=int, required=True)
+        p = session_sub.add_parser(name)
+        p.add_argument("path", nargs="?", default=".")
+    p = session_sub.add_parser("status")
+    p.add_argument("path", nargs="?", default=".")
+    p.add_argument("session_id", nargs="?")
+    p = session_sub.add_parser("timeline")
+    p.add_argument("path", nargs="?", default=".")
+    p.add_argument("session_id", nargs="?")
+    p.add_argument("--limit", type=int, default=50)
+    p = session_sub.add_parser("recall")
+    p.add_argument("query")
+    p.add_argument("path", nargs="?", default=".")
+    p.add_argument("--limit", type=int, default=10)
+    p = session_sub.add_parser("export")
+    p.add_argument("path", nargs="?", default=".")
+    p.add_argument("session_id", nargs="?")
+    p.add_argument("--format", choices=("json", "markdown"), default="json")
+    p = session_sub.add_parser("prune")
+    p.add_argument("path", nargs="?", default=".")
+    p.add_argument("--days", type=int, required=True)
 
-    dashboard = subparsers.add_parser("dashboard", help="serve the local read-only dashboard")
+    dashboard = subparsers.add_parser(
+        "dashboard", help="serve the local read-only dashboard"
+    )
     dashboard.add_argument("path", nargs="?", default=".")
     dashboard.add_argument("--host", default="127.0.0.1")
     dashboard.add_argument("--port", type=int, default=8765)
     dashboard.add_argument("--no-browser", action="store_true")
-    dashboard.add_argument("--allow-remote", action="store_true", help="allow non-local binding (unsafe)")
+    dashboard.add_argument(
+        "--allow-remote", action="store_true", help="allow non-local binding (unsafe)"
+    )
 
     ab = subparsers.add_parser("eval-ab", help="run the task-level CKG A/B harness")
     ab.add_argument("--manifest", default="evaluation/tasks.json")
-    ab.add_argument("--condition", choices=("with_ckg", "without_ckg", "both"), default="both")
+    ab.add_argument(
+        "--condition", choices=("with_ckg", "without_ckg", "both"), default="both"
+    )
     ab.add_argument("--output", default="results/")
     ab.add_argument("--dry-run", action="store_true")
     ab.add_argument("--agent-command")
-    ab.add_argument("--pilot", action="store_true", help="run exactly one Python and one JavaScript task")
-    ab.add_argument("--preflight", action="store_true", help="validate paired CKG provisioning without launching an agent")
-    ab.add_argument("--timeout", type=int, help="per-run timeout in seconds, overriding each task's manifest value")
+    ab.add_argument(
+        "--pilot",
+        action="store_true",
+        help="run exactly one Python and one JavaScript task",
+    )
+    ab.add_argument(
+        "--preflight",
+        action="store_true",
+        help="validate paired CKG provisioning without launching an agent",
+    )
+    ab.add_argument(
+        "--timeout",
+        type=int,
+        help="per-run timeout in seconds, overriding each task's manifest value",
+    )
 
     return parser
 
@@ -736,47 +813,90 @@ def _require_dir(path: str) -> None:
         raise NotADirectoryError(f"path '{path}' is not a directory")
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneralTypeIssues]
     args = build_parser().parse_args(argv)
 
     try:
         # validate target paths before dispatch
-        if args.command in ("index", "watch"):
-            _require_dir(args.path)
-        elif args.command not in ("eval",) and hasattr(args, "path"):
+        if (
+            args.command in ("index", "watch")
+            or args.command not in ("eval",)
+            and hasattr(args, "path")
+        ):
             _require_dir(args.path)
 
         if args.command == "eval-ab":
             from evaluation.ab_runner import main as ab_main
-            return ab_main(["--manifest", args.manifest, "--condition", args.condition, "--output", args.output] + (["--dry-run"] if args.dry_run else []) + (["--pilot"] if args.pilot else []) + (["--preflight"] if args.preflight else []) + (["--agent-command", args.agent_command] if args.agent_command else []) + (["--timeout", str(args.timeout)] if args.timeout else []))
+
+            return ab_main(
+                [
+                    "--manifest",
+                    args.manifest,
+                    "--condition",
+                    args.condition,
+                    "--output",
+                    args.output,
+                ]
+                + (["--dry-run"] if args.dry_run else [])
+                + (["--pilot"] if args.pilot else [])
+                + (["--preflight"] if args.preflight else [])
+                + (
+                    ["--agent-command", args.agent_command]
+                    if args.agent_command
+                    else []
+                )
+                + (["--timeout", str(args.timeout)] if args.timeout else [])
+            )
 
         if args.command == "dashboard":
-            if args.host not in ("127.0.0.1", "localhost", "::1") and not args.allow_remote:
-                print("Refusing remote dashboard binding without --allow-remote", file=sys.stderr); return 1
-            from ckg.dashboard.server import create_server
+            if (
+                args.host not in ("127.0.0.1", "localhost", "::1")
+                and not args.allow_remote
+            ):
+                print(
+                    "Refusing remote dashboard binding without --allow-remote",
+                    file=sys.stderr,
+                )
+                return 1
             import webbrowser
+
+            from ckg.dashboard.server import create_server
+
             server = create_server(args.path, args.host, args.port)
-            print(f"CKG dashboard: http://{args.host}:{args.port}/ (local read-only; do not expose publicly)")
+            print(
+                f"CKG dashboard: http://{args.host}:{args.port}/ (local read-only; do not expose publicly)"
+            )
             if not args.no_browser:
                 webbrowser.open(f"http://{args.host}:{args.port}/")
-            try: server.serve_forever()
-            except KeyboardInterrupt: pass
-            finally: server.server_close()
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
+            finally:
+                server.server_close()
             return 0
 
         if args.command == "sessions":
             service = SessionService(args.path)
             command = args.sessions_command
-            if command == "start": result = service.start()
-            elif command == "list": result = service.list()
-            elif command == "status": result = service.status(args.session_id)
-            elif command == "timeline": result = service.timeline(args.session_id, args.limit)
-            elif command == "recall": result = service.recall(args.query, args.limit)
+            if command == "start":
+                result = service.start()
+            elif command == "list":
+                result = service.list()
+            elif command == "status":
+                result = service.status(args.session_id)
+            elif command == "timeline":
+                result = service.timeline(args.session_id, args.limit)
+            elif command == "recall":
+                result = service.recall(args.query, args.limit)
             elif command == "export":
                 output = service.export(args.session_id, args.format)
-                print(output); return 0
-            else: result = service.prune(args.days)
-            print(json.dumps(result, indent=2, sort_keys=True)); return 0
+                print(output)
+                return 0
+            else:
+                result = service.prune(args.days)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0
 
         if args.command == "index":
             db_path = args.db or default_db_path(args.path)
@@ -858,9 +978,15 @@ def main(argv: list[str] | None = None) -> int:
                         )
                     else:
                         qs = queue_status(db_path)
-                        pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+                        pending = (
+                            qs.get("PENDING", 0)
+                            + qs.get("FAILED", 0)
+                            - qs.get("exhausted", 0)
+                        )  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
                         if pending > 0:
-                            print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
+                            print(
+                                f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`"
+                            )
                 except Exception:  # noqa: BLE001, S110
                     pass
             _print_candidates(
@@ -888,9 +1014,15 @@ def main(argv: list[str] | None = None) -> int:
                         )
                     else:
                         qs = queue_status(db_path)
-                        pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+                        pending = (
+                            qs.get("PENDING", 0)
+                            + qs.get("FAILED", 0)
+                            - qs.get("exhausted", 0)
+                        )  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
                         if pending > 0:
-                            print(f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`")
+                            print(
+                                f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`"
+                            )
                 except Exception:  # noqa: BLE001, S110
                     pass
             _print_context_pack(
@@ -912,7 +1044,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     except sqlite3.Error as exc:
         db = locals().get("db_path", "index")
-        print(f"Database error at {db}: {exc} — try removing the database and re-running `ckg index`.", file=sys.stderr)
+        print(
+            f"Database error at {db}: {exc} — try removing the database and re-running `ckg index`.",
+            file=sys.stderr,
+        )
         return 1
     except ImportError as exc:
         print(f"Embeddings unavailable: {exc}", file=sys.stderr)

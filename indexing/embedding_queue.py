@@ -1,4 +1,6 @@
+import sqlite3
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -23,7 +25,7 @@ class EmbeddingRunReport:
     failed: int = 0
 
 
-def enqueue_embedding_jobs(db_path: str, chunks: list) -> int:
+def enqueue_embedding_jobs(db_path: str, chunks: list[Any]) -> int:
     conn = db.connect(db_path)
 
     try:
@@ -49,19 +51,25 @@ def _ensure_model_consistency(conn, provider: EmbeddingProvider) -> None:
             "SELECT value FROM index_metadata WHERE key = ?", ("embedding_model",)
         ).fetchone()
         stored_model = stored["value"] if stored else None
-    except Exception:
+    except (sqlite3.Error, OSError):  # -- metadata lookup must not crash
         stored_model = None
     current = getattr(provider, "model_id", None)
     if current is None:
         try:
-            current = f"{getattr(provider, 'model_name', 'unknown')}:{provider.dimension}"
-        except Exception:
+            current = (
+                f"{getattr(provider, 'model_name', 'unknown')}:{provider.dimension}"
+            )
+        except (
+            AttributeError,
+            ValueError,
+            OSError,
+        ):  # -- provider probe must not crash
             return
     if stored_model is not None and stored_model != current:
         # Different models must never mix — clear all derived state and re-enqueue
         try:
             vec_index_repository.clear(conn)
-        except Exception:
+        except (sqlite3.Error, OSError):  # -- best-effort cleanup
             pass
         try:
             conn.execute("DELETE FROM embeddings")
@@ -70,15 +78,17 @@ def _ensure_model_consistency(conn, provider: EmbeddingProvider) -> None:
             try:
                 chunks = chunk_repository.fetch_all(conn)
                 for chunk in chunks:
-                    embedding_job_repository.enqueue(conn, chunk.chunk_key, chunk.content_hash)
-            except Exception:
+                    embedding_job_repository.enqueue(
+                        conn, chunk.chunk_key, chunk.content_hash
+                    )
+            except (sqlite3.Error, OSError):  # -- re-enqueue best-effort
                 pass
             conn.execute(
                 "INSERT INTO index_metadata (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
                 ("embedding_model", current),
             )
             conn.commit()
-        except Exception:
+        except (sqlite3.Error, OSError):  # -- model switch must not crash
             pass
     elif stored_model is None and current is not None:
         try:
@@ -86,7 +96,7 @@ def _ensure_model_consistency(conn, provider: EmbeddingProvider) -> None:
                 "INSERT INTO index_metadata (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
                 ("embedding_model", current),
             )
-        except Exception:
+        except (sqlite3.Error, OSError):  # -- metadata write best-effort
             pass
 
 
@@ -113,7 +123,7 @@ def run_embedding_worker(
                     ("embedding_model", mid),
                 )
                 conn.commit()
-        except Exception:
+        except (sqlite3.Error, OSError, AttributeError, ValueError):  # -- metadata write best-effort
             pass
 
         jobs = embedding_job_repository.claim(conn, limit=limit)
@@ -130,7 +140,7 @@ def run_embedding_worker(
             if chunk.chunk_key in claimed_keys
         }
 
-        embeddable: list = []
+        embeddable: list[Any] = []
         stale: list[tuple[str, str]] = []
         orphaned: list[str] = []
 
@@ -165,8 +175,10 @@ def run_embedding_worker(
                         for k, v in batch_embeddings.items():
                             cache[k] = v
                         try:
-                            on_progress(f"Embedding {min(idx + 50, len(embeddable))}/{len(embeddable)} chunks...")
-                        except Exception:
+                            on_progress(
+                                f"Embedding {min(idx + 50, len(embeddable))}/{len(embeddable)} chunks..."
+                            )
+                        except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
                             pass
                     report.done = len(embeddable)
                     report.reused = len(embeddable) - total_missing
@@ -181,7 +193,9 @@ def run_embedding_worker(
         except Exception as exc:  # noqa: BLE001 - any provider failure marks jobs failed instead of crashing the run
             with db.transaction(conn):
                 for chunk in embeddable:
-                    embedding_job_repository.mark_failed(conn, chunk.chunk_key, str(exc))
+                    embedding_job_repository.mark_failed(
+                        conn, chunk.chunk_key, str(exc)
+                    )
 
             report.failed = len(embeddable)
             return report

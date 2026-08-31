@@ -1,10 +1,11 @@
+# pyright: reportImportCycles=false
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from graph.code_graph import CodeGraph
-from indexing.symbol_index import SymbolIndex
+from graph.code_graph import CodeGraph  # pyright: ignore[reportImportCycles]
+from indexing.symbol_index import SymbolIndex  # pyright: ignore[reportImportCycles]
 from models.entities import resolved_import_reference
 from models.entities.documents import Document
 from models.entities.exports import Export

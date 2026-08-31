@@ -1,5 +1,5 @@
-from analysis.semantic.import_symbol_resolver import resolve_exported_symbol
 from analysis.semantic.cpp_overload import candidate_compatible, is_cpp_symbol
+from analysis.semantic.import_symbol_resolver import resolve_exported_symbol
 from analysis.semantic.name_resolver import (
     build_resolved_reference,
     resolve_in_scope,
