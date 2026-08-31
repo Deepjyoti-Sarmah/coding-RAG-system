@@ -1,32 +1,32 @@
 [
   {
-    "id": "fastapi-route-template-parsing",
+    "id": "fastapi-dependency-override-substitution",
     "language": "python",
     "fixture": "local_fastapi/fastapi",
-    "prompt": "In this codebase, a route is declared with a string containing braces like /items/{item_id}. Before any type checking, what helper walks that string to list the placeholder names, and what later helper pulls the actual string values from the incoming request's multidicts? Do not search for the placeholder names directly.",
-    "expected_files": ["utils.py", "_compat/v2.py"],
-    "expected_symbols": ["get_path_param_names", "get_missing_field_error"],
-    "success_criteria": "template parsing and missing field error",
+    "prompt": "Endpoints declare dependencies using a small factory function that just wraps its argument in a marker object; nothing about the callable itself is inspected there. Which function is this factory, and which attribute on the application instance later lets tests substitute a different callable for whatever marker ends up referencing it, without editing the endpoint's signature?",
+    "expected_files": ["param_functions.py", "applications.py"],
+    "expected_symbols": ["Depends", "dependency_overrides"],
+    "success_criteria": "dependency marker factory and override substitution",
     "timeout": 300
   },
   {
-    "id": "fastapi-dependency-reuse-key",
+    "id": "fastapi-default-error-handler-wiring",
     "language": "python",
     "fixture": "local_fastapi/fastapi",
-    "prompt": "A single Python callable is referenced from two different branches of the per-request tree. What three-part key is built from the callable's identity and surrounding context to decide if the second branch can reuse the first result, and where is that key constructed?",
-    "expected_files": ["dependencies/models.py", "types.py"],
-    "expected_symbols": ["_get_cache_key", "Dependant"],
-    "success_criteria": "reuse key construction",
+    "prompt": "When incoming request data fails validation, the framework needs to convert that failure into a structured error the client can read, before any of the user's own error-handling code runs. Which exception class carries the validation failure detail, and which module supplies the coroutine that turns any unhandled instance of it into a response by default?",
+    "expected_files": ["exceptions.py", "applications.py"],
+    "expected_symbols": ["RequestValidationError", "request_validation_exception_handler"],
+    "success_criteria": "default exception handler registration",
     "timeout": 300
   },
   {
-    "id": "fastapi-response-serialization-fallback",
+    "id": "fastapi-middleware-stack-assembly",
     "language": "python",
     "fixture": "local_fastapi/fastapi",
-    "prompt": "When no response model is declared, the framework must still make the return value serializable. Which fallback in the routing layer delegates to a recursive utility, and what two structures in the encoder module drive its type handling?",
-    "expected_files": ["routing.py", "encoders.py"],
-    "expected_symbols": ["serialize_response", "generate_encoders_by_class_tuples"],
-    "success_criteria": "fallback serialization path",
+    "prompt": "The full ASGI callable that actually serves requests isn't built until the app first needs it, and it wraps every registered layer around the router in order. Which method assembles that wrapped callable from the registered layers, and what attribute caches the result so it's only built once?",
+    "expected_files": ["applications.py"],
+    "expected_symbols": ["build_middleware_stack", "middleware_stack"],
+    "success_criteria": "middleware stack assembly and caching",
     "timeout": 300
   },
   {
@@ -47,6 +47,26 @@
     "expected_files": ["background.py", "routing.py"],
     "expected_symbols": ["BackgroundTasks", "get_request_handler"],
     "success_criteria": "after-response queue merge",
+    "timeout": 300
+  },
+  {
+    "id": "fiber-route-pattern-compile-match",
+    "language": "go",
+    "fixture": "local_fiber/fiber",
+    "prompt": "A registered path containing named segments in curly braces gets compiled once, ahead of time, into an internal representation with precomputed segment boundaries so that matching an incoming request doesn't have to re-scan the pattern text. Which type holds that compiled representation, and which method call on it actually walks the incoming path to fill in the parameter values when a request arrives?",
+    "expected_files": ["path.go", "router.go"],
+    "expected_symbols": ["routeParser", "getMatch"],
+    "success_criteria": "compiled route pattern and request-time parameter match",
+    "timeout": 300
+  },
+  {
+    "id": "fiber-domain-mount-constraint",
+    "language": "go",
+    "fixture": "local_fiber/fiber",
+    "prompt": "An application can be attached under a parent using both a URL prefix and an optional hostname constraint. Which type parses and evaluates the hostname pattern to decide if an incoming request's Host header qualifies, and which method wires a child application into its parent's request-handling path together with that constraint?",
+    "expected_files": ["domain.go", "mount.go"],
+    "expected_symbols": ["domainMatcher", "mount"],
+    "success_criteria": "domain constraint parsing and sub-app mount wiring",
     "timeout": 300
   },
   {

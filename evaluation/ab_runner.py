@@ -62,6 +62,12 @@ class FakeAgentRunner(AgentRunner):
 def load_tasks(path):
     tasks=json.loads(Path(path).read_text());assert len(tasks)>=1,"manifest must contain at least 1 task";return tasks
 def _provision_ckg(worktree):
+    # NOTE: timeout=120 is known to be too tight for large repos on current hardware —
+    # a full django (~927 files) index did not complete within 600s in a foreground
+    # measurement (2026-09-01), versus ~14s for a 45-file subset, suggesting a
+    # super-linear cost in the current indexing/semantic-resolution path rather than
+    # simple repo-size scaling. Not raised here since with_ckg provisioning is out of
+    # scope for the hard-task gates this timeout guards; flagged for follow-up.
     db=worktree/".ckg"/"index.sqlite";subprocess.run([sys.executable,"-m","ckg.cli","index",str(worktree)],cwd=Path(__file__).resolve().parents[1],capture_output=True,timeout=120,check=True);config=worktree/".mcp.json";config.write_text(json.dumps({"mcpServers":{"ckg":{"command":"ckg-mcp"}}}));
     parsed=json.loads(config.read_text());assert parsed["mcpServers"]["ckg"]["command"]=="ckg-mcp" and db.exists();return db,config
 def _validate_condition(worktree, condition):

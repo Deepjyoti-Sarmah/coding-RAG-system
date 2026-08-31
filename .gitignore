@@ -14,3 +14,7 @@ code-context-engine/
 
 # Local fastapi clone for hard A/B tasks (pinned commit 4903347, not cloned per run)
 local_fastapi/
+
+# Local fiber/django clones for hard A/B tasks (pinned commits, not cloned per run)
+local_fiber/
+local_django/
