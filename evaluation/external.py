@@ -6,10 +6,10 @@ file paths and retrieve wider (top_k=30) to yield min(10, distinct files
 available) distinct files.
 """
 import json
+import statistics
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-import statistics
 
 from embeddings.provider import EmbeddingProvider
 from evaluation.metrics import mean, recall_at_k, reciprocal_rank, token_reduction
@@ -190,7 +190,7 @@ def run_external_evaluation(
                 # Fallback: read directly from repo_dir if not indexed (e.g., size-capped)
                 try:
                     baseline_texts.append((repo_path / fp).read_text(encoding="utf-8"))
-                except Exception:
+                except (OSError, UnicodeDecodeError):
                     pass
         baseline_tokens = estimate_tokens("\n".join(baseline_texts)) if baseline_texts else 0
 

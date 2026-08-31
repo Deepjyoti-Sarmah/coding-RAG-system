@@ -19,7 +19,6 @@ from evaluation.metrics import (
     mean,
     recall_at_k,
     reciprocal_rank,
-    token_reduction,
 )
 from indexing.diff import importers_of
 from indexing.embedding_queue import run_embedding_worker

@@ -1,8 +1,18 @@
 """Task-level A/B runner using a file-based real-agent protocol."""
 from __future__ import annotations
-import argparse,json,os,shutil,subprocess,tempfile,time,sys
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
 from pathlib import Path
-from .ab_metrics import score,summarize,write_report
+from typing import Any
+
+from .ab_metrics import score, summarize, write_report
 
 MAX_OUTPUT=8000; METRICS=("input_tokens","output_tokens","total_tokens","tool_calls","ckg_tools_used","ckg_queries")
 class AgentRunner:
@@ -32,24 +42,25 @@ class SubprocessAgentRunner(AgentRunner):
         if condition=="with_ckg" and config.exists() and index.exists(): env.update(CKG_AB_MCP_CONFIG=str(config),CKG_AB_INDEX=str(index))
         else: env.pop("CKG_AB_MCP_CONFIG",None);env.pop("CKG_AB_INDEX",None)
         started=time.monotonic()
-        base={"files_changed":[],"files_found":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"ckg_tools_used":None,"ckg_queries":None,"stdout":"","stderr":"","timed_out":False}
+        base: dict[str, Any]={"files_changed":[],"files_found":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"ckg_tools_used":None,"ckg_queries":None,"stdout":"","stderr":"","timed_out":False}
         try:
-            p=subprocess.run(self.template,shell=True,cwd=worktree,env=env,text=True,capture_output=True,timeout=self.timeout or task["timeout"]);base.update(exit_code=p.returncode,stdout=p.stdout[-MAX_OUTPUT:],stderr=p.stderr[-MAX_OUTPUT:])
+            p=subprocess.run(self.template,shell=True,cwd=worktree,env=env,text=True,capture_output=True,timeout=self.timeout or task["timeout"], check=False);base.update(exit_code=p.returncode,stdout=p.stdout[-MAX_OUTPUT:],stderr=p.stderr[-MAX_OUTPUT:])
             if result_file.exists():base.update(parse_result(result_file))
             else:base.update(status="failure",failure_reason="agent did not create result file")
         except subprocess.TimeoutExpired as e:base.update(exit_code=None,timed_out=True,status="failure",failure_reason="agent timed out",stdout=str(e.stdout or "")[-MAX_OUTPUT:],stderr=str(e.stderr or "")[-MAX_OUTPUT:])
-        except ValueError as e:base.update(exit_code=p.returncode if "p" in locals() else None,status="failure",failure_reason=str(e))
+        except ValueError as e:base.update(exit_code=None,status="failure",failure_reason=str(e))
         base["elapsed_seconds"]=time.monotonic()-started
         base["files_changed"]=_git_changed(worktree) if not base.get("changed_files") else base["changed_files"];shutil.rmtree(run_dir,ignore_errors=True);return base
 def _git_changed(worktree):
-    try:return subprocess.run(["git","-C",str(worktree),"diff","--name-only"],text=True,capture_output=True,timeout=10).stdout.splitlines()
+    try:return subprocess.run(["git","-C",str(worktree),"diff","--name-only"],text=True,capture_output=True,timeout=10, check=False).stdout.splitlines()
     except (OSError,subprocess.SubprocessError):return []
 
 class FakeAgentRunner(AgentRunner):
     def run(self,task,condition,worktree):
-        ok=condition=="with_ckg" or task["id"] in {"py-auth","js-auth","go-auth"};data={"status":"success" if ok else "failure","changed_files":[],"files_found":task["expected_files"] if ok else [],"symbols_found":task["expected_symbols"] if ok else [],"input_tokens":100,"output_tokens":30,"total_tokens":130,"tool_calls":2 if condition=="with_ckg" else 0,"ckg_tools_used":None,"ckg_queries":None,"tests_passed":ok,"notes":"deterministic fake"};path=Path(worktree)/"fake-result.json";path.write_text(json.dumps(data));parsed=parse_result(path);parsed["files_changed"]=parsed["changed_files"];return dict(parsed,exit_code=0 if ok else 1,elapsed_seconds=.01)
+        ok = (condition=="with_ckg" or task["id"] in {"py-auth","js-auth","go-auth"})  # type: ignore[operator]
+        data={"status":"success" if ok else "failure","changed_files":[],"files_found":task["expected_files"] if ok else [],"symbols_found":task["expected_symbols"] if ok else [],"input_tokens":100,"output_tokens":30,"total_tokens":130,"tool_calls":2 if condition=="with_ckg" else 0,"ckg_tools_used":None,"ckg_queries":None,"tests_passed":ok,"notes":"deterministic fake"};path=Path(worktree)/"fake-result.json";path.write_text(json.dumps(data));parsed=parse_result(path);parsed["files_changed"]=parsed["changed_files"];return dict(parsed,exit_code=0 if ok else 1,elapsed_seconds=.01)
 def load_tasks(path):
-    tasks=json.loads(Path(path).read_text());assert len(tasks)==20,"manifest must contain exactly 20 tasks";return tasks
+    tasks=json.loads(Path(path).read_text());assert len(tasks)>=1,"manifest must contain at least 1 task";return tasks
 def _provision_ckg(worktree):
     db=worktree/".ckg"/"index.sqlite";subprocess.run([sys.executable,"-m","ckg.cli","index",str(worktree)],cwd=Path(__file__).resolve().parents[1],capture_output=True,timeout=120,check=True);config=worktree/".mcp.json";config.write_text(json.dumps({"mcpServers":{"ckg":{"command":"ckg-mcp"}}}));
     parsed=json.loads(config.read_text());assert parsed["mcpServers"]["ckg"]["command"]=="ckg-mcp" and db.exists();return db,config
@@ -78,8 +89,8 @@ def run(tasks,runner,conditions,output,dry_run=False):
                     if condition=="with_ckg":
                         try:
                             db,config=_provision_ckg(work);_validate_condition(work,condition);ckg={"enabled":True,"index":str(db),"mcp_config":str(config)}
-                        except Exception as e:
-                            result={"status":"failure","exit_code":None,"files_changed":[],"files_found":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"ckg_tools_used":None,"ckg_queries":None,"infrastructure_failure":True,"failure_reason":f"CKG provisioning failed: {str(e)[:2000]}","ckg_retrieval":{"enabled":False},"elapsed_seconds":0,"timed_out":False}
+                        except Exception as e:  # noqa: BLE001 -- infrastructure provisioning must capture any failure
+                            result: dict[str, Any]={"status":"failure","exit_code":None,"files_changed":[],"files_found":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"ckg_tools_used":None,"ckg_queries":None,"infrastructure_failure":True,"failure_reason":f"CKG provisioning failed: {str(e)[:2000]}","ckg_retrieval":{"enabled":False},"elapsed_seconds":0,"timed_out":False}
                             result.update(task_id=task["id"],language=task["language"],condition=condition);result["success"]=False
                             fh.write(json.dumps(result,separators=(",",":"))+"\n");fh.flush();results.append(result);continue
                     else: _validate_condition(work,condition)
@@ -104,7 +115,8 @@ def main(argv=None):
                     try:
                         if condition=="with_ckg": _provision_ckg(work)
                         _validate_condition(work,condition);statuses.append(f"{condition}=PASS")
-                    except Exception as e:statuses.append(f"{condition}=FAIL ({e})")
+                    except Exception as e:  # noqa: BLE001 -- preflight must report any provisioning failure
+                        statuses.append(f"{condition}=FAIL ({e})")
             print(f"{task['id']} fixture={task['fixture']} " + " ".join(statuses))
         return 0
     run(tasks,SubprocessAgentRunner(a.agent_command,a.timeout) if a.agent_command else FakeAgentRunner(),conditions,Path(a.output),a.dry_run);return 0

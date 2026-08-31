@@ -1,13 +1,37 @@
 from __future__ import annotations
-import json, statistics
+
+import json
+import statistics
+
+
+def _file_matches(expected: str, found_list: list[str]) -> bool:
+    # Normalize: strip any "fastapi/" prefix that the agent might prepend
+    def norm(p: str) -> str:
+        return p.removeprefix("fastapi/")
+
+    expected_n = norm(expected)
+    for f in found_list:
+        f_n = norm(f)
+        if f_n == expected_n:
+            return True
+        if "/" not in expected_n:
+            # expected is a basename — match only against basenames
+            if "/" not in f_n and f_n == expected_n:
+                return True
+        else:
+            # expected is a repo-relative path — match exact or trailing segment
+            if f_n == expected_n or f_n.endswith("/" + expected_n):
+                return True
+    return False
 
 def score(task, result):
-    files=" ".join(result.get("files_found") or [])
-    symbols=" ".join(result.get("symbols_found") or [])
-    file_ok=all(x in files for x in task["expected_files"])
+    files_found = result.get("files_found") or []
+    symbols_found = result.get("symbols_found") or []
+    files_changed = result.get("files_changed") or []
+    file_ok=all(_file_matches(x, files_found) for x in task["expected_files"])
     expected_changed=task.get("expected_changed_files", [])
-    changed_ok=all(x in " ".join(result.get("files_changed") or []) for x in expected_changed)
-    symbol_ok=all(x in symbols for x in task["expected_symbols"])
+    changed_ok=all(_file_matches(x, files_changed) for x in expected_changed)
+    symbol_ok=all(x in symbols_found for x in task["expected_symbols"])
     result["success"]=bool(result.get("exit_code")==0 and file_ok and symbol_ok and changed_ok and not result.get("timed_out"))
     result["success_reason"]="; ".join(x for x,ok in (("process",result.get("exit_code")==0),("files_found",file_ok),("symbols",symbol_ok),("files_changed",changed_ok)) if not ok) or "criteria met"
     return result

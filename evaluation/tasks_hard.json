@@ -1,0 +1,62 @@
+[
+  {
+    "id": "fastapi-route-template-parsing",
+    "language": "python",
+    "fixture": "local_fastapi/fastapi",
+    "prompt": "In this codebase, a route is declared with a string containing braces like /items/{item_id}. Before any type checking, what helper walks that string to list the placeholder names, and what later helper pulls the actual string values from the incoming request's multidicts? Do not search for the placeholder names directly.",
+    "expected_files": ["utils.py", "_compat/v2.py"],
+    "expected_symbols": ["get_path_param_names", "get_missing_field_error"],
+    "success_criteria": "template parsing and missing field error",
+    "timeout": 300
+  },
+  {
+    "id": "fastapi-dependency-reuse-key",
+    "language": "python",
+    "fixture": "local_fastapi/fastapi",
+    "prompt": "A single Python callable is referenced from two different branches of the per-request tree. What three-part key is built from the callable's identity and surrounding context to decide if the second branch can reuse the first result, and where is that key constructed?",
+    "expected_files": ["dependencies/models.py", "types.py"],
+    "expected_symbols": ["_get_cache_key", "Dependant"],
+    "success_criteria": "reuse key construction",
+    "timeout": 300
+  },
+  {
+    "id": "fastapi-response-serialization-fallback",
+    "language": "python",
+    "fixture": "local_fastapi/fastapi",
+    "prompt": "When no response model is declared, the framework must still make the return value serializable. Which fallback in the routing layer delegates to a recursive utility, and what two structures in the encoder module drive its type handling?",
+    "expected_files": ["routing.py", "encoders.py"],
+    "expected_symbols": ["serialize_response", "generate_encoders_by_class_tuples"],
+    "success_criteria": "fallback serialization path",
+    "timeout": 300
+  },
+  {
+    "id": "fastapi-security-graph-walk",
+    "language": "python",
+    "fixture": "local_fastapi/fastapi",
+    "prompt": "To build documentation, the system must discover all security needs for a route, even when they are hidden inside nested calls. Which traversal walks the graph with deduplication, which test decides if a node is a security requirement, and which aggregator produces the final definitions?",
+    "expected_files": ["openapi/utils.py", "security/oauth2.py"],
+    "expected_symbols": ["_get_openapi_dependency_data", "OAuth2PasswordBearer"],
+    "success_criteria": "security graph walk",
+    "timeout": 300
+  },
+  {
+    "id": "fastapi-after-response-queue",
+    "language": "python",
+    "fixture": "local_fastapi/fastapi",
+    "prompt": "Some work must run after the response is sent, even when the handler returns a Response that already carries its own background. Where is the queue type defined as a thin subclass, and how does the handler merge the per-request queue into the response without overwriting an existing one?",
+    "expected_files": ["background.py", "routing.py"],
+    "expected_symbols": ["BackgroundTasks", "get_request_handler"],
+    "success_criteria": "after-response queue merge",
+    "timeout": 300
+  },
+  {
+    "id": "fastapi-event-stream-splitting",
+    "language": "python",
+    "fixture": "local_fastapi/fastapi",
+    "prompt": "For streaming, a single logical message with embedded newlines must become multiple wire lines, and a periodic comment must be sent. Which helper in the event module normalizes line endings and splits them, and which routing-layer function decides to enter the event-stream branch based on the response class?",
+    "expected_files": ["sse.py", "routing.py"],
+    "expected_symbols": ["_split_sse_lines", "get_request_handler"],
+    "success_criteria": "event stream splitting and branch",
+    "timeout": 300
+  }
+]
