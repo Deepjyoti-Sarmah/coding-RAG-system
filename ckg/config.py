@@ -18,6 +18,36 @@ INCLUDE_EXTENSIONS = {
     ".hxx",
 }
 
+# Fallback extensions that get MODULE chunk without tree-sitter (40+ per CCE parity, not strict)
+FALLBACK_EXTENSIONS = {
+    ".html",
+    ".css",
+    ".scss",
+    ".less",
+    ".vue",
+    ".svelte",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".xml",
+    ".sql",
+    ".graphql",
+    ".gql",
+    ".proto",
+    ".tf",
+    ".hcl",
+    ".dockerfile",
+    ".md",
+    ".htm",
+    ".rb",
+    ".php",
+    ".swift",
+    ".kt",
+    ".sh",
+    ".bash",
+}
+
 EXCLUDE_DIRS = {
     ".git",
     "node_modules",
