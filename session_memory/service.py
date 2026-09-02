@@ -22,7 +22,9 @@ def _now() -> str:
 
 
 def _bounded(value: str | None, limit: int = MAX_TEXT) -> str:
-    return (value or "")[:limit]
+    from indexing.secrets import redact_pii, redact_secrets
+
+    return redact_pii(redact_secrets((value or "")[:limit]))
 
 
 class SessionService:

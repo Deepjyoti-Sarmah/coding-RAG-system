@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from ckg.config import (
     EXCLUDE_DIRS,
+    FALLBACK_EXTENSIONS,
     INCLUDE_EXTENSIONS,
     MAX_FILE_SIZE_BYTES,
 )
@@ -18,7 +19,9 @@ def is_inside_excluded_dir(file_path: Path) -> bool:
 
 
 def should_skip_file(file_path: Path) -> bool:
-    if file_path.suffix.lower() not in INCLUDE_EXTENSIONS:
+    ext = file_path.suffix.lower()
+    # Strict + fallback are both indexable; only skip truly unknown
+    if ext not in INCLUDE_EXTENSIONS and ext not in FALLBACK_EXTENSIONS:
         return True
 
     size_bytes = file_path.stat().st_size
@@ -87,13 +90,23 @@ def build_document(
 
 
 def load_code_files(path: str, *, on_progress=None) -> list[Document]:
+    from indexing.secrets import is_secret_filename, should_skip_file_content
+
     documents: list[Document] = []
 
     for idx, (file_path, relative_path) in enumerate(iter_repo_files(path), start=1):
+        if is_secret_filename(relative_path):
+            # pre-open deny-list: skip .env/.pem etc without reading
+            print(f"Skipping {file_path}: secret filename", file=sys.stderr)
+            continue
         try:
             content = file_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
             print(f"Skipping {file_path}: {e}")
+            continue
+
+        if should_skip_file_content(relative_path, content):
+            print(f"Skipping {file_path}: contains secrets", file=sys.stderr)
             continue
 
         documents.append(
