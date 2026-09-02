@@ -9,7 +9,10 @@ def connect(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path, timeout=10, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA temp_store=MEMORY")
+    conn.execute("PRAGMA cache_size=-64000")
     conn.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_MS}")
     load_vec_extension(conn)
     return conn

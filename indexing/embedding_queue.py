@@ -45,7 +45,36 @@ def enqueue_embedding_jobs(db_path: str, chunks: list[Any]) -> int:
 
 
 def _ensure_model_consistency(conn, provider: EmbeddingProvider) -> None:
-    """Invalidate stored embeddings if model identifier changed (even same dimension)."""
+    """Invalidate stored embeddings if model identifier or dimension changed."""
+    # Check dimension mismatch first (covers FakeProvider dim switch without model_id change)
+    try:
+        from storage.schema import get_embedding_dim, set_embedding_dim
+
+        stored_dim = get_embedding_dim(conn)
+        cur_dim = getattr(provider, "dimension", None)
+        if stored_dim is not None and cur_dim is not None and stored_dim != cur_dim:
+            try:
+                vec_index_repository.clear(conn)
+            except (sqlite3.Error, OSError):
+                pass
+            try:
+                conn.execute("DELETE FROM embeddings")
+                conn.execute("DELETE FROM embedding_jobs")
+                chunks = chunk_repository.fetch_all(conn)
+                for chunk in chunks:
+                    embedding_job_repository.enqueue(conn, chunk.chunk_key, chunk.content_hash)
+                set_embedding_dim(conn, cur_dim)
+                conn.commit()
+            except (sqlite3.Error, OSError):
+                pass
+            # need to re-read stored_model after dim clear
+        elif cur_dim is not None and stored_dim is None:
+            try:
+                set_embedding_dim(conn, cur_dim)
+            except (sqlite3.Error, OSError):
+                pass
+    except Exception:
+        pass
     try:
         stored = conn.execute(
             "SELECT value FROM index_metadata WHERE key = ?", ("embedding_model",)
@@ -124,6 +153,15 @@ def run_embedding_worker(
                 )
                 conn.commit()
         except (sqlite3.Error, OSError, AttributeError, ValueError):  # -- metadata write best-effort
+            pass
+
+        # Backoff under memory pressure (P4-1-1)
+        try:
+            from indexing.resource_governor import is_memory_pressured
+
+            if limit is not None and is_memory_pressured():
+                limit = max(10, limit // 2)
+        except Exception:
             pass
 
         jobs = embedding_job_repository.claim(conn, limit=limit)

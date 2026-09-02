@@ -37,7 +37,7 @@ def build_semantic_chunks(result: BuildResult) -> list[SemanticChunk]:
     for export in result.exports:
         exports_by_document.setdefault(export.document_id, []).append(export)
 
-    return [
+    chunks = [
         build_semantic_chunk(
             symbol,
             result.graph,
@@ -46,6 +46,61 @@ def build_semantic_chunks(result: BuildResult) -> list[SemanticChunk]:
         )
         for symbol in result.symbols
     ]
+    # Fallback for docs with no symbols but non-empty content → synthetic MODULE symbol + chunk
+    symbol_doc_ids = {s.document_id for s in result.symbols}
+    for doc in result.documents:
+        if doc.document_id not in symbol_doc_ids and doc.content.strip():
+            # Only for fallback languages or genuinely chunk-worthy docs (avoid empty __init__.py noise)
+            # Create synthetic MODULE symbol first so FK passes, then chunk
+            from analysis.passes.module_symbol_pass import build_module_symbol
+            # Reuse module_symbol logic but without import/export guard for fallback langs
+            # Check if fallback extension
+            from ckg.config import FALLBACK_EXTENSIONS
+
+            ext = "." + doc.relative_path.split(".")[-1].lower() if "." in doc.relative_path else ""
+            is_fallback = ext in FALLBACK_EXTENSIONS
+            # For strict langs, only fallback if doc had imports/exports (original module_symbol logic)
+            # For fallback langs, always create MODULE chunk when non-empty
+            should_fallback = is_fallback or doc.relative_path.endswith((".html", ".css", ".json", ".md", ".yaml", ".xml"))
+            if should_fallback or doc.content.strip():
+                # Avoid duplicating empty-file test: empty file already filtered by content.strip()
+                # For strict langs, respect original guard: need imports/exports to be worth chunking
+                if not is_fallback:
+                    # Keep original behavior for strict langs: require imports/exports to avoid noise
+                    # Already handled by module_symbol_pass, so skip here to avoid duplicate
+                    continue
+                synth = build_module_symbol(doc)
+                # Ensure stable_key matches fallback chunk key expectations
+                result.symbols.append(synth)
+                # Also need to add to graph/symbol_index? chunker doesn't have context, but result.symbols is enough for FK
+                chunks.append(_fallback_module_chunk(doc, synth))
+    return chunks
+
+
+def _fallback_module_chunk(doc, synth=None) -> SemanticChunk:
+    # Use synthetic symbol's stable_key/symbol_id if provided
+    if synth is not None:
+        text = doc.content[:2000]
+        return SemanticChunk(
+            chunk_key=synth.stable_key,
+            symbol_id=synth.symbol_id,
+            relative_path=doc.relative_path,
+            embedding_text=f"module {doc.relative_path}\nsource:\n{text}",
+            display_text=text,
+            content_hash=compute_content_hash(text),
+            chunk_version=CHUNK_VERSION,
+        )
+    text = doc.content[:2000]
+    stable = f"{doc.relative_path}|{doc.language}|__module__|module"
+    return SemanticChunk(
+        chunk_key=stable,
+        symbol_id=doc.document_id,
+        relative_path=doc.relative_path,
+        embedding_text=f"module {doc.relative_path}\nsource:\n{text}",
+        display_text=text,
+        content_hash=compute_content_hash(text),
+        chunk_version=CHUNK_VERSION,
+    )
 
 
 def build_semantic_chunk(

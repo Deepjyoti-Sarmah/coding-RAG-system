@@ -264,3 +264,18 @@ def bump_generation(conn) -> int:
     )
 
     return generation
+
+
+def get_embedding_dim(conn) -> int | None:
+    try:
+        row = conn.execute("SELECT value FROM index_metadata WHERE key='embedding_dim'").fetchone()
+    except sqlite3.OperationalError:
+        return None
+    return int(row["value"]) if row else None
+
+
+def set_embedding_dim(conn, dim: int) -> None:
+    conn.execute(
+        "INSERT INTO index_metadata (key,value) VALUES ('embedding_dim', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        (str(dim),),
+    )

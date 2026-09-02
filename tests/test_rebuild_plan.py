@@ -233,6 +233,69 @@ class TestPlanRebuild(unittest.TestCase):
 
         self.assertEqual(plan.untouched, {"unrelated.ts"})
 
+    def test_transitive_importers_are_reresolved(self):
+        # A -> B -> C chain: editing A should reresolve B and transitively C
+        # target.ts -> middle.ts -> leaf.ts
+        partition = partition_files(
+            _scan(
+                {
+                    "target.ts": FileChange.CHANGED,
+                    "middle.ts": FileChange.UNCHANGED,
+                    "leaf.ts": FileChange.UNCHANGED,
+                }
+            )
+        )
+        documents = {
+            f"doc-{p}": _document(p)
+            for p in ["target.ts", "middle.ts", "leaf.ts"]
+        }
+        snapshot = _snapshot(
+            ["target.ts", "middle.ts", "leaf.ts"],
+            {"target.ts": ["helper"], "middle.ts": ["mid"]},
+        )
+        importers = {
+            "target.ts": {"doc-middle.ts"},
+            "middle.ts": {"doc-leaf.ts"},
+            "target": {"doc-middle.ts"},
+            "middle": {"doc-leaf.ts"},
+        }
+        fresh_exports = [_export("target.ts", "renamed")]
+        fresh_symbols = [_symbol("target.ts", "renamed")]
+        plan = plan_rebuild(
+            partition=partition,
+            snapshot=snapshot,
+            importers=importers,
+            documents_by_id=documents,
+            fresh_exports=fresh_exports,
+            fresh_symbols=fresh_symbols,
+        )
+        self.assertIn("middle.ts", plan.reresolve)
+        # transitive: leaf imports middle which imports target
+        self.assertIn("leaf.ts", plan.reresolve)
+
+    def test_no_infinite_loop_on_circular_imports(self):
+        partition = partition_files(
+            _scan({"a.ts": FileChange.CHANGED, "b.ts": FileChange.UNCHANGED})
+        )
+        documents = {f"doc-{p}": _document(p) for p in ["a.ts", "b.ts"]}
+        snapshot = _snapshot(["a.ts", "b.ts"], {"a.ts": ["x"]})
+        importers = {
+            "a.ts": {"doc-b.ts"},
+            "b.ts": {"doc-a.ts"},
+            "a": {"doc-b.ts"},
+            "b": {"doc-a.ts"},
+        }
+        plan = plan_rebuild(
+            partition=partition,
+            snapshot=snapshot,
+            importers=importers,
+            documents_by_id=documents,
+            fresh_exports=[_export("a.ts", "y")],
+            fresh_symbols=[_symbol("a.ts", "y")],
+        )
+        # Should not hang, b.ts should be reresolved but not infinite
+        self.assertIn("b.ts", plan.reresolve)
+
 
 if __name__ == "__main__":
     unittest.main()

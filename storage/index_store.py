@@ -44,6 +44,7 @@ def persist_index(
     file_states: list[FileState] | None = None,
     *,
     removed_paths: frozenset[str] | set[str] | None = None,
+    reresolve_paths: frozenset[str] | set[str] | None = None,
 ) -> None:
     """Replace the persisted index with `result`.
 
@@ -52,6 +53,9 @@ def persist_index(
     their rows are purged precisely, analysis tables are reset (their ids
     are not stable across runs), and the embedding cache plus vector index
     survive for every chunk that is still current.
+    `reresolve_paths` are unchanged files whose resolutions are stale and
+    must have their analysis rows cleared before reinsertion; they remain
+    in documents/symbols.
     """
     conn = db.connect(db_path)
 
@@ -63,7 +67,10 @@ def persist_index(
                 _clear_all(conn)
             else:
                 _purge_paths(conn, removed_paths)
-                _clear_analysis_tables(conn)
+                if reresolve_paths:
+                    _clear_analysis_tables_for_paths(conn, frozenset(reresolve_paths))
+                else:
+                    _clear_analysis_tables(conn)
 
             document_repository.insert_many(conn, result.documents)
             symbol_repository.insert_many(conn, result.symbols)
@@ -302,10 +309,7 @@ def _clear_all(conn) -> None:
 def _clear_analysis_tables(conn) -> None:
     """Reset tables whose row ids are not stable across runs.
 
-    Imports and exports use autoincrement ids, and references/resolutions
-    hang off them, so the merged full result is re-inserted from scratch
-    each run. These tables hold small rows; the expensive content
-    (documents, symbols, chunk text) stays in place.
+    Full-build path only. See _clear_analysis_tables_for_paths for incremental.
     """
     for table in (
         "resolved_imports",
@@ -316,6 +320,28 @@ def _clear_analysis_tables(conn) -> None:
         "exports",
     ):
         conn.execute(f'DELETE FROM "{table}"')
+
+
+def _clear_analysis_tables_for_paths(conn, paths: frozenset[str] | set[str]) -> None:
+    if not paths:
+        return
+    placeholders = ",".join("?" * len(paths))
+    # Resolve document_ids for these relative_paths
+    doc_ids = [r["document_id"] for r in conn.execute(f"SELECT document_id FROM documents WHERE relative_path IN ({placeholders})", list(paths)).fetchall()]
+    # If still not in documents (new files), nothing to clear yet for them
+    if doc_ids:
+        did_place = ",".join("?" * len(doc_ids))
+        for tbl, col in (("imports", "document_id"), ("exports", "document_id"), ("references", "document_id")):
+            conn.execute(f"DELETE FROM \"{tbl}\" WHERE {col} IN ({did_place})", doc_ids)
+        # resolved_* and relationships are cascaded via FK but also clear leftover
+        # relationships that may reference those symbols/documents
+        # Clear relationships where either endpoint is in removed docs (via symbols)
+        conn.execute(f"DELETE FROM relationships WHERE source_symbol_id IN (SELECT symbol_id FROM symbols WHERE document_id IN ({did_place})) OR target_symbol_id IN (SELECT symbol_id FROM symbols WHERE document_id IN ({did_place}))", doc_ids + doc_ids)
+    else:
+        # Fallback: clear nothing specific; full reinsert will handle via REPLACE
+        pass
+    # For incremental, we will re-insert analysis for all rebuilt/reresolved docs via bulk insert below,
+    # so clearing per-doc is sufficient. For untouched, rows remain.
 
 
 def _purge_paths(conn, paths: frozenset[str] | set[str]) -> None:

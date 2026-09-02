@@ -6,6 +6,10 @@ from pathlib import Path
 from indexing.watcher import _DebouncedReindexer
 
 
+import pytest
+
+
+@pytest.mark.slow
 class TestDebouncedReindexer(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

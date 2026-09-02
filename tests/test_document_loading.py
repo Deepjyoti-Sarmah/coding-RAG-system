@@ -47,7 +47,7 @@ class TestDirectoryLoad(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "auth.ts").write_text("export const a = 1;\n", encoding="utf-8")
-            (root / "notes.md").write_text("# notes\n", encoding="utf-8")
+            (root / "notes.txt").write_text("# notes\n", encoding="utf-8")
             (root / "script.py").write_text("x = 1\n", encoding="utf-8")
 
             documents = load_code_files(str(root))
@@ -56,6 +56,16 @@ class TestDirectoryLoad(unittest.TestCase):
                 {d.relative_path for d in documents},
                 {"auth.ts", "script.py"},
             )
+
+    def test_fallback_extension_is_indexed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "page.html").write_text("<html>hi</html>\n", encoding="utf-8")
+            (root / "auth.ts").write_text("export const a = 1;\n", encoding="utf-8")
+
+            documents = load_code_files(str(root))
+
+            self.assertIn("page.html", {d.relative_path for d in documents})
 
     def test_skips_excluded_dirs(self):
         with tempfile.TemporaryDirectory() as tmp:

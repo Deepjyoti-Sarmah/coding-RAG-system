@@ -27,11 +27,14 @@ from indexing.rebuild_plan import (
     partition_files,
     plan_rebuild,
 )
+from indexing.resource_governor import onnx_thread_cap
 from indexing.symbol_index import SymbolIndex
 from ingestion.loader import build_document
 from models.entities.documents import Document
 from models.file_state import FileState
 from storage.index_store import load_file_states, load_index, persist_index
+
+onnx_thread_cap()
 
 
 @dataclass(slots=True)
@@ -48,40 +51,43 @@ class IndexRunReport:
 
 
 def reindex_index(db_path: str, root_dir: str, *, on_progress=None) -> IndexRunReport:
-    previous_states = _load_previous_states(db_path)
+    from indexing.resource_governor import ProjectIndexLock
 
-    scan = scan_files(root_dir, previous_states)
+    with ProjectIndexLock(root_dir):
+        previous_states = _load_previous_states(db_path)
+        scan = scan_files(root_dir, previous_states)
 
-    if on_progress is not None:
-        total = len(scan.current)
-        # emit early scan progress so large repos don't appear hung
-        if total >= 50:
-            try:
-                on_progress(f"Scanning {total} files...")
-            except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
-                pass
+        if on_progress is not None:
+            total = len(scan.current)
+            if total >= 50:
+                try:
+                    on_progress(f"Scanning {total} files...")
+                except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
+                    pass
 
-    if not previous_states:
-        result = build_graph(root_dir, on_progress=on_progress)
-        persist_index(
-            db_path,
-            result,
-            _file_states_from_documents(result.documents),
+        if not previous_states:
+            result = build_graph(root_dir, on_progress=on_progress)
+            states = _file_states_from_documents(result.documents)
+            persist_index(
+                db_path,
+                result,
+                states,
+            )
+            _persist_merkle(db_path, states)
+            enqueue_embedding_jobs(db_path, result.chunks)
+
+            return IndexRunReport(
+                changes=scan.changes,
+                parsed_files=len(result.documents),
+                resolved_references=len(result.references),
+            )
+
+        return _incremental_rebuild(
+            db_path=db_path,
+            previous_states=previous_states,
+            scan=scan,
+            on_progress=on_progress,
         )
-        enqueue_embedding_jobs(db_path, result.chunks)
-
-        return IndexRunReport(
-            changes=scan.changes,
-            parsed_files=len(result.documents),
-            resolved_references=len(result.references),
-        )
-
-    return _incremental_rebuild(
-        db_path=db_path,
-        previous_states=previous_states,
-        scan=scan,
-        on_progress=on_progress,
-    )
 
 
 def _incremental_rebuild(
@@ -175,16 +181,19 @@ def _incremental_rebuild(
 
     result.chunks = build_semantic_chunks(result)
 
+    states = _build_file_states(
+        scan=scan,
+        changes=changes,
+        previous_states=previous_states,
+    )
     persist_index(
         db_path,
         result,
-        _build_file_states(
-            scan=scan,
-            changes=changes,
-            previous_states=previous_states,
-        ),
+        states,
         removed_paths=partition.rebuild | partition.deleted,
+        reresolve_paths=plan.reresolve,
     )
+    _persist_merkle(db_path, states)
     enqueue_embedding_jobs(db_path, result.chunks)
 
     return IndexRunReport(
@@ -279,6 +288,10 @@ def _build_documents(
     previous_docs_by_path: dict[str, Document],
     on_progress=None,
 ) -> dict[str, Document]:
+    from indexing.resource_governor import adaptive_batch_size
+
+    total = len(scan.current)
+    batch = adaptive_batch_size(total)
     documents_by_path: dict[str, Document] = {}
 
     for idx, (path, scanned) in enumerate(scan.current.items(), start=1):
@@ -304,9 +317,9 @@ def _build_documents(
             document_id=document_id,
         )
 
-        if on_progress is not None and idx % 50 == 0:
+        if on_progress is not None and idx % batch == 0:
             try:
-                on_progress(f"Parsed {idx}/{len(scan.current)} files...")
+                on_progress(f"Parsed {idx}/{total} files...")
             except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
                 pass
 
@@ -425,6 +438,25 @@ def _content_hash(
 
 def _content_hash_for(content: str) -> str:
     return compute_content_hash(content)
+
+
+def _persist_merkle(db_path: str, states: list[FileState]) -> None:
+    try:
+        from indexing.merkle import compute_root
+        from storage import db
+
+        root = compute_root(states)
+        conn = db.connect(db_path)
+        try:
+            conn.execute(
+                "INSERT INTO index_metadata (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                ("merkle_root", root),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
 
 
 def _now() -> str:

@@ -199,13 +199,48 @@ def _importer_paths(
     importers: dict[str, set[str]],
     documents_by_id: dict[str, Document],
 ) -> frozenset[str]:
-    paths: set[str] = set()
+    """Transitive closure over importers (BFS).
 
-    for source_path in invalidation_sources:
-        for importer_id in importers.get(source_path, set()):
+    If A is invalidated and B imports A, B must be re-resolved. If C
+    imports B, C also becomes stale — but only because B's *resolution*
+    may change, not because A's fingerprint directly touches C. We
+    therefore walk the importer graph transitively, seeding with
+    invalidation_sources. This is bounded because the graph is small and
+    acyclic in practice; visited guards prevent loops.
+    """
+    # Build reverse map: module_path -> set[document_id] already given as `importers`
+    # Need also to map document relative_path back to its module path for next hop.
+    # However `importers` keys are module_paths (e.g. "src/auth"), not relative_paths.
+    # First, collect direct importers, then iteratively expand.
+    visited_sources: set[str] = set()
+    queue: list[str] = list(invalidation_sources)
+    result: set[str] = set()
+
+    # To support transitive walk we need a way to go from importer document
+    # -> its own module path -> its importers. Derive module path as
+    # relative_path without extension.
+    def module_paths_for_relative(relative_path: str) -> list[str]:
+        # e.g. "src/auth.ts" -> ["src/auth", "src/auth.ts"] candidates that may appear as keys
+        if "." in relative_path:
+            without_ext = relative_path.rsplit(".", 1)[0]
+            return [without_ext, relative_path]
+        return [relative_path]
+
+    while queue:
+        source = queue.pop(0)
+        if source in visited_sources:
+            continue
+        visited_sources.add(source)
+        for importer_id in importers.get(source, set()):
             document = documents_by_id.get(importer_id)
-
-            if document is not None:
-                paths.add(document.relative_path)
-
-    return frozenset(paths)
+            if document is None:
+                continue
+            relative = document.relative_path
+            if relative not in result:
+                result.add(relative)
+                # Enqueue this importer as a new source for transitive importers
+                for mp in module_paths_for_relative(relative):
+                    if mp not in visited_sources:
+                        queue.append(mp)
+    # Exclude invalidation sources themselves — they are already in rebuild set
+    return frozenset(result - set(invalidation_sources))
