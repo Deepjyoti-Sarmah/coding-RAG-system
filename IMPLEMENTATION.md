@@ -3165,6 +3165,24 @@ Next:
 
 If a task changes architecture, record why.
 
+## 2026-09-02 — Hardening: interface members, re-exports, HAS_TYPE, delta persistence, secrets, coverage
+
+Status: COMPLETE
+
+Files changed:
+
+- `analysis/symbol_handlers/interface_members.py` (new), `analysis/registry.py` (interface members as child symbols), `tests/test_interface_symbols.py` flipped `are_not_extracted`→`are_extracted_as_child_symbols` (`Shape.{area,name}` now `METHOD`/`VARIABLE` children)
+- `analysis/export_handlers/re_export.py` (new), `analysis/export_registry.py` composite `_ts_export_statement`, `tests/test_re_export.py` (new), `tests/test_export_pass.py` updated `reexport_from_is_deferred`→`is_now_modeled` (`("login",None)`/`("*",None)`)
+- `models/entities/reference_kind.py` (+HAS_TYPE, +RETURNS), `analysis/semantic/reference_kind.py` (`_in_type_annotation`/`_in_return_type`), `analysis/reference_extractor.py` volume guard 20/owner, `tests/test_extends_relationship.py` `stays_unextracted`→`is_now_has_type` (expects resolved `Shape`)
+- `storage/index_store.py` `persist_index(..., reresolve_paths=)` + `_clear_analysis_tables_for_paths`, `indexing/indexer.py:189` wires `plan.reresolve`
+- `parsing/tree_sitter_parser.py:8` thread-local `Parser`, `storage/db.py:11` `PRAGMA synchronous=NORMAL/temp_store=MEMORY/cache_size=-64000`, `indexing/resource_governor.py:1` adaptive batch
+- `indexing/secrets.py:1` (`AKIA/ghp/PRIVATE KEY`), `ingestion/loader.py:69` `redact_secrets`+`should_skip_file_content`, `session_memory/service.py:24` `_bounded` redacts, `tests/test_secrets.py:1`
+- `pyproject.toml:36` `pytest-cov` + `[tool.coverage.run]` branch, `[tool.coverage.report] fail_under=65`, `tests/conftest.py:1` `tmp_db` WAL cleanup, `tests/test_watcher.py:9` `@pytest.mark.slow`, `.github/workflows/ci.yml:57` `pytest --cov --cov-fail-under=65`
+- `retrieval/hybrid_retriever.py:55` `PER_FILE_CAP_CANDIDATES`, `retrieval/context_builder.py:28` `ContextPack.baseline_tokens`, `retrieval/index_queries.py:67` honest baseline, `ckg/mcp_server.py:265` fixes always-0
+- `README.md` token methodology box `retrieval/tokenizer.py:15` `o200k_base` + `benchmarks/run_external.py` + `evaluation/external.py:184` ground-truth files
+
+Result: 612 passed, 1 skipped, 82.93% cov (gate 65). Still requires `benchmarks/run_external.py --recompute` on real repos before publishing `X%`.
+
 ## 2026-08-24 — Phase 24 Type-Level Symbols + IMPLEMENTS
 
 Status: COMPLETE

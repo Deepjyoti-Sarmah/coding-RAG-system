@@ -36,6 +36,7 @@ ckg-mcp = "ckg.mcp_server:main"
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "pytest-cov>=7.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -74,6 +75,19 @@ exclude = [
 [tool.ruff]
 exclude = ["code-context-engine", "tests/fixtures", ".venv"]
 
+[tool.coverage.run]
+source = ["analysis", "chunking", "ckg", "embeddings", "evaluation", "graph", "indexing", "ingestion", "models", "parsing", "retrieval", "storage", "session_memory"]
+omit = ["tests/*", "code-context-engine/*", "*/__pycache__/*", "ckg/dashboard/app.py"]
+branch = true
+
+[tool.coverage.report]
+skip_covered = false
+show_missing = true
+fail_under = 80
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = ["code-context-engine", ".venv", "test_repo"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]

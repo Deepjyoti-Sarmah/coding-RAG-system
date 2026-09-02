@@ -66,6 +66,14 @@ class TestTokenReduction(unittest.TestCase):
     def test_zero_baseline_is_zero(self):
         self.assertEqual(token_reduction(10, 0), 0.0)
 
+    def test_negative_reduction_when_context_exceeds_baseline(self):
+        # token_reduction can be negative — caller must not clip it
+        self.assertAlmostEqual(token_reduction(300, 200), -0.5)
+        self.assertAlmostEqual(token_reduction(250, 100), -1.5)
+
+    def test_negative_baseline_is_zero(self):
+        self.assertEqual(token_reduction(10, -5), 0.0)
+
 
 class TestAccuracy(unittest.TestCase):
     def test_all_correct(self):
@@ -76,6 +84,16 @@ class TestAccuracy(unittest.TestCase):
 
     def test_empty_is_trivially_perfect(self):
         self.assertEqual(accuracy([]), 1.0)
+
+
+class TestRetrievalGate(unittest.TestCase):
+    def test_gate_definition_recall(self):
+        # Gate: FTS+graph without vectors must keep 0.83/0.78 fixture baseline ckg/cli.py:295
+        from evaluation.runner import run_evaluation
+
+        report = run_evaluation(provider=None, top_k=5)
+        self.assertGreaterEqual(report.definition_accuracy, 0.83)
+        self.assertGreaterEqual(report.mean_recall_at_k, 0.5)
 
 
 if __name__ == "__main__":

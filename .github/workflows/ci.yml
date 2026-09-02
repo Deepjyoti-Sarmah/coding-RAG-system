@@ -54,4 +54,5 @@ jobs:
       # (retrieval/numpy_vector_store.py via storage/db.py::load_vec_extension
       # returning False). Do not shim sqlite-vec on macOS; let the fallback
       # engage. The macOS matrix cells exist to prove the fallback works.
-      - run: uv run pytest
+      - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=80
+      - run: uv run pytest -m "not slow" -q

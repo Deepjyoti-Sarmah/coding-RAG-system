@@ -1471,6 +1471,19 @@ ckg dashboard . --no-browser
 
 It shows index health and counts, recent sessions, decisions, code areas, retrieval activity, token comparisons, and compact symbol search results. It uses only Python’s standard-library HTTP server and keeps session memory in `.ckg/session.sqlite`. The server binds to localhost by default; stop it with Ctrl-C and do not expose it publicly. Remote binding requires the explicit `--allow-remote` flag and is unsafe without additional access controls. Token savings are observational dashboard metrics, not an A/B productivity claim.
 
+## Token methodology (how to cite X%)
+
+To claim `X%` you must pair `mean_savings_pct` with `mean_recall_at_10` at fixed `token_budget=800`, `o200k_base` `retrieval/tokenizer.py:15` (fallback `len//4` `retrieval/tokenizer.py:40`), `top_k=30`→10 files `evaluation/external.py:123`:
+
+```bash
+python benchmarks/run_external.py --repo <url> --source-dir <dir> --queries benchmarks/<repo>_queries.json --output benchmarks/results/<repo>.json
+python benchmarks/run_external.py --recompute "benchmarks/results/*.json"
+```
+
+Report `evaluation/external.py:244` `ExternalReport.mean_savings_pct` (honest: `baseline_tokens` from `expected_files` only `evaluation/external.py:184`, `context_tokens` from `build_context_pack(..., token_budget=800)` `evaluation/external.py:197`) alongside `mean_recall_at_10` and `p50` latency. `evaluation/runner.py:202` intentionally `token_reduction=0.0` (whole-repo `99%` is indefensible); `ckg/dashboard/server.py:68` `savings_percentage` is sum-over-events, not per-query. LLM total-tokens require `ckg eval-ab --agent-command "$AGENT_CMD"` `evaluation/ab_runner.py:36` paired `with_ckg`/`without_ckg` where `total_tokens` null stays null `ab_runner.py:17` (never fabricated). Cite commit SHA and `token_budget` or don't cite.
+
+Built-in safety: `ingestion/loader.py:89` skips `.env` with secrets `indexing/secrets.py:1` (`AKIA/ghp/PRIVATE KEY`), `ingestion/loader.py:69` `redact_secrets` before `chunking/symbol_chunker.py:51` embedding, `session_memory/service.py:24` `redact_secrets` on `_bounded`, thread-local parser `parsing/tree_sitter_parser.py:8`, `storage/db.py:11` `PRAGMA synchronous=NORMAL`.
+
 ## Release smoke test
 
 Build and check the distributable wheel without publishing it:
