@@ -1,0 +1,13 @@
+{
+  "relationship": 1.15,
+  "exact": 0.95,
+  "token_overlap": 0.35,
+  "graph_distance": 0.45,
+  "path": 0.3,
+  "kind": 0.2,
+  "fts": 0.1,
+  "vector": 0.1,
+  "test_example": -0.4,
+  "_trained_on": "evaluation/tasks.json 20 tasks heuristic tuning 2026-09-02",
+  "_method": "manual grid vs heuristic baseline (no real agent yet, eval-ab pilot only)"
+}

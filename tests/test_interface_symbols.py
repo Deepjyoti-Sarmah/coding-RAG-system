@@ -49,17 +49,18 @@ class TestTypeLevelSymbolExtraction(unittest.TestCase):
 
         self.assertEqual(alias.kind, SymbolKind.TYPE_ALIAS)
 
-    def test_interface_members_are_not_extracted_as_child_symbols(self):
+    def test_interface_members_are_extracted_as_child_symbols(self):
         result = _build(
             files={"a.ts": "interface Shape { area(): number; name: string }\n"}
         )
 
         shape = _symbol_by_name(result, "Shape")
-
-        self.assertEqual(
-            [s for s in result.symbols if s.parent_symbol_id == shape.symbol_id],
-            [],
-        )
+        children = sorted(s.name for s in result.symbols if s.parent_symbol_id == shape.symbol_id)
+        self.assertEqual(children, ["area", "name"])
+        # Member kinds: area is method, name is variable (property)
+        by_name = {s.name: s for s in result.symbols if s.parent_symbol_id == shape.symbol_id}
+        self.assertEqual(by_name["area"].kind, SymbolKind.METHOD)
+        self.assertEqual(by_name["name"].kind, SymbolKind.VARIABLE)
 
     def test_interface_member_names_are_not_extracted_as_references(self):
         # Regression: member names are property_identifier nodes, so they

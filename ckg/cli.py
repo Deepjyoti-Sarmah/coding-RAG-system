@@ -215,6 +215,63 @@ def cmd_watch(
     )
 
 
+def cmd_doctor(root: str = ".", verbose: bool = False) -> int:
+    """One-command ops check — like `cce services`."""
+    from pathlib import Path
+
+    p = Path(root)
+    db_path = default_db_path(root)
+    checks: list[tuple[str, bool, str]] = []
+    # .ckg exists
+    has_db = Path(db_path).exists()
+    checks.append(("index present", has_db, db_path if has_db else "no index — run `ckg index .`"))
+    # lock free
+    try:
+        from indexing.resource_governor import ProjectIndexLock
+
+        lk = ProjectIndexLock(root)
+        free = lk.acquire(blocking=False)
+        if free:
+            lk.release()
+        checks.append(("lock free", free, "locked" if not free else "free"))
+    except Exception as e:  # noqa: BLE001
+        checks.append(("lock free", False, str(e)))
+    # queue pending
+    try:
+        if has_db:
+            qs = queue_status(db_path)  # type: ignore
+            pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
+            checks.append(("embedding queue", pending == 0, f"pending={pending}"))
+        else:
+            checks.append(("embedding queue", True, "no db"))
+    except Exception as e:  # noqa: BLE001
+        checks.append(("embedding queue", False, str(e)))
+    # git hook
+    try:
+        from indexing.git_hooks import _git_hooks_dir
+
+        hd = _git_hooks_dir(p)
+        hook = (hd / "hooks" / "post-commit") if hd else None
+        has_hook = hook is not None and hook.exists() and "CKG keep-fresh" in hook.read_text(errors="ignore")
+        checks.append(("git hook", has_hook, str(hook) if has_hook else "no hook — run `ckg init`"))
+    except Exception:
+        checks.append(("git hook", False, "unknown"))
+    # embedding backend
+    try:
+        prov = _detect_provider()
+        checks.append(("embedding backend", prov is not None, prov.model_id if prov else "none - FTS+graph only (ok)"))  # type: ignore[operator]
+    except Exception as e:  # noqa: BLE001
+        checks.append(("embedding backend", False, str(e)))
+
+    ok = all(v for _, v, _ in checks)
+    for name, passed, detail in checks:
+        mark = "✓" if passed else "✗"
+        print(f"{mark} {name}: {detail}")
+        if verbose:
+            pass
+    return 0 if ok else 1
+
+
 def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | None:
     """Auto-detect: Ollama if reachable, then local sentence-transformers if importable, else None.
 
@@ -316,7 +373,9 @@ def _require_provider_or_explain() -> EmbeddingProvider:
     return provider
 
 
-def _ensure_mcp_entry(path: Path, container_key: str) -> str:
+def _ensure_mcp_entry(path: Path, container_key: str | None) -> str:
+    if container_key is None:
+        return "written"
     entry: dict[str, object] = {"command": "ckg-mcp"}
     if path.exists():
         # An unreadable or non-object config is the user's file, not ours to
@@ -353,22 +412,101 @@ def _ensure_mcp_entry(path: Path, container_key: str) -> str:
         return "written"
 
 
-def cmd_init(root: str = ".") -> dict[str, str]:
+def cmd_init(root: str = ".", *, agents: list[str] | None = None) -> dict[str, str]:
+    from ckg.editors import EDITORS, atomic_write_text, detect_editors, project_storage_slug
+
     root_path = Path(root)
-    targets: list[tuple[Path, str]] = []
-    # default always .mcp.json
-    targets.append((root_path / ".mcp.json", "mcpServers"))
-    if (root_path / ".vscode").is_dir():
-        targets.append((root_path / ".vscode" / "mcp.json", "mcpServers"))
-    if (root_path / ".cursor").is_dir():
-        targets.append((root_path / ".cursor" / "mcp.json", "mcpServers"))
-    if (root_path / "opencode.json").is_file():
-        targets.append((root_path / "opencode.json", "mcp"))
+    if agents is None or agents == ["auto"]:
+        agents = detect_editors(root_path)
+        if agents == ["claude"]:
+            agents = ["claude"]
+        # auto: claude always + detected
+        if "claude" not in agents:
+            agents = ["claude"] + agents
+    elif "all" in agents:
+        agents = list(EDITORS.keys())
+    # map agent -> target path/container
+    editor_targets: dict[str, tuple[Path, str | None]] = {}
+    for ag in agents:
+        info = EDITORS.get(ag)
+        if not info:
+            continue
+        cfg = info["config_path"]
+        # handle ~/ expansion for codex
+        if cfg.startswith("~"):
+            cfg_path = Path(cfg).expanduser()
+        else:
+            cfg_path = root_path / cfg
+        editor_targets[ag] = (cfg_path, info["container_key"])
     results: dict[str, str] = {}
-    for path, container_key in targets:
+    for ag, (path, container_key) in editor_targets.items():
+        if container_key is None:
+            # copilot/pi instruction files — versioned block with upgrade
+            from ckg.editors import CKG_BLOCK_START, ensure_block_content
+
+            existing = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+            if CKG_BLOCK_START in existing:
+                results[str(path)] = "already configured"
+            else:
+                new_content, already = ensure_block_content(existing)
+                if already:
+                    results[str(path)] = "already configured"
+                else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    atomic_write_text(path, new_content)
+                    results[str(path)] = "written"
+            continue
+        if path.suffix == ".toml":
+            # codex TOML — append section, not JSON, sanitize
+            from ckg.editors import toml_escape
+
+            marker = 'ckg-mcp'
+            if path.exists() and marker in path.read_text(encoding="utf-8", errors="ignore"):
+                results[str(path)] = "already configured"
+            else:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                slug = project_storage_slug(str(root_path.resolve()))
+                # sanitize slug for TOML
+                slug_esc = toml_escape(slug)
+                toml_snippet = f'\n[mcp_servers.ckg-{slug_esc}]\ncommand = "ckg-mcp"\n'
+                # atomic append
+                existing = path.read_text(encoding="utf-8") if path.exists() else ""
+                atomic_write_text(path, existing + toml_snippet)
+                results[str(path)] = "written"
+            continue
         status = _ensure_mcp_entry(path, container_key)
         results[str(path)] = status
+    # git hooks
+    try:
+        from indexing.git_hooks import install_hooks
+
+        install_hooks(root_path)
+    except Exception:
+        pass
     return results
+
+
+def cmd_uninstall(root: str = ".") -> dict[str, str]:
+    from indexing.git_hooks import uninstall_hooks
+
+    root_path = Path(root)
+    removed = {}
+    for name in [".mcp.json", ".vscode/mcp.json", ".cursor/mcp.json", "opencode.json"]:
+        p = root_path / name
+        if p.exists():
+            # remove ckg entry if present
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                for k in ("mcpServers", "mcp", "servers"):
+                    if isinstance(data.get(k), dict) and "ckg" in data[k]:
+                        del data[k]["ckg"]
+                        p.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+                        removed[str(p)] = "removed"
+            except Exception:
+                pass
+    for h in uninstall_hooks(root_path):
+        removed[h] = "removed"
+    return removed
 
 
 def cmd_embed(
@@ -650,7 +788,12 @@ def _print_eval_report(report: EvaluationReport) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="ckg")
+    parser = argparse.ArgumentParser(
+        prog="ckg",
+        description="Code Knowledge Graph — local-first semantic index",
+        epilog="examples:\n  ckg init --agent all    # configure all editors\n  ckg index .             # index repo\n  ckg search \"login\"     # hybrid search\n  ckg doctor .            # ops check\n  ckg dashboard --no-browser",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--version", action="version", version=_get_version())
     parser.add_argument("--db", help="override the index database path")
 
@@ -736,10 +879,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     init_parser = subparsers.add_parser("init", help="configure MCP for this project")
     init_parser.add_argument("path", nargs="?", default=".")
+    init_parser.add_argument("--agent", choices=["auto", "claude", "cursor", "vscode", "codex", "copilot", "pi", "opencode", "gemini", "all"], default="auto")
+    init_parser.add_argument("--plugin", action="store_true", help="also generate plugin")
+    uninstall_parser = subparsers.add_parser("uninstall", help="remove CKG MCP configs and hooks")
+    uninstall_parser.add_argument("path", nargs="?", default=".")
 
     embed_parser = subparsers.add_parser("embed", help="drain the embedding queue")
     embed_parser.add_argument("path", nargs="?", default=".")
     embed_parser.add_argument("--limit", type=int, default=None)
+
+    doctor_parser = subparsers.add_parser("doctor", help="check index health, locks, hooks, and embedding backend (like cce services)")
+    doctor_parser.add_argument("path", nargs="?", default=".")
+    doctor_parser.add_argument("--verbose", action="store_true", help="show detailed checks")
 
     sessions = subparsers.add_parser(
         "sessions", help="manage local project session memory"
@@ -848,6 +999,9 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                 + (["--timeout", str(args.timeout)] if args.timeout else [])
             )
 
+        if args.command == "doctor":
+            return cmd_doctor(args.path, verbose=args.verbose)
+
         if args.command == "dashboard":
             if (
                 args.host not in ("127.0.0.1", "localhost", "::1")
@@ -922,7 +1076,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
 
         if args.command == "init":
             try:
-                results = cmd_init(args.path)
+                results = cmd_init(args.path, agents=[args.agent])
             except (ValueError, OSError) as error:
                 print(f"Could not configure MCP: {error}", file=sys.stderr)
                 return 1
@@ -932,6 +1086,12 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                     print(f"already configured: {file_path}")
                 else:
                     print(f"Wrote {file_path}")
+            return 0
+
+        if args.command == "uninstall":
+            results = cmd_uninstall(args.path)
+            for p, s in results.items():
+                print(f"{s}: {p}")
             return 0
 
         db_path = args.db or default_db_path(args.path)

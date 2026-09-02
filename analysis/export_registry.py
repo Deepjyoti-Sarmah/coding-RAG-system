@@ -6,6 +6,7 @@ from analysis.export_handlers.declaration import handle_export_statement
 from analysis.export_handlers.go_exports import handle_go_exports
 from analysis.export_handlers.java_exports import handle_java_exports
 from analysis.export_handlers.python_exports import handle_python_top_level
+from analysis.export_handlers.re_export import handle_re_export
 from analysis.export_handlers.rust_exports import handle_rust_exports
 from analysis.export_handlers.specifier import handle_export_specifier
 from analysis.registry import TYPESCRIPT_FAMILY
@@ -13,8 +14,16 @@ from models.entities.exports import Export
 
 ExportHandler = Callable[..., "list[Export] | None"]
 
+def _ts_export_statement(*, node, document):
+    # Try normal export first, then re-export (export * from / export {x} from)
+    result = handle_export_statement(node=node, document=document)
+    if result is not None:
+        return result
+    return handle_re_export(node=node, document=document)
+
+
 _TS_EXPORT_HANDLERS: dict[str, ExportHandler] = {
-    "export_statement": handle_export_statement,
+    "export_statement": _ts_export_statement,
     "export_specifier": handle_export_specifier,
 }
 

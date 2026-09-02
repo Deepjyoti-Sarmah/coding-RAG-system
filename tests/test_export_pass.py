@@ -116,13 +116,13 @@ class TestExportPass(unittest.TestCase):
             [("default", "login")],
         )
 
-    def test_reexport_from_is_deferred(self):
+    def test_reexport_from_is_now_modeled(self):
         exports = _extract_exports('export { login } from "./auth";\n')
-        self.assertEqual(exports, [])
+        self.assertEqual(_tuples(exports), [("login", None)])
 
-    def test_star_reexport_is_deferred(self):
+    def test_star_reexport_is_now_modeled(self):
         exports = _extract_exports('export * from "./auth";\n')
-        self.assertEqual(exports, [])
+        self.assertEqual(_tuples(exports), [("*", None)])
 
     def test_non_exported_statement_produces_no_export(self):
         exports = _extract_exports("const x = 1;\nfunction f() {}\n")

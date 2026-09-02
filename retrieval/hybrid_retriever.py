@@ -33,15 +33,20 @@ WHAT_IMPORTS_PATTERN = re.compile(
     r"([A-Za-z_][\w.]*)|importers?\s+of\s+([A-Za-z_][\w.]*))",
     re.IGNORECASE,
 )
+WHAT_TYPE_PATTERN = re.compile(
+    r"(?:(?:where|what)\s+(?:is\s+)?([A-Za-z_]\w*)\s+type\s+(?:used|referenced)|type\s+uses?\s+of\s+([A-Za-z_]\w*)|who\s+uses\s+type\s+([A-Za-z_]\w*))",
+    re.IGNORECASE,
+)
 
 # Ordered: first match wins. Callers/callees/definitions are unambiguous
 # structural intents; importer phrasings overlap with plain English ("what
-# uses X"), so they run last.
+# uses X"), so they run last. Type uses is specific.
 _INTENT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("callers", WHO_CALLS_PATTERN),
     ("callees", WHAT_CALLS_PATTERN),
     ("definition", WHERE_IS_PATTERN),
     ("importers", WHAT_IMPORTS_PATTERN),
+    ("type_users", WHAT_TYPE_PATTERN),
 ]
 
 Intent = tuple[str, str]
@@ -52,7 +57,11 @@ FtsSearch = Callable[[str, int], list[FtsHit]]
 Embed = Callable[[str], np.ndarray]
 
 # Per-file cap to diversify retrieval: at most this many chunks per file in first pass.
+# Tuned per benchmarks/results/SUMMARY.md: cheap repos (express/chi) saw P_over_ret
+# collapse without cap (fastapi 4.7→10 distinct files with cap), so default is 3.
+# Exposed via retrieve(per_file_cap=) for benchmark sweeps A/B (cap vs weighted).
 DEFAULT_PER_FILE_CAP = 3
+PER_FILE_CAP_CANDIDATES = [1, 2, 3, 5]
 
 
 def _select_with_per_file_cap(
@@ -152,6 +161,8 @@ class HybridRetriever:
             return self._graph_callees(target)
         if kind == "definition":
             return self._exact_definition(target)
+        if kind == "type_users":
+            return self._graph_type_users(target)
         return self._graph_importers(target)
 
     def _graph_callers(self, target_name: str) -> HybridRetrieval:
@@ -175,6 +186,26 @@ class HybridRetriever:
         return HybridRetrieval(
             strategy="graph_callees", query=target_name, candidates=candidates
         )
+
+    def _graph_type_users(self, target_name: str) -> HybridRetrieval:
+        candidates: list[HybridCandidate] = []
+        for symbol in self.symbol_index.lookup_by_name(target_name):
+            for user in self.graph.typed_by(symbol.symbol_id):
+                candidates.append(self._from_symbol(user, sources=("graph",)))
+            for user in self.graph.typed_by(symbol.symbol_id):
+                # also check via has_type direction symmetry
+                pass
+        # also search via HAS_TYPE outgoing from users — need reverse lookup
+        # fallback: scan all relationships HAS_TYPE where target is target_name
+        if not candidates:
+            for rel in self.graph.relationships():
+                if rel.kind.value == "has_type":
+                    tgt = self.graph._symbols_by_id.get(rel.target_symbol_id)
+                    if tgt and tgt.name == target_name:
+                        src = self.graph._symbols_by_id.get(rel.source_symbol_id)
+                        if src:
+                            candidates.append(self._from_symbol(src, sources=("graph",)))
+        return HybridRetrieval(strategy="graph_type_users", query=target_name, candidates=candidates)
 
     def _exact_definition(self, symbol_name: str) -> HybridRetrieval:
         candidates = [

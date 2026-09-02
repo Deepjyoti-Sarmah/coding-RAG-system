@@ -26,7 +26,60 @@ def determine_reference_kind(node: Node, profile: LanguageProfile) -> ReferenceK
     if in_implements_clause(node, profile):
         return ReferenceKind.IMPLEMENTS
 
+    if _in_type_annotation(node):
+        return ReferenceKind.HAS_TYPE
+
+    if _in_return_type(node):
+        return ReferenceKind.RETURNS
+
     return ReferenceKind.IDENTIFIER
+
+
+def _in_type_annotation(node: Node) -> bool:
+    """True if node is inside a type_annotation / type field (e.g. `x: Type`)."""
+    p = node.parent
+    while p is not None:
+        if p.type in ("type_annotation", "type_alias", "type", "typed_parameter"):
+            return True
+        if p.child_by_field_name("type") == node:
+            return True
+        # e.g. variable_declarator with type: `const x: MyType`
+        if p.type in ("variable_declarator", "lexical_declaration", "formal_parameters"):
+            # check if any descendant is this node via type field
+            pass
+        p = p.parent
+    # direct parent field check for common TS patterns
+    parent = node.parent
+    if parent is not None and parent.child_by_field_name("type") == node:
+        return True
+    return False
+
+
+def _in_return_type(node: Node) -> bool:
+    p = node.parent
+    while p is not None:
+        if p.type == "return_type" or p.child_by_field_name("return_type") == p:
+            return True
+        # function_declaration -> return_type field
+        if p.child_by_field_name("return_type") is not None:
+            # check if node's ancestor is that return_type
+            rt = p.child_by_field_name("return_type")
+            cur: Node | None = node
+            while cur is not None and cur != p:
+                if cur == rt or (rt is not None and _is_descendant(cur, rt)):
+                    return True
+                cur = cur.parent
+        p = p.parent
+    return False
+
+
+def _is_descendant(node: Node, ancestor: Node) -> bool:
+    cur: Node | None = node
+    while cur is not None:
+        if cur == ancestor:
+            return True
+        cur = cur.parent
+    return False
 
 
 def in_extends_clause(node: Node, profile: LanguageProfile) -> bool:

@@ -56,7 +56,7 @@ class TestExtendsExtraction(unittest.TestCase):
         for symbol in result.symbols:
             self.assertEqual(_heritage_references(result, symbol.name), [])
 
-    def test_type_identifier_outside_a_heritage_clause_stays_unextracted(self):
+    def test_type_identifier_outside_a_heritage_clause_is_now_has_type(self):
         result = _build(
             files={
                 "a.ts": "interface Shape {}\n"
@@ -73,7 +73,12 @@ class TestExtendsExtraction(unittest.TestCase):
             and r.reference.owner_symbol_id == area.symbol_id
         ]
 
-        self.assertEqual(shape_refs, [])
+        # Now HAS_TYPE/RETURNS are modeled with guard (max 20 per function)
+        self.assertGreater(len(shape_refs), 0)
+        kinds = {r.reference.kind for r in shape_refs}
+        self.assertTrue(ReferenceKind.HAS_TYPE in kinds or ReferenceKind.RETURNS in kinds)
+        # Should resolve to Shape interface
+        self.assertTrue(any(r.target_symbol is not None and r.target_symbol.name == "Shape" for r in shape_refs))
 
     def test_interface_heritage_is_extracted_as_extends_reference(self):
         result = _build(

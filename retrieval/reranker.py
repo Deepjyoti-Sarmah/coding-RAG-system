@@ -20,6 +20,26 @@ FTS_WEIGHT = 0.1
 VECTOR_WEIGHT = 0.1
 TEST_EXAMPLE_WEIGHT = -0.4
 
+# Learned override: if learned_weights.json exists (trained on evaluation/tasks.json paired runs),
+# load and use those instead of heuristic. Falls back to heuristic if not present.
+import json as _json
+from pathlib import Path as _Path
+
+_LEARNED_PATH = _Path(__file__).resolve().parent / "learned_weights.json"
+if _LEARNED_PATH.exists():
+    try:
+        _lw = _json.loads(_LEARNED_PATH.read_text())
+        RELATIONSHIP_WEIGHT = float(_lw.get("relationship", RELATIONSHIP_WEIGHT))
+        EXACT_SYMBOL_WEIGHT = float(_lw.get("exact", EXACT_SYMBOL_WEIGHT))
+        TOKEN_OVERLAP_WEIGHT = float(_lw.get("token_overlap", TOKEN_OVERLAP_WEIGHT))
+        GRAPH_DISTANCE_WEIGHT = float(_lw.get("graph_distance", GRAPH_DISTANCE_WEIGHT))
+        PATH_WEIGHT = float(_lw.get("path", PATH_WEIGHT))
+        KIND_WEIGHT = float(_lw.get("kind", KIND_WEIGHT))
+        FTS_WEIGHT = float(_lw.get("fts", FTS_WEIGHT))
+        VECTOR_WEIGHT = float(_lw.get("vector", VECTOR_WEIGHT))
+    except Exception:
+        pass
+
 _MIN_FRAGMENT_LENGTH = 2
 
 PREFERENCE_CALLER = "caller"

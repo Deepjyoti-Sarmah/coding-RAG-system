@@ -165,6 +165,15 @@ class CodeGraph:
     def subtypes_of(self, symbol_id: str) -> list[Symbol]:
         return self._sources_of(symbol_id, RelationshipKind.EXTENDS)
 
+    def has_type_of(self, symbol_id: str) -> list[Symbol]:
+        return self._targets_of(symbol_id, RelationshipKind.HAS_TYPE)
+
+    def typed_by(self, symbol_id: str) -> list[Symbol]:
+        return self._sources_of(symbol_id, RelationshipKind.HAS_TYPE)
+
+    def returns_of(self, symbol_id: str) -> list[Symbol]:
+        return self._targets_of(symbol_id, RelationshipKind.RETURNS)
+
     def _sources_of(
         self,
         symbol_id: str,

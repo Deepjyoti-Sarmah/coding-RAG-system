@@ -22,10 +22,12 @@ def handle_interface(
     # Members are property_signature / method_signature nodes, which no
     # existing handler understands; they stay in the interface signature
     # rather than becoming half-extracted child symbols.
-    return build_symbol(
+    # Now also indexed as child symbols for finer retrieval (kind=variable/method).
+    symbol = build_symbol(
         node=node,
         name=node_text(name),
         kind=SymbolKind.INTERFACE,
         document=document,
         owner=owner,
     )
+    return symbol

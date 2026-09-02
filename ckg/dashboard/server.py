@@ -34,11 +34,28 @@ class DashboardServer(ThreadingHTTPServer):
 class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompatibleVariableOverride]
     server: Any  # type: ignore[assignment]  # pyright: ignore[reportIncompatibleVariableOverride]
     server_version = "CKGDashboard/1.0"
+    def _check_auth(self) -> bool:
+        import hmac, os
+
+        token = os.environ.get("CKG_DASHBOARD_TOKEN")
+        if token:
+            auth = self.headers.get("Authorization", "")
+            if not hmac.compare_digest(f"Bearer {token}", auth):
+                self._send({"error":"unauthorized"},401)
+                return False
+        site = self.headers.get("Sec-Fetch-Site", "")
+        if site and site not in ("same-origin", "same-site", "none"):
+            self._send({"error":"csrf"},403)
+            return False
+        return True
+
     def _send(self, data: Any, status: int = 200, content_type: str = "application/json") -> None:
         raw = data.encode() if isinstance(data, str) else json.dumps(data, separators=(",", ":")).encode()
         if len(raw) > 2_000_000: raw = b'{"error":"response too large"}'; status=500
         self.send_response(status); self.send_header("Content-Type", content_type+"; charset=utf-8"); self.send_header("Content-Length",str(len(raw))); self.end_headers(); self.wfile.write(raw)
     def do_GET(self) -> None:
+        if not self._check_auth():
+            return
         try:
             parsed=urlparse(self.path); path=parsed.path
             if ".." in path or "\\" in path: return self._send({"error":"invalid path"},400)
@@ -51,6 +68,60 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
             return self._send({"error":"not found"},404)
         except Exception as e:  # noqa: BLE001 -- HTTP handler must return 500 for any handler error
             return self._send({"error":str(e)},500)
+    def do_POST(self) -> None:
+        if not self._check_auth():
+            return
+        parsed = urlparse(self.path)
+        if parsed.path == "/api/reindex":
+            try:
+                import subprocess, sys
+
+                subprocess.Popen([sys.executable, "-m", "ckg.cli", "index", cast(DashboardServer, self.server).project], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return self._send({"status": "reindex started"})
+            except Exception as e:
+                return self._send({"error": str(e)}, 500)
+        self._send({"error":"not found"},404)
+
+    def do_DELETE(self) -> None:
+        if not self._check_auth():
+            return
+        parsed = urlparse(self.path)
+        if parsed.path.startswith("/api/files/"):
+            rel = parsed.path[len("/api/files/"):]
+            if ".." in rel or "\\" in rel or rel.startswith("/"):
+                return self._send({"error":"invalid path"},400)
+            # guard within project
+            project = cast(DashboardServer, self.server).project
+            try:
+                target = (Path(project) / rel).resolve()
+                target.relative_to(Path(project).resolve())
+            except ValueError:
+                return self._send({"error":"invalid path"},400)
+            # purge from index
+            db = default_db_path(project)
+            if Path(db).exists():
+                try:
+                    from storage import db as sdb
+
+                    conn = sdb.connect(db)
+                    try:
+                        from storage.index_store import _purge_paths  # type: ignore
+
+                        with sdb.transaction(conn):
+                            _purge_paths(conn, {rel})
+                        conn.commit()
+                    finally:
+                        conn.close()
+                except Exception:
+                    pass
+            fp = Path(project) / rel
+            if fp.exists():
+                try:
+                    fp.unlink()
+                except OSError:
+                    pass
+            return self._send({"status":"deleted","path":rel})
+        self._send({"error":"not found"},404)
     def _health(self) -> None:
         project = cast(DashboardServer, self.server).project
         db=Path(project)/".ckg"/"index.sqlite"; sdb=Path(session_db_path(project))

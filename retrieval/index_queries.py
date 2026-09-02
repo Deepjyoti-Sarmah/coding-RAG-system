@@ -73,10 +73,16 @@ def build_context_pack_from_index(
     top_k: int = 5,
 ) -> ContextPack:
     # One materialization serves both the retriever and the context pack.
+    from retrieval.context_builder import estimate_tokens
+
     result = load_index_cached(db_path)
     retriever = build_hybrid_retriever(db_path, provider=provider, result=result)
 
     retrieval = retriever.retrieve(query, top_k=top_k)
+
+    # Honest baseline: ground-truth is unknown here, use whole-index size
+    # as informative denominator (not a savings claim).
+    baseline_tokens = estimate_tokens("\n".join(d.content for d in result.documents)) if result.documents else 0
 
     return build_context_pack(
         retrieval.candidates,
@@ -84,4 +90,5 @@ def build_context_pack_from_index(
         graph=result.graph,
         symbols_by_key={s.stable_key: s for s in result.symbols},
         token_budget=token_budget,
+        baseline_tokens=baseline_tokens,
     )

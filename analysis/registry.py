@@ -26,6 +26,10 @@ from analysis.symbol_handlers.go_function import (
     handle_go_type_spec,
 )
 from analysis.symbol_handlers.interface import handle_interface
+from analysis.symbol_handlers.interface_members import (
+    handle_method_signature,
+    handle_property_signature,
+)
 from analysis.symbol_handlers.java_class import handle_java_class
 from analysis.symbol_handlers.java_enum import handle_java_enum
 from analysis.symbol_handlers.java_field import handle_java_field
@@ -60,6 +64,8 @@ _TS_NODE_HANDLERS: dict[str, SymbolHandler] = {
     "variable_declarator": handle_variable_declarator,
     "interface_declaration": handle_interface,
     "type_alias_declaration": handle_type_alias,
+    "property_signature": handle_property_signature,
+    "method_signature": handle_method_signature,
 }
 
 SYMBOL_HANDLERS_BY_LANGUAGE: dict[str, dict[str, SymbolHandler]] = {

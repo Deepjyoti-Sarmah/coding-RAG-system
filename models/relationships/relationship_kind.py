@@ -7,3 +7,5 @@ class RelationshipKind(Enum):
     IMPLEMENTS = "implements"
     DECLARES = "declares"
     DEFINITION_OF = "definition_of"
+    HAS_TYPE = "has_type"
+    RETURNS = "returns"

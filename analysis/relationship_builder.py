@@ -8,6 +8,8 @@ _RELATIONSHIP_BY_REFERENCE = {
     ReferenceKind.CALL: RelationshipKind.CALLS,
     ReferenceKind.EXTENDS: RelationshipKind.EXTENDS,
     ReferenceKind.IMPLEMENTS: RelationshipKind.IMPLEMENTS,
+    ReferenceKind.HAS_TYPE: RelationshipKind.HAS_TYPE,
+    ReferenceKind.RETURNS: RelationshipKind.RETURNS,
 }
 
 

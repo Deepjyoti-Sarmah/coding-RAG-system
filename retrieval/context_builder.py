@@ -34,6 +34,7 @@ class ContextPack:
     supporting_definitions: list[ContextEntry]
     relationships: tuple[str, ...]
     file_paths: tuple[str, ...]
+    baseline_tokens: int = 0
 
 
 def build_context_pack(
@@ -43,6 +44,7 @@ def build_context_pack(
     graph: CodeGraph,
     symbols_by_key: dict[str, Symbol],
     token_budget: int,
+    baseline_tokens: int = 0,
 ) -> ContextPack:
     primaries: list[ContextEntry] = []
     supporting: list[ContextEntry] = []
@@ -85,6 +87,7 @@ def build_context_pack(
         supporting_definitions=supporting,
         relationships=relationships,
         file_paths=file_paths,
+        baseline_tokens=baseline_tokens,
     )
 
 

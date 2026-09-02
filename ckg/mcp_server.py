@@ -21,6 +21,22 @@ from session_memory import SessionService
 
 _mcp_provider = None
 
+# Resource governor — idle tracking for long-lived MCP server (P4-1-1)
+try:
+    from indexing.resource_governor import IdleTracker
+
+    _idle_tracker = IdleTracker(timeout_seconds=1800)
+except Exception:  # noqa: BLE001
+    _idle_tracker = None  # type: ignore[assignment]
+
+
+def _touch_idle() -> None:
+    if _idle_tracker is not None:
+        try:
+            _idle_tracker.touch()
+        except Exception:  # noqa: BLE001
+            pass
+
 
 def _get_mcp_provider():
     global _mcp_provider
@@ -99,6 +115,15 @@ def _context_entry_dict(entry: Any) -> dict[str, Any]:
     }
 
 
+def is_idle() -> bool:
+    if _idle_tracker is None:
+        return False
+    try:
+        return _idle_tracker.is_idle()
+    except Exception:  # noqa: BLE001
+        return False
+
+
 @mcp.tool()
 async def index_repository(path: str, embed: bool = False) -> dict[str, Any]:
     """Build or update the semantic index for a repository at `path`.
@@ -117,16 +142,20 @@ async def index_repository(path: str, embed: bool = False) -> dict[str, Any]:
 
         provider = LocalEmbeddingProvider()
 
+    _touch_idle()
     report = cmd_index(path, db_path, provider=provider)
 
     # Long-lived server can absorb the 14s model load; drain a bounded batch
     # lazily without blocking import. Limit keeps a single call from stalling.
+    # Backoff under memory pressure (P4-1-1)
     try:
         lazy_provider = provider if provider is not None else _get_mcp_provider()
         if lazy_provider is not None:
             from indexing.embedding_queue import run_embedding_worker
+            from indexing.resource_governor import is_memory_pressured
 
-            run_embedding_worker(db_path, lazy_provider, limit=200)
+            batch = 100 if is_memory_pressured() else 200
+            run_embedding_worker(db_path, lazy_provider, limit=batch)
     except Exception:  # noqa: BLE001, S110
         pass
 
@@ -141,6 +170,7 @@ async def index_repository(path: str, embed: bool = False) -> dict[str, Any]:
 @mcp.tool()
 async def repository_status(path: str = ".") -> dict[str, Any]:
     """Report index generation and document/symbol/chunk/embedding counts for `path`."""
+    _touch_idle()
     db_path = default_db_path(path)
 
     if not Path(db_path).exists():
@@ -152,6 +182,7 @@ async def repository_status(path: str = ".") -> dict[str, Any]:
 @mcp.tool()
 async def definition(name: str, path: str = ".") -> dict[str, Any]:
     """Find the exact definition site(s) of a symbol by name."""
+    _touch_idle()
     db_path = default_db_path(path)
 
     if not Path(db_path).exists():
@@ -164,6 +195,7 @@ async def definition(name: str, path: str = ".") -> dict[str, Any]:
 @mcp.tool()
 async def callers(name: str, path: str = ".") -> dict[str, Any]:
     """Find every symbol that calls `name` (1-hop incoming graph neighborhood)."""
+    _touch_idle()
     db_path = default_db_path(path)
 
     if not Path(db_path).exists():
@@ -176,6 +208,7 @@ async def callers(name: str, path: str = ".") -> dict[str, Any]:
 @mcp.tool()
 async def callees(name: str, path: str = ".") -> dict[str, Any]:
     """Find every symbol that `name` calls (1-hop outgoing graph neighborhood)."""
+    _touch_idle()
     db_path = default_db_path(path)
 
     if not Path(db_path).exists():
@@ -192,6 +225,7 @@ async def search(query: str, path: str = ".", top_k: int = 5) -> dict[str, Any]:
     to generate them). Use for open-ended questions; use definition/callers/callees
     for exact lookups instead.
     """
+    _touch_idle()
     db_path = default_db_path(path)
 
     if not Path(db_path).exists():
@@ -229,6 +263,7 @@ async def search(query: str, path: str = ".", top_k: int = 5) -> dict[str, Any]:
 @mcp.tool()
 async def imports(file: str, path: str = ".") -> dict[str, Any]:
     """List a file's own import statements and where each one resolves to."""
+    _touch_idle()
     db_path = default_db_path(path)
 
     if not Path(db_path).exists():
@@ -243,6 +278,7 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
     with source excerpts and relationships. Uses vector search when embeddings
     are available (run `ckg embed` otherwise).
     """
+    _touch_idle()
     db_path = default_db_path(path)
 
     if not Path(db_path).exists():
@@ -266,6 +302,7 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
         "query": pack.query,
         "token_budget": pack.token_budget,
         "total_tokens": pack.total_tokens,
+        "baseline_tokens": getattr(pack, "baseline_tokens", 0),
         "primary_definitions": [_context_entry_dict(e) for e in pack.primary_definitions],
         "supporting_definitions": [_context_entry_dict(e) for e in pack.supporting_definitions],
         "relationships": list(pack.relationships),
@@ -276,7 +313,8 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
     selected = result["primary_definitions"] + result["supporting_definitions"]
     if selected:
         try:
-            SessionService(path).retrieval(query, [f"{x['relative_path']}:{x['qualified_name']}" for x in selected], pack.total_tokens, getattr(pack, "baseline_tokens", 0), (perf_counter()-started)*1000)
+            baseline = int(getattr(pack, "baseline_tokens", 0) or 0)
+            SessionService(path).retrieval(query, [f"{x['relative_path']}:{x['qualified_name']}" for x in selected], pack.total_tokens, baseline, (perf_counter()-started)*1000)
         except Exception:  # noqa: BLE001, S110 -- best-effort session logging must not crash tool
             pass
     return result
@@ -288,39 +326,46 @@ def _session_error(error: Exception) -> dict[str, Any]:
 
 @mcp.tool()
 async def session_start(path: str = ".") -> dict[str, Any]:
+    _touch_idle()
     return {"session": SessionService(path).start()}
 
 
 @mcp.tool()
 async def session_end(path: str, session_id: str) -> dict[str, Any]:
+    _touch_idle()
     session = SessionService(path).end(session_id)
     return {"session": session} if session else _session_error(ValueError("session not found for project"))
 
 
 @mcp.tool()
 async def session_status(path: str, session_id: str | None = None) -> dict[str, Any]:
+    _touch_idle()
     return {"session": SessionService(path).status(session_id)}
 
 
 @mcp.tool()
 async def session_recall(path: str, query: str, limit: int = 10) -> dict[str, Any]:
+    _touch_idle()
     return {"results": SessionService(path).recall(query, limit)}
 
 
 @mcp.tool()
 async def session_timeline(path: str, session_id: str, limit: int = 50) -> dict[str, Any]:
+    _touch_idle()
     try: return {"session_id": session_id, "events": SessionService(path).timeline(session_id, limit)}
     except ValueError as error: return _session_error(error)
 
 
 @mcp.tool()
 async def record_decision(path: str, decision: str, reason: str = "", session_id: str | None = None) -> dict[str, Any]:
+    _touch_idle()
     try: return {"decision": SessionService(path).decision(decision, reason, session_id)}
     except ValueError as error: return _session_error(error)
 
 
 @mcp.tool()
 async def record_code_area(path: str, file_path: str, description: str = "", session_id: str | None = None) -> dict[str, Any]:
+    _touch_idle()
     try: return {"code_area": SessionService(path).code_area(file_path, description, session_id)}
     except ValueError as error: return _session_error(error)
 

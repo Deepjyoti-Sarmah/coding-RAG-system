@@ -45,6 +45,20 @@ def walk(
     if node != root_node and creates_symbol(node, profile.symbol_handlers):
         return
 
+    # Volume guard for type refs before visiting
+    if node.type in profile.heritage_only_nodes:
+        from analysis.semantic.reference_kind import _in_return_type, _in_type_annotation
+        from models.entities.reference_kind import ReferenceKind
+
+        # quick check to avoid creating 100s of type refs
+        if not in_heritage_clause(node, profile) and not (_in_type_annotation(node) or _in_return_type(node)):
+            # not in any allowed position -> skip quickly, but still walk children
+            pass
+        elif not in_heritage_clause(node, profile):
+            type_count = sum(1 for r in results if getattr(r, "kind", None) in (ReferenceKind.HAS_TYPE, ReferenceKind.RETURNS, "has_type", "returns"))
+            if type_count >= 20:
+                return
+
     reference = visit(
         node=node,
         owner_symbol=owner_symbol,
@@ -52,6 +66,13 @@ def walk(
     )
 
     if reference is not None:
+        # second guard after kind determined
+        from models.entities.reference_kind import ReferenceKind as RK
+
+        if getattr(reference, "kind", None) in (RK.HAS_TYPE, RK.RETURNS):
+            existing = sum(1 for r in results if getattr(r, "kind", None) in (RK.HAS_TYPE, RK.RETURNS))
+            if existing >= 20:
+                return
         results.append(reference)
 
     # A member expression is represented atomically by its access path;
@@ -87,13 +108,13 @@ def visit(
             owner_symbol=owner_symbol,
         )
 
-    # A type_identifier is extracted only in a heritage clause. Type
-    # positions elsewhere (annotations, generics) have no resolvable
-    # target yet, and extracting them would flood the resolver with
-    # references it can only mark unresolved.
+    # type_identifier extraction policy moved to walk() guard above; here just check identifier set
     if node.type in profile.heritage_only_nodes:
         if not in_heritage_clause(node, profile):
-            return None
+            from analysis.semantic.reference_kind import _in_return_type, _in_type_annotation
+
+            if not (_in_type_annotation(node) or _in_return_type(node)):
+                return None
 
     elif node.type not in profile.identifier_nodes:
         return None
