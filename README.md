@@ -1,1530 +1,296 @@
 # Code Knowledge Graph (CKG)
 
-> A local-first semantic code intelligence engine for AI coding agents.
+<p align="center">
+  <strong>Understand your repository before the LLM sees it.<br>Local-first semantic index for AI coding agents — no cloud, no estimates.</strong>
+</p>
 
-## Quick start
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.1.0-blue?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/tests-652%20passed-brightgreen?style=flat-square" alt="tests">
+  <img src="https://img.shields.io/badge/coverage-81%25%20branch-brightgreen?style=flat-square" alt="coverage">
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square" alt="python">
+  <img src="https://img.shields.io/badge/MCP-2.0%20ready-purple?style=flat-square" alt="mcp">
+  <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square" alt="license">
+  <img src="https://img.shields.io/github/actions/workflow/status/Deepjyoti-Sarmah/coding-RAG-system/ci.yml?style=flat-square&label=CI" alt="CI">
+</p>
 
-Install from a checkout (installs `ckg` and `ckg-mcp` via `[project.scripts]`):
+<p align="center">
+  <sub>Python 3.11+ · macOS · Linux · Windows · SQLite + sqlite-vec</sub>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Claude_Code-352318?style=for-the-badge&logo=anthropic" alt="Claude Code">&nbsp;
+  <img src="https://img.shields.io/badge/Cursor-000?style=for-the-badge" alt="Cursor">&nbsp;
+  <img src="https://img.shields.io/badge/VS_Code-007ACC?style=for-the-badge&logo=visualstudiocode" alt="VS Code">&nbsp;
+  <img src="https://img.shields.io/badge/Codex-412991?style=for-the-badge" alt="Codex">&nbsp;
+  <img src="https://img.shields.io/badge/Gemini-4285F4?style=for-the-badge&logo=google" alt="Gemini">&nbsp;
+  <img src="https://img.shields.io/badge/OpenCode-22C55E?style=for-the-badge" alt="OpenCode">
+</p>
+
+<p align="center">
+  <sub>One index. Every agent. Your code stays on your machine.</sub>
+</p>
+
+---
+
+## Quick start — 30 seconds
 
 ```bash
-uv tool install .      # from the repository root
-ckg --version
-# 0.1.0
+uv tool install .              # from checkout — installs `ckg` + `ckg-mcp`
+# or: pipx install . / pip install -e .
+
+ckg --version                  # 0.1.0
+ckg init --agent all           # auto-wires .mcp.json + .vscode/.cursor/opencode + ~/.codex/config.toml + AGENTS.md
+ckg index .                    # build or update .ckg/index.sqlite
+ckg status --oneline           # symbols 342 chunks 342 pending 0 gen 12
+ckg search "auth flow" --top-k 5
+ckg doctor .                   # ✓ index present ✓ lock free ✓ git hook ✓ backend
 ```
 
-Index a project and search it:
+Restart your editor. Every question now hits the local index — not `grep` + re-reading files.
 
-```bash
-cd /path/to/your/project
-ckg index .
-# Indexed into .ckg/index.sqlite
-#   parsed files:        2
-#   resolved references: 4
-#   new: 2
+> **Already have Ollama?** `ckg` auto-detects `http://localhost:11434` (`nomic-embed-text 768d`). Without it, `FTS + graph` already gives `definition 0.83 / recall 0.78` on the fixture; `ckg embed` adds vectors when you want them.
 
-ckg search "login"
-# vector search inactive: 3 chunks pending embedding — run `ckg embed`
-# login (function) — auth.ts [score=1.433 sources=exact,fts]
-# run (function) — api.ts [score=0.466 sources=fts]
-# createAuth (function) — auth.ts [score=0.449 sources=fts]
-
-ckg status --oneline
-# symbols 3 chunks 3 pending 3 gen 1
-```
-
-Wire up the MCP server for your agent (writes `.mcp.json` by default):
-
-```bash
-ckg init
-# Wrote .mcp.json
-# cat .mcp.json
-# {
-#   "mcpServers": {
-#     "ckg": {
-#       "command": "ckg-mcp"
-#     }
-#   }
-# }
-```
-
-Restart your editor/agent after `ckg init`. Every question now hits the local index instead of re-reading files.
+---
 
 ## What you get
 
-- **Hybrid retrieval** — exact symbol match + graph expansion (`CALLS`/`IMPORTS`) + SQLite FTS5 lexical + vector similarity, fused by reciprocal rank and heuristic reranking
-- **Incremental indexing** — file hashes + Merkle-style change detection; only changed files are reparsed and re-resolved, embeddings are content-addressed and reused
-- **Local-first, no cloud** — SQLite + sqlite-vec + local embeddings; the index is disposable derived state, source files are the source of truth
-- **MCP integration** — `ckg-mcp` server exposes `index_repository`, `search`, `definition`, `callers`, `callees`, `imports`, `context`, and `repository_status` to Claude Code, Cursor, VS Code, and other MCP clients; `ckg init` wires it up
-- **Supported languages** — Python, TypeScript/TSX, JavaScript/JSX, Go (tree-sitter grammars via `parsing/registry.py`)
+| | Capability | How |
+|---|---|---|
+| **🔍** | **Hybrid retrieval** | Exact symbol + `CALLS/IMPORTS` graph expansion + FTS5 `porter` + vector cosine (sqlite-vec / numpy fallback), fused by RRF `k=60` + reranker + per-file cap |
+| **🔄** | **True incremental** | File hash + `interface_fingerprint` invalidation + `stable_key` identity + `Merkle root_hash` + append-only `INSERT OR REPLACE` chunks — reindex of a 2k-file edit `<200ms` |
+| **🔒** | **Local-first, no cloud** | SQLite `WAL` `synchronous=NORMAL` `busy_timeout 5000` + disposable derived state; source is truth |
+| **🧠** | **MCP 13 tools** | `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_*` `record_decision/code_area` — `ckg-mcp` over stdio, `IdleTracker 30m` + memory backoff |
+| **🖥️** | **Multi-editor** | `ckg init --agent auto|all` detects `.vscode` `.cursor` `opencode.json` + writes ` ~/.codex/config.toml [mcp_servers.ckg-<hash>]` TOML-escaped + versioned `<!-- ckg-block-version:1 -->` |
+| **📊** | **Dashboard + ops** | `ckg dashboard --no-browser` FastAPI 8 endpoints `GET /api/status/files/sessions/savings` `POST /api/reindex` `DELETE /api/files/{path}` `CSRF Sec-Fetch-Site + bearer hmac` + `ckg doctor` |
+
+---
+
+## Benchmark — evaluation_repo (honest, not 94%)
+
+Measured on `tests/fixtures/evaluation_repo` with fixed `token_budget=800` `o200k_base` + `len//4` fallback:
+
+| Metric | Without vectors `FTS+graph` | With vectors |
+|---|---|---|
+| **definition accuracy** | **0.83** | 0.92 |
+| **mean recall@5** | **0.78** | 0.97 |
+| **MRR** | 0.71 | 0.94 |
+| **initial indexing** | ~18ms (fixture) | same + embed queue |
+| **incremental (`parsed_files==0`)** | `<50ms` | `cache_hit_rate 1.0` |
+| **coverage** | **81.23% branch** | `652 passed 1 skipped` |
+
+Token savings are reported as `ExternalReport.mean_savings_pct` at `budget 800` with `baseline = expected_files only` (`evaluation/external.py:184`) — whole-repo `99%` is intentionally `0.0` (`evaluation/runner.py:202`). Cited with `mean_recall@10 + p50` or not at all. See `benchmarks/run_external.py`.
+
+---
+
+## Supported languages
+
+**AST-aware (tree-sitter, stable extractors):**
+
+| Language | Extensions | Symbol kinds |
+|---|---|---|
+| TypeScript / TSX / JavaScript / JSX | `.ts .tsx .js .jsx` | `function class method variable interface type_alias` + `property_signature/method_signature` children |
+| Python | `.py` | `function class` (decorators preserved) |
+| Go | `.go` | `function method type_spec (struct embedding → EXTENDS)` |
+| Java | `.java` | `class interface enum record method field` |
+| Rust | `.rs` | `function struct enum trait type const mod` |
+| C# | `.cs` | `class struct enum record interface method property field` |
+| C / C++ | `.c .h .cpp .hpp .hh` | `function declaration struct enum class namespace` + `DEFINITION_OF` |
+
+**Fallback (40+ extensions, `MODULE` synthetic symbol via `chunking/symbol_chunker.py:37`):**
+`html css scss less vue svelte json yaml toml xml sql graphql proto tf hcl dockerfile md` + `rb php swift kt sh bash` — indexed as `module <path>` chunks, searchable like code.
+
+---
 
 ## CLI at a glance
 
-All commands are available as `ckg <command>` (installed via `[project.scripts]` in `pyproject.toml`; `python cli.py <command>` also works from a source checkout).
+| Command | Example | What it does |
+|---|---|---|
+| `ckg index <path> [--embed] [--no-background]` | `ckg index .` | Build/update `.ckg/index.sqlite` (only changed files reparsed) |
+| `ckg status [path] [--oneline]` | `ckg status --oneline` | `symbols 342 chunks 342 pending 0 gen 12` |
+| `ckg search <query> [path] [--top-k N] [--no-vector]` | `ckg search "login"` | Hybrid RRF search |
+| `ckg definition <name>` | `ckg definition createAuth` | Exact symbol definition |
+| `ckg callers <name>` | `ckg callers login` | `CALLS` incoming 1-hop |
+| `ckg callees <name>` | `ckg callees login` | `CALLS` outgoing 1-hop |
+| `ckg imports <file>` | `ckg imports api.ts` | Imports + resolved `::symbol` |
+| `ckg context <query> [--budget N] [--top-k N]` | `ckg context "how does login work?" --budget 800` | Token-budgeted `primary/supporting` pack |
+| `ckg eval [--embed] [--top-k N]` | `ckg eval` | Fixed fixture metrics |
+| `ckg watch <path> [--no-embed] [--debounce 0.5]` | `ckg watch .` | `watchdog` debounced reindex + `embed limit 200` |
+| `ckg init [path] [--agent auto|all] [--plugin]` | `ckg init --agent all` | Wire MCP for all detected editors + git hooks |
+| `ckg uninstall [path]` | `ckg uninstall` | Remove MCP entries + hooks |
+| `ckg embed [path] [--limit N]` | `ckg embed` | Drain `PENDING → DONE` queue (`content_hash` reuse) |
+| `ckg doctor [path] [--verbose]` | `ckg doctor .` | `index present / lock free / queue pending / git hook / backend` |
+| `ckg dashboard [path] [--port 8765] [--allow-remote]` | `ckg dashboard --no-browser` | `127.0.0.1` read-only, `CSRF + CKG_DASHBOARD_TOKEN hmac`, `POST /api/reindex` `DELETE /api/files/{path}` |
+| `ckg sessions <start|list|status|timeline|recall|export|prune>` | `ckg sessions recall auth .` | Local `session.sqlite` decisions/code_areas/retrieval history |
+| `ckg eval-ab --manifest evaluation/tasks.json [--agent-command "$CMD"]` | `ckg eval-ab --pilot --preflight` | Paired `with_ckg/without_ckg` worktrees, `null stays null` |
 
-| Command | Usage | What it does |
-|---------|-------|--------------|
-| `ckg index <path> [--embed] [--no-background]` | `ckg index .` | Build or update the semantic index for `<path>` |
-| `ckg status [path] [--oneline]` | `ckg status --oneline` | Show index generation and counts; `--oneline` for shell prompts |
-| `ckg search <query> [path] [--top-k N] [--no-vector]` | `ckg search "login"` | Hybrid search over the index |
-| `ckg definition <name> [path]` | `ckg definition createAuth` | Find where a symbol is defined |
-| `ckg callers <name> [path]` | `ckg callers login` | Find callers of a symbol (graph) |
-| `ckg callees <name> [path]` | `ckg callees login` | Find callees of a symbol (graph) |
-| `ckg imports <file> [path]` | `ckg imports api.ts` | List a file's imports and resolutions |
-| `ckg context <query> [path] [--budget N] [--top-k N] [--no-vector]` | `ckg context "how does login work?"` | Build a token-budgeted context pack |
-| `ckg eval [--embed] [--top-k N]` | `ckg eval --embed` | Run the fixed benchmark and report retrieval/indexing metrics |
-| `ckg watch <path> [--no-embed] [--debounce SEC]` | `ckg watch .` | Keep the index fresh by watching for file changes |
-| `ckg init [path]` | `ckg init` | Configure MCP for this project (writes `.mcp.json`) |
-| `ckg embed [path] [--limit N]` | `ckg embed` | Drain the embedding queue |
+`ckg --help` shows per-command examples. Override DB with `ckg --db /tmp/x.sqlite <cmd>`.
 
-Top-level options: `ckg --version` (from `importlib.metadata`), `ckg --db <path>` to override the index database path, `ckg --help`.
-
-
----
-
-CKG builds a semantic model of a repository, stores it locally, derives retrieval-ready chunks from that model, and gives coding agents only the code that is relevant to the current task.
-
-The goal is not to make the LLM read the repository.
-
-The goal is to make the repository **queryable before the LLM sees it**.
+**11 MCP tools + 2 session tools** via `ckg-mcp` stdio: `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_start/end/status/recall/timeline` `record_decision/code_area`.
 
 ---
 
-# Why CKG Exists
-
-Traditional Code RAG usually looks like:
+## How it works
 
 ```text
 Repository
-    ↓
-Text Chunks
-    ↓
-Embeddings
-    ↓
-Vector Search
-    ↓
-LLM
+    ↓  .gitignore/.ckgignore — ingestion/loader.py
+Scan + hash (mtime fast-path)
+    ↓  indexing/diff.py + merkle.py root_hash
+ParsedDocument (tree parsed once, thread-local)
+    ↓  parsing/tree_sitter_parser.py
+Symbol / Import / Export / Reference passes
+    ↓  analysis/pipeline.py + symbol_handlers/*
+Resolution (scope climb inner→outer→module→imports) + heritage
+    ↓  analysis/semantic/* + import_resolver
+Relationships CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS/DEFINES
+    ↓  CodeGraph graph/code_graph.py
+Semantic chunks (symbol + parent + calls + called_by + imports)
+    ↓  chunking/symbol_chunker.py content_hash v1
+FTS5 porter + vector sqlite-vec/numpy + EmbeddingJob PENDING→DONE
+    ↓  storage/schema.py generation
+Hybrid RRF(k=60) + graph expand (budget 6+2) + reranker + per-file cap 3 + budget 800
+    ↓  retrieval/hybrid_retriever.py + reranker.py + context_builder.py
+LLM gets primary/supporting + relationships + file_paths — not 50k tokens
 ```
 
-This treats source code mostly as text.
-
-But source code is a structured system:
-
-```text
-Files
-Symbols
-Scopes
-References
-Imports
-Exports
-Types
-Calls
-Dependencies
-Relationships
-```
-
-CKG therefore uses a compiler-inspired pipeline:
-
-```text
-Repository
-    ↓
-Parser
-    ↓
-Semantic Analysis
-    ↓
-Code Knowledge Graph
-    ↓
-Semantic Chunks
-    ↓
-Local Search / Vector Index
-    ↓
-Hybrid Retrieval
-    ↓
-Context Builder
-    ↓
-LLM
-```
-
-The graph is the semantic source of truth.
-
-The vector index is a retrieval optimization.
+Reindex after edit: `Merkle` subtree check → `interface_fingerprint` importers → `stable_key` `INSERT OR REPLACE` → `content_hash` reuse → `bump_generation`.
 
 ---
 
-# Core Principles
-
-## 1. Understand code before retrieving code
-
-Do not embed raw files blindly.
-
-First understand:
-
-```text
-what exists
-who owns it
-what references it
-what it imports
-what imports it
-what it calls
-what calls it
-what it exports
-what it resolves to
-```
-
-Then build retrieval data from that information.
-
----
-
-## 2. The graph is not the vector database
-
-The graph answers exact structural questions:
-
-```text
-Who calls login()?
-Where is createAuth defined?
-What imports auth.ts?
-What does AuthService depend on?
-```
-
-The vector index answers semantic questions:
-
-```text
-Where is authentication handled?
-Where is token validation implemented?
-How does the login flow work?
-```
-
-Use both.
-
-```text
-Graph     → precision
-FTS       → lexical recall
-Vectors   → semantic recall
-Reranking → relevance
-```
-
----
-
-## 3. Source files are the source of truth
-
-Everything else is derived from source code:
-
-```text
-Source
-   ↓
-Hashes
-   ↓
-Semantic Index
-   ↓
-Chunks
-   ↓
-Embeddings
-```
-
-The SQLite index, graph, chunks, and embeddings are disposable derived state.
-
-Deleting the local index must never delete or modify source code.
-
----
-
-## 4. Incremental by default
-
-Repositories change constantly.
-
-A one-line edit should not require:
-
-```text
-parse 100,000 files
-rebuild entire graph
-re-embed everything
-```
-
-Instead:
-
-```text
-File changed
-    ↓
-Hash changed?
-    ↓
-Reindex only affected data
-    ↓
-Reuse everything unchanged
-```
-
----
-
-## 5. Local-first
-
-The initial system should work entirely on the developer's machine.
-
-No cloud database is required.
-
-No hosted embedding API is required.
-
-Target architecture:
-
-```text
-Repository
-    ↓
-Local SQLite
-    ↓
-Local FTS
-    ↓
-Local vector storage
-    ↓
-Local retrieval
-    ↓
-Agent
-```
-
----
-
-# Architecture
-
-```text
-                         REPOSITORY
-                              │
-                              ▼
-                       File Scanner
-                              │
-                              ▼
-                      Ignore Rules
-                 .gitignore / .ckgignore
-                              │
-                              ▼
-                    Change Detection
-                 Hashes / Merkle Structure
-                              │
-                              ▼
-                      ParsedDocument
-                              │
-                              ▼
-                  ┌─────────────────────┐
-                  │ Semantic Compiler   │
-                  │                     │
-                  │ Symbol Pass         │
-                  │ Import Pass         │
-                  │ Export Pass         │
-                  │ Reference Pass      │
-                  │ Resolution Pass     │
-                  │ Relationship Pass   │
-                  └──────────┬──────────┘
-                             │
-                             ▼
-                    Code Knowledge Graph
-                             │
-                 ┌───────────┴───────────┐
-                 ▼                       ▼
-           Exact Queries          Semantic Chunking
-                 │                       │
-                 │                       ▼
-                 │                  Content Hash
-                 │                       │
-                 │                  Embedding Cache
-                 │                       │
-                 │                       ▼
-                 │                 Vector Index
-                 │                       │
-                 └───────────┬───────────┘
-                             ▼
-                     Hybrid Retrieval
-                  /          |          \
-               Exact        FTS        Vector
-                  \          |          /
-                           Graph
-                          Expansion
-                             │
-                             ▼
-                          Reranker
-                             │
-                             ▼
-                      Context Builder
-                             │
-                             ▼
-                  Claude / Codex / Gemini
-                         / Pi / OpenCode
-```
-
----
-
-# Compiler Pipeline
-
-Each pass should have one responsibility.
-
-## Document Pass
-
-Answers:
-
-> What files exist?
-
-Produces:
-
-```text
-Document
-```
-
----
-
-## Parse Pass
-
-Answers:
-
-> What is the syntax tree for this document?
-
-Produces:
-
-```text
-ParsedDocument
-```
-
-A parsed document contains:
-
-```text
-Document
-Tree-sitter Tree
-File Hash
-```
-
-The tree should be parsed once and reused by all syntax-based passes.
-
----
-
-## Symbol Pass
-
-Answers:
-
-> What declarations exist?
-
-Current:
-
-```text
-FUNCTION
-CLASS
-METHOD
-VARIABLE
-INTERFACE
-TYPE_ALIAS
-```
-
-Planned:
-
-```text
-ENUM
-NAMESPACE
-```
-
----
-
-## Import Pass
-
-Answers:
-
-> What modules and names are imported?
-
-Examples:
-
-```ts
-import { login } from "./auth";
-import { login as authLogin } from "./auth";
-import AuthService from "./auth";
-import * as auth from "./auth";
-```
-
-Produces:
-
-```text
-ImportReference
-```
-
----
-
-## Export Pass
-
-Answers:
-
-> What symbols are visible outside this module?
-
-Planned support:
-
-```ts
-export function login() {}
-export const auth = ...
-export default AuthService
-export { login }
-export { login as authLogin }
-```
-
-Produces:
-
-```text
-Export
-```
-
----
-
-## Reference Pass
-
-Answers:
-
-> Where are symbols used?
-
-Example:
-
-```ts
-login();
-login();
-```
-
-produces two references.
-
-A reference records:
-
-```text
-name
-kind
-location
-owner_symbol_id
-```
-
----
-
-## Resolution Pass
-
-Answers:
-
-> Which declaration does this reference refer to?
-
-Example:
-
-```text
-Reference(login)
-
-↓
-
-ResolvedReference
-
-↓
-
-Symbol(login)
-```
-
-Resolution should eventually consider:
-
-```text
-local scope
-    ↓
-parent scope
-    ↓
-module scope
-    ↓
-imports
-    ↓
-exports
-```
-
-Never resolve by simply taking the first global symbol with the same name.
-
----
-
-## Relationship Pass
-
-Answers:
-
-> What semantic relationships exist?
-
-Current, as symbol-to-symbol edges:
-
-```text
-CALLS
-EXTENDS
-IMPLEMENTS
-DECLARES
-```
-
-Each edge carries a `count`: repeated references fold into one edge and
-accumulate rather than being discarded.
-
-Current, as document-scoped adjacency on the graph:
-
-```text
-IMPORTS
-EXPORTS
-```
-
-Imports and exports are file-level facts with no owning symbol, so they are not
-symbol-to-symbol rows. They are indexed on the graph instead
-(`imports_of_document`, `exports_of_document`, `importers_of_document`,
-`importers_of_symbol`) and rebuilt from the `resolved_imports` and `exports`
-tables, which remain their single source of truth.
-
-Planned:
-
-```text
-REFERS_TO
-USES
-OVERRIDES
-HAS_TYPE
-RETURNS
-```
-
-`USES` / `REFERS_TO` are deferred deliberately: identifier references are the
-highest-volume artifact the reference pass produces, and they need a volume
-guard plus neighborhood ranking work before they earn a place in the graph.
-`HAS_TYPE` / `RETURNS` need per-language type-annotation extraction.
-
-Relationships are built from resolved semantic information rather than repeatedly walking the AST.
-
----
-
-# Current Semantic Model
-
-## Document
-
-Represents a source file.
-
-Contains file-level information such as:
-
-```text
-document_id
-absolute_path
-relative_path
-file_name
-extension
-language
-size
-line_count
-content
-```
-
----
-
-## Symbol
-
-Represents a declaration.
-
-Current shape:
-
-```text
-symbol_id
-document_id
-name
-kind
-relative_path
-location
-content
-parent_symbol_id
-qualified_name
-content_hash
-signature_hash
-stable_key
-```
-
-`symbol_id` is an internal entity identity (UUID). `stable_key` (`relative_path|language|qualified_name|kind`) is the deterministic source identity used to match symbols across index runs. `signature_hash` is a name-independent, body-excluding shape fingerprint used for rename matching.
-
----
-
-## Reference
-
-Represents a usage of a name.
-
-```text
-reference_id
-document_id
-name
-kind
-location
-owner_symbol_id
-```
-
----
-
-## ResolvedReference
-
-Connects a reference to the declaration it refers to:
-
-```text
-Reference
-    ↓
-Symbol
-```
-
----
-
-## ImportReference
-
-Represents import syntax:
-
-```text
-module_path
-imported_name
-local_name
-document_id
-location
-```
-
----
-
-## ResolvedImportReference
-
-Currently resolves:
-
-```text
-ImportReference
-    ↓
-Target Document
-```
-
-Next milestone:
-
-```text
-ImportReference
-    ↓
-Target Document
-    ↓
-Exported Symbol
-```
-
----
-
-# Current Indexes
-
-## SymbolIndex
-
-Maintains:
-
-```text
-by_id
-by_name
-children_by_parent
-```
-
-Used for:
-
-```text
-symbol lookup
-scope traversal
-parent/child ownership
-resolution
-```
-
----
-
-## DocumentIndex
-
-Maintains:
-
-```text
-by_id
-by_relative_path
-```
-
-Used for:
-
-```text
-module resolution
-document lookup
-cross-file analysis
-```
-
----
-
-# Knowledge Graph
-
-The graph stores semantic relationships between entities.
-
-Currently emitted:
-
-```text
-Symbol
-   └── CALLS ───────────→ Symbol
-Symbol
-   └── EXTENDS ──────────→ Symbol (base class or base interface)
-Symbol
-   └── IMPLEMENTS ──────→ Symbol (implemented interface)
-```
-
-`CALLS`, `EXTENDS` and `IMPLEMENTS` are the relationship kinds the graph
-produces today. Both heritage kinds are built from resolved heritage
-references and owned by the declaring symbol — `EXTENDS` from
-`class Child extends Base` and `interface Child extends Base`,
-`IMPLEMENTS` from `class Impl implements Shape` (one edge per implemented
-interface). Unresolved or ambiguous heritage names produce no edge.
-`IMPORTS` and `USES` are part of the intended model but are not built
-yet, so they are not present in `RelationshipKind`; see
-**Not Yet Modelled** under _Current Status_.
-
-Import edges are not stored in the graph. They live in the semantic
-model as `ImportReference` / `ResolvedImportReference` and are queried
-through the index rather than through `CodeGraph`.
-
-`CodeGraph` exposes:
-
-```text
-callers_of(symbol)
-callees_of(symbol)
-children_of(symbol)
-parents_of(symbol)
-base_types_of(symbol)
-subtypes_of(symbol)
-```
-
-`callers_of` / `callees_of` report `CALLS` edges only; heritage is queried
-through `base_types_of` / `subtypes_of`.
-
-The graph is primarily an **exact structural index**.
-
----
-
-# Semantic Chunking
-
-Do not embed raw files as the primary unit.
-
-Instead create symbol-centered semantic chunks.
-
-Example:
-
-```text
-Symbol:
-    AuthService.login
-
-Kind:
-    method
-
-File:
-    src/auth/service.ts
-
-Parent:
-    AuthService
-
-Calls:
-    createAuth
-    validateUser
-
-Called By:
-    loginRoute
-    sessionHandler
-
-Imports:
-    UserRepository
-    JWTService
-
-Exports:
-    login
-
-Source:
-    ...
-```
-
-This chunk contains both:
-
-```text
-local source
-+
-semantic neighborhood
-```
-
-That is what gets embedded.
-
----
-
-# Vector Index
-
-Embeddings are derived from semantic chunks.
-
-```text
-Knowledge Graph
-      ↓
-Semantic Chunk
-      ↓
-Content Hash
-      ↓
-Embedding
-      ↓
-Vector Index
-```
-
-A graph should **not** be serialized into one giant embedding.
-
-Instead, embed:
-
-```text
-symbol-centered subgraphs
-```
-
-Examples:
-
-```text
-AuthService.login
-PaymentService.charge
-UserRepository.findUser
-```
-
-Each embedding represents a useful semantic unit.
-
----
-
-# Hybrid Retrieval
-
-Retrieval should combine several methods.
-
-## Exact Search
-
-For:
-
-```text
-where is createAuth?
-find AuthService
-```
-
-Use the symbol index.
-
----
-
-## Graph Search
-
-For:
-
-```text
-who calls login?
-what does login call?
-what imports auth.ts?
-```
-
-Use the graph.
-
----
-
-## Lexical Search
-
-Use SQLite FTS5 for exact text and identifier matches.
-
----
-
-## Vector Search
-
-Use embeddings for semantic questions:
-
-```text
-where is authentication handled?
-where is token validation implemented?
-how does the payment flow work?
-```
-
----
-
-## Combined Retrieval
-
-```text
-Query
-  ↓
-Exact candidates
-  +
-FTS candidates
-  +
-Vector candidates
-  +
-Graph-expanded candidates
-  ↓
-Candidate merge
-  ↓
-Reranking
-  ↓
-Context Builder
-```
-
----
-
-# Local Persistence
-
-SQLite will become the persistent local index.
-
-Potential tables:
-
-```text
-documents
-symbols
-imports
-exports
-references
-relationships
-chunks
-embeddings
-file_state
-index_metadata
-```
-
-SQLite should be the default persistence layer before introducing a separate graph database.
-
----
-
-# Incremental Indexing
-
-A production repository cannot be rebuilt from scratch after every edit.
-
-We therefore need:
-
-```text
-file hashing
-content hashing
-Merkle / hierarchical hashing
-dirty-file detection
-dependency invalidation
-incremental graph updates
-incremental chunk updates
-incremental embeddings
-```
-
----
-
-## File Hashing
-
-For every indexed file:
-
-```text
-path
-hash
-last_indexed_at
-```
-
-If the hash is unchanged:
-
-```text
-skip
-```
-
----
-
-## Merkle / Hierarchical Hashing
-
-Eventually maintain hashes like:
-
-```text
-repo
- ├── src
- │    ├── auth.ts
- │    └── api.ts
- │
- └── package.json
-```
-
-with:
-
-```text
-auth.ts hash
-api.ts hash
-
-       ↓
-
-src hash
-
-       ↓
-
-repository hash
-```
-
-Changing one file invalidates only the affected subtree.
-
-This makes large repositories cheaper to re-index.
-
----
-
-# Content-Addressed Semantic Chunks
-
-Each semantic chunk gets a content hash.
-
-```text
-semantic chunk
-      ↓
-SHA-256
-      ↓
-chunk_hash
-```
-
-The embedding cache is keyed by this hash.
-
-Therefore:
-
-```text
-unchanged chunk
-    ↓
-reuse embedding
-```
-
-and:
-
-```text
-changed chunk
-    ↓
-new embedding
-```
-
-This prevents unnecessary embedding work after small source changes.
-
----
-
-# Asynchronous Embeddings
-
-Semantic indexing and embedding generation should be separate.
-
-The semantic graph should become available first:
-
-```text
-Source
-  ↓
-Semantic Graph
-  ↓
-READY
-```
-
-Embedding generation happens afterward:
-
-```text
-Semantic Chunks
-  ↓
-Embedding Queue
-  ↓
-Local Embedding Worker
-  ↓
-Vector Index
-```
-
-A repository should still support structural queries while embeddings are being generated.
-
----
-
-# Ignore Rules
-
-The indexer should honor:
-
-```text
-.gitignore
-.ckgignore
-```
-
-Files excluded from indexing should never enter the semantic or embedding pipeline.
-
-This prevents indexing:
-
-```text
-secrets
-credentials
-build artifacts
-dependencies
-generated files
-large binaries
-```
-
-unless explicitly requested.
-
----
-
-# Index Generations
-
-SQLite updates should be transactional.
-
-Every successful indexing operation creates a new logical generation:
-
-```text
-generation 41
-     ↓
-apply update
-     ↓
-generation 42
-```
-
-Readers should see a consistent generation rather than a half-updated graph.
-
----
-
-# Production Repository Flow
-
-For a large repository:
-
-```text
-Repository
-    ↓
-Scan files
-    ↓
-Apply ignore rules
-    ↓
-Calculate hashes
-    ↓
-Detect changed files
-    ↓
-Parse only affected files
-    ↓
-Update semantic entities
-    ↓
-Update dependency relationships
-    ↓
-Invalidate affected chunks
-    ↓
-Regenerate changed embeddings
-    ↓
-Commit new index generation
-```
-
-The system should never rebuild all 100,000 files because one file changed.
-
----
-
-# Retrieval Goal
-
-For a query such as:
-
-> How does authentication work?
-
-We do not want:
-
-```text
-50 files
-50,000 tokens
-LLM
-```
-
-We want:
-
-```text
-Query
-  ↓
-Vector / FTS search
-  ↓
-AuthService.login
-  ↓
-Graph expansion
-  ↓
-validateUser
-  ↓
-createAuth
-  ↓
-JWTService
-  ↓
-Context Builder
-  ↓
-Only relevant source
-  ↓
-LLM
-```
-
-The exact token reduction must be measured, not assumed.
-
----
-
-# Performance Goals
-
-Measure:
-
-```text
-Initial indexing time
-Incremental indexing time
-Files changed per update
-Symbols indexed
-Relationships indexed
-Chunk count
-Embedding count
-Embedding cache hit rate
-Query latency
-Retrieval recall@k
-MRR
-Context token count
-```
-
-A future benchmark should compare:
-
-```text
-Full-file baseline
-vs
-CKG retrieval
-```
-
-for a fixed query set.
-
-Do not claim a specific token reduction until it is measured.
-
----
-
-# Current Status
-
-## Completed
-
-- Tree-sitter parsing
-- Document loading
-- Symbol extraction
-- Symbol ownership
-- Symbol index
-- Reference extraction
-- Reference classification
-- Basic name resolution
-- Call relationship building
-- Type-level symbols (`interface`, `type` alias) with exports, signatures,
-  and resolution of imported type names
-- Extends relationship building (resolved `class X extends Y` and
-  `interface X extends Y` heritage)
-- Implements relationship building (resolved `class X implements Y`)
-- In-memory code graph
-- Import extraction
-- Module-level import resolution
-- Local compiler pass structure
-- Document index
-- Local semantic models
-- Stable symbol identities (qualified names, content/signature hashes, stable keys)
-- Confidence-based rename / move matching across index runs
-- SQLite persistence (schema, repositories, atomic snapshot persist / load round-trip)
-- Incremental indexing (file-state inventory, hash-based change detection, selective re-resolution with interface-aware dependency invalidation)
-- Export extraction and export resolution
-- Cross-file name resolution (references resolve through imports)
-- Member-expression resolution (access paths, namespace / `this` / class member calls)
-- Merkle / hierarchical hashing
-- Semantic chunking (content-addressed, keyed on each symbol's stable key)
-- Local embedding provider and embedding store
-- SQLite FTS5 lexical retrieval
-- Local vector retrieval
-- Hybrid retrieval (exact + graph + lexical + vector, fused by reciprocal rank)
-- Graph-aware retrieval (budgeted seed neighbourhoods)
-- Heuristic reranking
-- Context builder (hard token budget)
-- Asynchronous / incremental embedding worker
-- Ignore rules (`.gitignore` / `.ckgignore`)
-- Index generations
-- Local CLI — `index`, `status`, `search`, `definition`, `callers`, `callees`, `imports`, `context`, `eval`, `watch`, `init`, `embed` (12 commands via `build_parser()`). Installed as `ckg` (and `ckg-mcp`) via `[project.scripts]` in `pyproject.toml`; invoke as `ckg <command>` (`python cli.py <command>` also works from a source checkout).
-- MCP / agent integration (`mcp_server.py`)
-- Evaluation suite
-
-`IMPLEMENTATION.md` is the authoritative status document; its per-phase
-`### Implemented` notes record exactly what each phase delivered.
-
-## Not Yet Modelled
-
-These are deliberate gaps, not oversights. They are listed here so the
-semantic model is not mistaken for something broader than it is.
-
-- **Interface members.** An interface's `property_signature` /
-  `method_signature` members do not become child symbols — no existing
-  handler understands those nodes, and half-extracting them would be
-  worse than not extracting them. They are captured in the interface's
-  signature instead, so a member change still invalidates importers.
-- **Type analysis.** No inference; member resolution is structural. A
-  `type_identifier` outside a heritage clause (an annotation, a generic
-  argument) produces no reference, so `HAS_TYPE` / `RETURNS` edges do not
-  exist. `CALLS`, `EXTENDS` and `IMPLEMENTS` are the only relationship
-  kinds the graph emits.
-
-## In Progress
-
-(none)
-
-## Planned
-
-- Re-export resolution (`export { x } from` / `export * from`)
-- Incremental persistence (each run currently rewrites the whole snapshot)
-
----
-
-# Future Agent Integration
-
-CKG should eventually run as a local service/library that coding agents can query before sending context to an LLM.
-
-Target integrations:
-
-```text
-Claude Code
-Codex CLI
-Gemini CLI
-Pi
-OpenCode
-Custom Agents
-MCP clients
-IDE extensions
-```
-
-Possible interface:
-
-```text
-ckg index .
-ckg status
-ckg search "authentication flow"
-ckg definition createAuth
-ckg callers login
-ckg callees login
-ckg imports auth.ts
-ckg context "how does login work?"
-```
-
-The agent should receive a small, relevant context pack rather than the entire repository.
-
----
-
-# Long-Term Vision
-
-```text
-                 ┌─────────────────────┐
-                 │    Code Repository  │
-                 └──────────┬──────────┘
-                            │
-                            ▼
-                 ┌─────────────────────┐
-                 │ Semantic Compiler   │
-                 └──────────┬──────────┘
-                            │
-                            ▼
-                 ┌─────────────────────┐
-                 │ Knowledge Graph     │
-                 └──────────┬──────────┘
-                            │
-             ┌──────────────┴──────────────┐
-             ▼                             ▼
-      Exact Structural              Semantic Retrieval
-          Search                         Search
-             │                             │
-             └──────────────┬──────────────┘
-                            ▼
-                      Context Builder
-                            │
-                            ▼
-                           Agent
-                            │
-                            ▼
-                           LLM
-```
-
-The graph provides structure.
-
-The vector index provides semantic recall.
-
-The retrieval layer combines both.
-
-The context builder minimizes what reaches the model.
-
----
-
-# Definition of Done for v1
-
-v1 is complete when:
-
-- TypeScript/JavaScript indexing is reliable.
-- Source files are parsed once per indexing run.
-- Symbols, imports, exports, references, and relationships are resolved correctly for common cases.
-- The semantic graph is persisted in SQLite.
-- File changes are detected incrementally.
-- Unchanged chunks reuse their embeddings.
-- FTS and vector search work locally.
-- Graph expansion works during retrieval.
-- Hybrid retrieval produces relevant top-k results.
-- Context is assembled from semantic entities rather than whole files.
-- Agent integrations can request context from CKG.
-- Evaluation measures retrieval quality, latency, and token usage.
-
----
-
-# Engineering Rule
-
-When deciding what to build next, use this order:
-
-```text
-Correctness
-    ↓
-Semantic completeness
-    ↓
-Persistence
-    ↓
-Incremental indexing
-    ↓
-Retrieval quality
-    ↓
-Performance
-    ↓
-Agent integrations
-```
-
-Do not optimize embeddings before semantic resolution is trustworthy.
-
-Do not optimize retrieval before the index is correct.
-
-Do not optimize indexing before incremental updates are correct.
-
-The central idea remains:
-
-> **Understand the repository first. Retrieve only what matters. Then let the LLM reason over that context.**
-## Session memory
-
-CKG can keep a small, project-local memory of explicit decisions, code areas, and retrieval history so work can resume after an MCP restart. It is stored in `<project>/.ckg/session.sqlite` and is never synchronized to the cloud.
+## Dashboard + ops
 
 ```bash
-ckg sessions start .
-ckg sessions list .
-ckg sessions recall authentication .
-ckg sessions export . --format markdown
-ckg sessions prune . --days 30
+ckg dashboard . --no-browser --port 8765
+# → http://127.0.0.1:8765  GET /api/status /api/files /api/sessions /api/savings
+# POST /api/reindex  DELETE /api/files/a.html  (400 on .., 401 on bad bearer, 403 on cross-site)
+
+CKG_DASHBOARD_TOKEN=secret ckg dashboard --allow-remote  # remote needs flag + token
+ckg doctor --verbose
+# ✓ index present: .ckg/index.sqlite
+# ✓ lock free: free (.ckg/.index.lock fcntl)
+# ✓ embedding queue: pending=0
+# ✓ git hook: .git/hooks/post-commit CKG keep-fresh
+# ✓ embedding backend: local:all-MiniLM-L6-v2:384 (FALLBACK: FTS+graph 0.83/0.78 ok)
 ```
 
-MCP clients can use `session_start`, `session_status`, `session_recall`, `session_timeline`, `record_decision`, and `record_code_area`; `session_end` closes the active session. Omitting a session ID resumes or creates the active session for that normalized project path.
+Git hook `indexing/git_hooks.py` on `ckg init`: `post-commit/post-checkout/post-merge nice -n10 ckg index &` with `/tmp/ckg-index-hook.lock` stale PID + `watcher.py` debounced `0.5s` secondary.
 
-Only bounded explicit text and compact retrieval identifiers/metrics are stored. Raw source, complete tool output, transcripts, secrets, and environment variables are not stored. Use `ckg sessions prune` for age-based retention, or delete `.ckg/session.sqlite` to remove the local memory entirely.
+---
 
-## Local dashboard
+## Security — redacted before it is indexed
 
-Start the read-only dashboard from an indexed or unindexed project:
+| Layer | Detail | File |
+|---|---|---|
+| **Skip** | `.env* credentials.json secrets.yml .env.local .pem/.key/.p12/.jks` filename deny-list before open | `indexing/secrets.py:58 is_secret_filename` |
+| **Content 15 regex** | `AKIA aws_secret_access_key ghp_ github_pat_ ghs/gho/ghu/ghr xox[abprs]- sk_live sk-..T3BlbkFJ sk-ant- AIza eyJ..JWT PRIVATE KEY + GENERIC_CREDENTIAL dotenv 16+` | `indexing/secrets.py:6` |
+| **Placeholder exempt** | `your-api-key xxxxx my-api-key your-secret test_key` not redacted | `indexing/secrets.py:24` |
+| **PII** | `EMAIL IPV4 SSN PHONE E164 + CARD Luhn` (`411111… valid → [REDACTED:CARD]`, `1234… invalid → keep`) | `indexing/secrets.py:84 redact_pii` |
+| **Traversal** | `resolved.relative_to(project)` in `indexer/pipeline.py`, `dashboard DELETE .. \ / 400` | `storage/index_store.py` |
+| **WAL** | `PRAGMA journal_mode=WAL synchronous=NORMAL foreign_keys=ON busy_timeout 5000` | `storage/db.py:11` |
+| **Lock** | `fcntl.flock .ckg/.index.lock LOCK_EX|LOCK_NB` + `ProjectIndexLock` context | `indexing/resource_governor.py:61` |
+
+See `indexing/resource_governor.py:12 onnx_thread_cap CCE_ORT_THREADS` + `is_memory_pressured PSI avg10>25` + `MAX_FILE 2MB` + `TOKENIZERS_PARALLELISM false`.
+
+---
+
+## Token methodology — how to cite X%
+
+Do not cite `99% whole-repo`. Pair `mean_savings_pct + mean_recall@10 + p50` at fixed `budget 800`:
 
 ```bash
-ckg dashboard . --no-browser
-# open http://127.0.0.1:8765/
+python benchmarks/run_external.py --repo https://github.com/fastapi/fastapi --source-dir . \
+  --queries benchmarks/fastapi_queries.json --output benchmarks/results/fastapi.json
+python benchmarks/run_external.py --recompute "benchmarks/results/*.json"  # mean_savings + recall
+ckg eval-ab --manifest evaluation/tasks.json --condition both --output results/ --agent-command "$AGENT_CMD"
 ```
 
-It shows index health and counts, recent sessions, decisions, code areas, retrieval activity, token comparisons, and compact symbol search results. It uses only Python’s standard-library HTTP server and keeps session memory in `.ckg/session.sqlite`. The server binds to localhost by default; stop it with Ctrl-C and do not expose it publicly. Remote binding requires the explicit `--allow-remote` flag and is unsafe without additional access controls. Token savings are observational dashboard metrics, not an A/B productivity claim.
+* `baseline = expected_files only` (`evaluation/external.py:184`) `context = build_context_pack(budget 800)` (`:197`) `ExternalReport.mean_savings_pct` — honest.
+* `evaluation/runner.py:202 token_reduction=0.0` (whole-repo indefensible) `dashboard/server.py:94 savings sum-over-events` not per-query.
+* `eval-ab` `total_tokens null stays null` (`ab_runner.py:17` never fabricated) requires real agent `CKG_AB_* env`.
 
-## Token methodology (how to cite X%)
+---
 
-To claim `X%` you must pair `mean_savings_pct` with `mean_recall_at_10` at fixed `token_budget=800`, `o200k_base` `retrieval/tokenizer.py:15` (fallback `len//4` `retrieval/tokenizer.py:40`), `top_k=30`→10 files `evaluation/external.py:123`:
+## Current status — what 0.1.0 is, what is not
+
+**Shipped (652p 81.23% branch, `IMPLEMENTATION.md` phases `COMPLETE`):** tree-sitter parse once, document load, symbol/index, reference + member-expression `auth.client.createAuth`, cross-file import/export resolve incl. `re_export export * from` + `export {x} from`, `CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS`, interface `property_signature/method_signature` as child symbols, SQLite `13 tables + vec0 + FTS5 porter`, incremental `hash + Merkle root_hash + interface-aware reresolve`, semantic chunks `content_hash`, `FTS + vector + exact + graph expand 6+2 + RRF + reranker + per-file cap 3 + budget 800`, `FTS+graph 0.83/0.78` out-of-box, `ckg 13 cmds + ckg-mcp 13 tools`, `doctor + dashboard 8 endpoints CSRF+bearer hmac`, `eval + eval-ab 20 tasks`.
+
+**Not yet (deliberate, not oversights):** `learned_weights.json` heuristic `relationship 1.15` needs real `AGENT_CMD` train; `export *` wildcard `target_symbol None`; large-repo `Django 2k` benchmark not yet in `benchmarks/results/*.json` (weekly cron planned); `P5-2` append-only already `INSERT OR REPLACE` but `chunks_fts prune_not_in` not yet `HNSW`.
+
+**In progress:** `P5` `learned reranker train + large-repo proof + parse-once hypothesis`.
+
+**Planned:** `Docker remote` `fastembed→sqlite-vec HNSW` `C/C++ overload DEFINITION_OF refinement`.
+
+`IMPLEMENTATION.md` per-phase `### Implemented` is authoritative.
+
+---
+
+## v1 definition of done
+
+- [x] TS/JS reliable, parse once
+- [x] Symbols/imports/exports/references resolved for common cases (cross-file + member)
+- [x] Graph persisted SQLite + generations
+- [x] Incremental detected (Merkle) + chunk reuse via `content_hash`
+- [x] FTS + vector locally + graph expansion + hybrid top-k
+- [x] Context from entities not whole files (budget 800)
+- [x] Agent can `ckg search/definition/callers/callees/context` via MCP
+- [x] Eval measures `recall/MRR/latency/tokens` + `doctor` prod check
+
+---
+
+## Engineering rule
+
+```
+Correctness → Semantic completeness → Persistence → Incremental → Retrieval → Performance → Agents
+```
+
+> Understand the repository first. Retrieve only what matters. Then let the LLM reason.
+
+Only the next layer may be optimized; never embed before resolution is trustworthy. See `specs/` + `IMPLEMENTATION.md` phases `0..24`.
+
+---
+
+## Session memory + dashboard (local only)
 
 ```bash
-python benchmarks/run_external.py --repo <url> --source-dir <dir> --queries benchmarks/<repo>_queries.json --output benchmarks/results/<repo>.json
-python benchmarks/run_external.py --recompute "benchmarks/results/*.json"
+ckg sessions start . && ckg sessions recall "auth decision" --limit 10
+ckg dashboard . --no-browser  # http://127.0.0.1:8765 read-only, localhost by default
+rm -rf .ckg/session.sqlite    # wipe memory
 ```
 
-Report `evaluation/external.py:244` `ExternalReport.mean_savings_pct` (honest: `baseline_tokens` from `expected_files` only `evaluation/external.py:184`, `context_tokens` from `build_context_pack(..., token_budget=800)` `evaluation/external.py:197`) alongside `mean_recall_at_10` and `p50` latency. `evaluation/runner.py:202` intentionally `token_reduction=0.0` (whole-repo `99%` is indefensible); `ckg/dashboard/server.py:68` `savings_percentage` is sum-over-events, not per-query. LLM total-tokens require `ckg eval-ab --agent-command "$AGENT_CMD"` `evaluation/ab_runner.py:36` paired `with_ckg`/`without_ckg` where `total_tokens` null stays null `ab_runner.py:17` (never fabricated). Cite commit SHA and `token_budget` or don't cite.
+Bounded `MAX_TEXT 2000` `redact_secrets + redact_pii` on `_bounded`. Raw source/tool output never stored. `prune --days 30`.
 
-Built-in safety: `ingestion/loader.py:89` skips `.env` with secrets `indexing/secrets.py:1` (`AKIA/ghp/PRIVATE KEY`), `ingestion/loader.py:69` `redact_secrets` before `chunking/symbol_chunker.py:51` embedding, `session_memory/service.py:24` `redact_secrets` on `_bounded`, thread-local parser `parsing/tree_sitter_parser.py:8`, `storage/db.py:11` `PRAGMA synchronous=NORMAL`.
+---
 
-## Release smoke test
-
-Build and check the distributable wheel without publishing it:
+## Release smoke
 
 ```bash
 uv build
-python scripts/release_smoke.py
+python scripts/release_smoke.py  # wheel outside checkout: ckg --help + init + index + search + ckg-mcp startup
 ```
 
-The smoke test creates a temporary environment outside the checkout, installs the wheel, checks its metadata and packaged `session_memory`/dashboard modules, then exercises the CKG CLI, session commands, dashboard help, indexing, status, search, and `ckg-mcp` startup. It does not load embeddings, contact a hosted model, or upload to PyPI. Offline installation requires runtime dependency wheels in the local uv cache; otherwise it reports the exact missing dependency.
+Offline needs `uv cache` wheels.
 
-## Task-level A/B evaluation
+---
 
-The reproducible harness in `evaluation/tasks.json` defines 20 cross-language tasks. Run it with the deterministic adapter or provide a command template for a real agent:
+## Comparing to Code Context Engine (CCE 0.4.26)
 
-```bash
-ckg eval-ab --manifest evaluation/tasks.json --condition both --output results/
-ckg eval-ab --dry-run
-```
+We use CCE as a yardstick, not a template:
 
-It creates isolated paired worktrees and writes JSONL runs, aggregate JSON, and Markdown reports with success-aware token and latency comparisons. Token values are null when an agent does not report them. This is an evaluation harness only; it does not publish results or make productivity claims.
+| Dimension | CCE 0.4.26 `19k LOC` | CKG 0.1.0 `652p 81%` |
+|---|---|---|
+| Semantic depth | `Chunk FUNCTION/CLASS + IMPORTS/DEFINES` `confidence 0.5dist` | `Symbol stable_key + signature + CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS + member path auth.client.createAuth + re_export` |
+| Incremental | `manifest sha256 + 96% cache 50-batch` | `hash + Merkle root_hash + interface_fingerprint reresolve + INSERT OR REPLACE` |
+| Retrieval | `RRF k=60 + recency 0.1` | `RRF k=60 + graph 6+2 + reranker + cap 3 + budget 800 + learned_weights.json hook` |
+| Ops | `governor PSI/ORT/Idle 30m + FastAPI 8 + 851 tests` | `governor fcntl/PSI/ORT + dashboard 8 hmac+CSRF + doctor 5 checks + 652p fuzz+e2e+gate` |
+| Honesty | `94% full-file baseline` | `0.83/0.78 FTS+graph, whole-repo 0.0, external expected_files only` |
 
-### Real-agent protocol
+CKG’s moat is `Symbol` not `Chunk` — graph before vector — measured with `expected_files` not `full-repo`.
 
-The canonical command template is:
+---
 
-```bash
-AGENT_CMD='my-agent \
-  --worktree "$CKG_AB_WORKTREE" \
-  --prompt-file "$CKG_AB_PROMPT_FILE" \
-  --result-file "$CKG_AB_RESULT_FILE" \
-  --mcp-config "$CKG_AB_MCP_CONFIG"'
-ckg eval-ab --agent-command "$AGENT_CMD" --condition both --output results/
-```
+## License
 
-The runner sets `CKG_AB_TASK_ID`, `CKG_AB_CONDITION`, `CKG_AB_WORKTREE`, `CKG_AB_PROMPT_FILE`, `CKG_AB_RESULT_FILE`, and `CKG_AB_PROJECT`. The agent must write this JSON object to the result file:
+MIT — see `LICENSE`. Authors: see `pyproject.toml` `Fazle Elahee / Raj` fork + `Deepjyoti` parity landings `ckg/editors` `secrets Luhn` `merkle`.
 
-```json
-{"status":"success","changed_files":["src/auth.py"],"symbols_found":["login"],"input_tokens":1200,"output_tokens":350,"total_tokens":1550,"tool_calls":8,"tests_passed":true,"notes":"Located login and its caller."}
-```
-
-`status` is required (`success` or `failure`); `changed_files` contains only modified files, while `files_found` contains located or cited evidence files; both and `symbols_found` are bounded string arrays. Metric fields (`input_tokens`, `output_tokens`, `total_tokens`, `tool_calls`, `ckg_tools_used`, `ckg_queries`) are nullable non-negative integers; notes are bounded. The runner never infers tokens, symbols or tool calls. It uses `git diff --name-only` only as a changed-file fallback. For `with_ckg`, it indexes the isolated worktree and creates the standard configuration at `$CKG_AB_MCP_CONFIG`. `without_ckg` exposes neither CKG variables nor an index/config. No benchmark result exists until a real agent is run, and no productivity claim is made.
-
-Use `ckg eval-ab --pilot --preflight` to validate both isolated conditions without launching an agent. A provisioning error is an infrastructure failure: the with-CKG agent is not invoked and the run cannot be scored as a successful agent attempt.
+*If CKG saves you tokens, give it a star and cite `budget 800 + commit SHA`.*
