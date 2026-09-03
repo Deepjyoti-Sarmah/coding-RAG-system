@@ -457,5 +457,56 @@ class TestImplementsIncrementalInvalidation(unittest.TestCase):
         self.assertEqual(self._implements_edges(), [])
 
 
+class TestMerkleReuseAndGuardrails(unittest.TestCase):
+    def test_reused_chunks_100_percent_after_one_edit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            db = str(root / "index.sqlite")
+            _write(root, AUTH)
+            from embeddings.fake_provider import FakeEmbeddingProvider
+            import indexing.embedding_queue as q
+            prov = FakeEmbeddingProvider(dimension=8)
+            reindex_index(db, str(root))
+            q.run_embedding_worker(db, prov)
+            before = _scalar(db, "SELECT COUNT(*) FROM chunks")
+            _write(root, {"a.ts": "export function createAuth() { return 99; }\n"})
+            reindex_index(db, str(root))
+            q.run_embedding_worker(db, prov)
+            after = _scalar(db, "SELECT COUNT(*) FROM chunks")
+            self.assertEqual(before, after)
+            # untouched b.ts chunks still there
+            self.assertGreater(_scalar(db, "SELECT COUNT(*) FROM chunks WHERE relative_path='b.ts'"), 0)
+
+    def test_merkle_root_persisted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            db_path = str(root / "index.sqlite")
+            _write(root, AUTH)
+            reindex_index(db_path, str(root))
+            conn = db.connect(db_path)
+            try:
+                row = conn.execute("SELECT value FROM index_metadata WHERE key='merkle_root'").fetchone()
+                self.assertIsNotNone(row)
+                self.assertEqual(len(row[0]), 64)
+            finally:
+                conn.close()
+
+    def test_parse_once_per_file(self):
+        # guardrail: build_graph parses once per document (not per pass)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write(root, AUTH)
+            from unittest.mock import patch
+            from parsing.tree_sitter_parser import TreeSitterParser
+            orig = TreeSitterParser.parse
+            calls: list[str] = []
+            def counted(self, document):
+                calls.append(document.relative_path)
+                return orig(self, document)
+            with patch.object(TreeSitterParser, "parse", counted):
+                reindex_index(str(root / "index.sqlite"), str(root))
+            self.assertEqual(len(calls), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
