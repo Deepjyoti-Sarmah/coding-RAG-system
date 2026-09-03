@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function CopyButton({ text, className = "" }) {
+export default function CopyButton({ text, className = "text-blue-deep/60 hover:bg-blue-deep/5 hover:text-blue-deep" }) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -18,7 +18,7 @@ export default function CopyButton({ text, className = "" }) {
       type="button"
       onClick={handleCopy}
       aria-label="Copy to clipboard"
-      className={`shrink-0 rounded p-1.5 text-ink-soft transition hover:bg-ink/5 hover:text-ink ${className}`}
+      className={`shrink-0 rounded p-1.5 transition ${className}`}
     >
       {copied ? (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

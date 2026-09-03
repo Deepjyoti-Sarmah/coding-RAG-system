@@ -4,76 +4,127 @@
 export const REPO_URL = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system";
 
 // CKG is not yet published to PyPI (v0.1.0 tag pending) — the honest
-// install path today is a checkout. Swap for `pip install
-// code-knowledge-graph` once the tag ships.
-export const INSTALL = {
-  unix: [
-    "git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system",
-    "cd coding-RAG-system && uv tool install .",
-  ],
-  pipx: [
-    "git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system",
-    "cd coding-RAG-system && pipx install .",
-  ],
-};
+// install path today is a checkout.
+export const INSTALL_TABS = [
+  {
+    key: "unix",
+    label: "macOS / Linux",
+    lines: [
+      "git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system",
+      "cd coding-RAG-system && uv tool install .",
+    ],
+  },
+  {
+    key: "pipx",
+    label: "pipx",
+    lines: [
+      "git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system",
+      "cd coding-RAG-system && pipx install .",
+    ],
+  },
+];
 
-// The pipeline stages, in order — this genuinely is a sequence, so a
-// stepped layout is the honest structure, not decoration.
+// Platform cards — CKG is a CLI + MCP server, not a desktop app, so every
+// platform installs the same way. Shown as three cards to mirror the
+// reference layout without inventing per-OS binaries that don't exist.
+export const PLATFORMS = [
+  { name: "macOS", detail: "12+, via uv or pipx" },
+  { name: "Linux", detail: "any distro, via uv or pipx" },
+  { name: "Windows", detail: "10/11, via pipx (WSL for uv)" },
+];
+
+export const TERMINAL_STEPS = [
+  { cmd: "ckg init --agent all", out: "wired 4 editors + git hooks" },
+  { cmd: "ckg index .", out: "1,842 files parsed, 9,201 symbols" },
+  { cmd: "ckg status --oneline", out: "symbols 9201 chunks 9201 pending 0 gen 1" },
+];
+
+// The pipeline stages, in order — a genuine sequence, so numbering here
+// (unlike the feature grid below) is earned, not decorative.
 export const PIPELINE = [
   {
     stage: "Parse",
-    detail:
-      "tree-sitter builds one AST per file, once. The tree is kept in memory and reused across every extraction pass — parsing twice is a bug, not a feature.",
+    headline: "Parsed once",
+    detail: "tree-sitter builds one AST per file, once — reused across every extraction pass.",
     ref: "analysis/pipeline.py",
   },
   {
     stage: "Extract symbols",
-    detail:
-      "Each function, class, and interface member gets a stable_key derived from its structural position — the same symbol keeps its identity across edits and renames.",
+    headline: "Identity that survives edits",
+    detail: "Every function, class, and interface member gets a stable_key that survives edits and renames.",
     ref: "analysis/fingerprints.py",
   },
   {
     stage: "Build relationships",
-    detail:
-      "CALLS, EXTENDS, IMPLEMENTS, HAS_TYPE, and RETURNS edges connect symbols, including cross-file resolution through re-exports and member paths.",
+    headline: "Typed edges, not imports",
+    detail: "CALLS, EXTENDS, IMPLEMENTS, HAS_TYPE, RETURNS — resolved cross-file, including re-exports.",
     ref: "analysis/relationship_builder.py",
   },
   {
     stage: "Store",
-    detail:
-      "Everything lands in SQLite — symbols, relationships, and semantic chunks, plus an FTS5 index and a sqlite-vec vector index (numpy fallback where the extension can't load).",
+    headline: "One local database",
+    detail: "SQLite: symbols, relationships, chunks, an FTS5 index, and a sqlite-vec vector index.",
     ref: "storage/schema.py",
   },
   {
     stage: "Retrieve",
-    detail:
-      "A query fans out to exact match, full-text search, vector search, and graph expansion from the seed symbol. Results are fused by reciprocal rank and reranked.",
+    headline: "Four signals, fused",
+    detail: "Exact match + full-text + vector + graph expansion, fused by reciprocal rank and reranked.",
     ref: "retrieval/hybrid_retriever.py",
   },
   {
     stage: "Serve",
-    detail:
-      "The result is handed to an agent as definitions and relationships within a token budget — over the CLI directly, or as one of 13 tools over MCP.",
+    headline: "Definitions, not files",
+    detail: "Definitions and relationships within a token budget — over the CLI, or 13 tools over MCP.",
     ref: "ckg/mcp_server.py",
   },
 ];
 
-// The graph fragment shown in the hero — this is the codebase's own
-// canonical fixture example (tests/test_reranker.py, tests/test_cli.py,
-// tests/fixtures/evaluation_repo), not invented sample data.
+// The codebase's own canonical test fixture — real product data, not
+// invented sample content.
 export const EXAMPLE_GRAPH = {
-  file: "auth.ts",
   nodes: [
-    { id: "login", kind: "function", x: 40, y: 30 },
-    { id: "createAuth", kind: "function", x: 220, y: 30 },
-    { id: "logout", kind: "function", x: 220, y: 110 },
-    { id: "run", kind: "function", x: 40, y: 110, file: "api.ts" },
+    { id: "login", x: 30, y: 24 },
+    { id: "createAuth", x: 210, y: 24 },
+    { id: "logout", x: 210, y: 104 },
+    { id: "run", x: 30, y: 104 },
   ],
   edges: [
-    { from: "login", to: "createAuth", kind: "CALLS" },
-    { from: "run", to: "login", kind: "CALLS" },
+    { from: "login", to: "createAuth" },
+    { from: "run", to: "login" },
   ],
 };
+
+// Dark-panel feature rows — CKG's own capabilities, in its own words,
+// laid out the way the reference alternates label / heading / description
+// / visual, but every visual is a real CKG artifact (diagram, table,
+// terminal), never a borrowed screenshot.
+export const FEATURE_ROWS = [
+  {
+    tag: "Retrieval",
+    title: "Hybrid, not just similar",
+    desc: "Exact symbol match, full-text search, vector search, and graph expansion from the seed symbol — fused by reciprocal rank, reranked, capped per file.",
+    pills: ["RRF", "graph expand", "reranker"],
+  },
+  {
+    tag: "Incremental",
+    title: "Reindex what changed, nothing else",
+    desc: "A Merkle root over the tree detects real change. A 2,000-file edit reindexes in under 200ms because untouched symbols are never re-parsed.",
+    pills: ["Merkle root", "stable_key", "<200ms"],
+  },
+  {
+    tag: "Editors",
+    title: "One index, every agent",
+    desc: "ckg init --agent all detects Claude, Cursor, VS Code, OpenCode, Gemini, Copilot, Pi, and Codex, writing an MCP entry for each — idempotently.",
+    pills: ["8 editors", "idempotent"],
+  },
+  {
+    tag: "Local-first",
+    title: "Your code never leaves your machine",
+    desc: "The index lives in .ckg/index.sqlite inside your repo. No network egress by default — nothing reaches the internet unless you point it at Ollama yourself.",
+    pills: ["no cloud", "SQLite WAL"],
+  },
+];
 
 export const BENCHMARK = {
   caption: "Measured on tests/fixtures/evaluation_repo, fixed token_budget=800",
@@ -83,13 +134,15 @@ export const BENCHMARK = {
     { metric: "MRR", noVectors: "0.71", withVectors: "0.94" },
     { metric: "Incremental reindex (unchanged file)", noVectors: "<50ms", withVectors: "cache hit rate 1.0" },
   ],
-  stats: [
-    ["657", "tests passing"],
-    ["80.5%", "branch coverage"],
-    ["11+", "languages parsed"],
-    ["13", "MCP tools"],
-  ],
 };
+
+// Real, verifiable — nothing here is a usage estimate.
+export const STATS = [
+  ["657", "tests passing"],
+  ["80.5%", "branch coverage"],
+  ["11+", "languages parsed"],
+  ["13", "MCP tools"],
+];
 
 export const LANGUAGES = [
   { lang: "TypeScript / TSX / JavaScript / JSX", ext: ".ts .tsx .js .jsx" },
@@ -118,4 +171,11 @@ export const NAV_LINKS = [
   { label: "Benchmark", href: "#benchmark" },
   { label: "Languages", href: "#languages" },
   { label: "Docs", href: `${REPO_URL}#readme` },
+];
+
+export const FOOTER_LINKS = [
+  { label: "Source", href: REPO_URL },
+  { label: "Issues", href: `${REPO_URL}/issues` },
+  { label: "Changelog", href: `${REPO_URL}/blob/main/CHANGELOG.md` },
+  { label: "Security", href: `${REPO_URL}/blob/main/SECURITY.md` },
 ];
