@@ -133,6 +133,7 @@ def _ensure_table(conn, dimension: int, model_id: str | None = None) -> None:
             except sqlite3.OperationalError:
                 pass
 
+    # HNSW via vec0 cosine: prune_not_in keeps HNSW graph incremental (append-only, no drop)
     conn.execute(
         f"""
         CREATE VIRTUAL TABLE IF NOT EXISTS {_VEC_TABLE} USING vec0(
