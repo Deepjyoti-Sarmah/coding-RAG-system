@@ -14,8 +14,14 @@ candidates = [
     {"relationship": 1.25, "exact": 1.0},
 ]
 for w in candidates:
-    # temporarily write weights, run eval, score = definition_accuracy + mean_recall
+    # temporarily write weights, reload reranker, run eval
     Path("retrieval/learned_weights.json").write_text(json.dumps(w))
+    # force reload so new weights take effect (retrieval/reranker loads at import)
+    import importlib, retrieval.reranker
+    importlib.reload(retrieval.reranker)
+    # also reload hybrid_retriever which cached reranker weights via import
+    import retrieval.hybrid_retriever
+    importlib.reload(retrieval.hybrid_retriever)
     r = run_evaluation(provider=None, top_k=5)
     score = r.definition_accuracy + r.mean_recall_at_k
     if best is None or score > best:
