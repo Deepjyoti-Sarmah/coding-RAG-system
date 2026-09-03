@@ -58,7 +58,7 @@ def _recompute_file(path: Path) -> None:
         _precision_ceiling_at_k,
         _precision_over_returned,
     )
-    from evaluation.metrics import mean, recall_at_k, reciprocal_rank
+    from evaluation.metrics import mean, recall_at_k, reciprocal_rank, token_reduction
 
     data = json.loads(path.read_text(encoding="utf-8"))
     questions = data.get("questions", [])
@@ -105,6 +105,12 @@ def _recompute_file(path: Path) -> None:
     # mean_recall and mean_rr should already match recomputed, but recompute for consistency
     data["mean_recall_at_10"] = mean(q["recall_at_10"] for q in questions) if questions else 0.0
     data["mean_reciprocal_rank"] = mean(q["reciprocal_rank"] for q in questions) if questions else 0.0
+
+    # Aggregate (token-volume-weighted) savings — see evaluation/external.py
+    # ExternalReport.aggregate_savings_pct docstring for why this, not
+    # mean_savings_pct, is the number to cite.
+    if "mean_baseline_tokens" in data and "mean_context_tokens" in data:
+        data["aggregate_savings_pct"] = token_reduction(data["mean_context_tokens"], data["mean_baseline_tokens"])
 
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     print(f"Recomputed {path}: P@10 {mean_prec:.3f} ceiling {mean_ceiling:.3f} norm {mean_norm:.3f} over_ret {mean_over:.3f}", file=sys.stderr)

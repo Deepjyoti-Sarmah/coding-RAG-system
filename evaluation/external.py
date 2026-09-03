@@ -65,7 +65,20 @@ class ExternalReport:
     # honest token-savings aggregates (paired with recall)
     mean_baseline_tokens: float = 0.0
     mean_context_tokens: float = 0.0
+    # Mean of each query's own savings_pct. This is a mean of ratios with
+    # very different denominators (a 40-token file and a 3,800-token file
+    # both count once), so a handful of small files where the fixed
+    # context-pack overhead exceeds the file's own size can swing this
+    # deeply negative even when the set saves tokens in aggregate. Useful
+    # for "what does a typical single query look like", not for a
+    # headline number.
     mean_savings_pct: float = 0.0
+    # 1 - mean_context_tokens / mean_baseline_tokens — equivalent to
+    # summing baseline and context tokens across every query and taking
+    # one ratio, so each query is weighted by its actual token volume
+    # instead of counted once regardless of size. This is the number a
+    # savings claim should cite.
+    aggregate_savings_pct: float = 0.0
 
 
 def load_external_questions(path: str | Path) -> list[ExternalQuestion]:
@@ -232,6 +245,7 @@ def run_external_evaluation(
     mean_baseline = mean(r.baseline_tokens for r in results)
     mean_context = mean(r.context_tokens for r in results)
     mean_savings = mean(r.savings_pct for r in results)
+    aggregate_savings = token_reduction(mean_context, mean_baseline) if mean_baseline else 0.0
     p50 = statistics.median(latencies) if latencies else 0.0
     # p95 as 95th percentile
     p95 = 0.0
@@ -259,4 +273,5 @@ def run_external_evaluation(
         mean_baseline_tokens=mean_baseline,
         mean_context_tokens=mean_context,
         mean_savings_pct=mean_savings,
+        aggregate_savings_pct=aggregate_savings,
     )

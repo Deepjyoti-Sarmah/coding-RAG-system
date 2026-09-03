@@ -1,0 +1,267 @@
+{
+  "repo": "self -- this repository (Deepjyoti-Sarmah/coding-RAG-system)",
+  "source_dir": "retrieval",
+  "commit": null,
+  "queries_file": "benchmarks/self_queries.json",
+  "note": "Original queries written by hand against this repo's own retrieval/ package, not derived from any other project. See README.md Token methodology for aggregate_savings_pct vs mean_savings_pct.",
+  "total_questions": 11,
+  "mean_precision_at_10": 0.1,
+  "mean_precision_ceiling_at_10": 0.1,
+  "mean_precision_at_10_normalized": 1.0,
+  "mean_recall_at_10": 1.0,
+  "mean_reciprocal_rank": 0.9090909090909091,
+  "p50_latency_seconds": 0.0015967609997460386,
+  "p95_latency_seconds": 0.0022692239999742014,
+  "index_seconds": 0.0855693319999773,
+  "mean_baseline_tokens": 1007.1818181818181,
+  "mean_context_tokens": 839.4545454545455,
+  "mean_savings_pct": -1.6771196276920648,
+  "aggregate_savings_pct": 0.1665312753858651,
+  "questions": [
+    {
+      "query": "reciprocal rank fusion of ranked lists",
+      "expected_files": [
+        "ranking.py"
+      ],
+      "ranked_files": [
+        "ranking.py",
+        "neighborhood.py",
+        "reranker.py",
+        "hybrid_retriever.py",
+        "candidate.py",
+        "context_builder.py",
+        "numpy_vector_store.py",
+        "vector_store.py",
+        "sqlite_vec_store.py",
+        "index_queries.py"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 96,
+      "context_tokens": 845,
+      "savings_pct": -7.802083333333334
+    },
+    {
+      "query": "expand graph neighborhood one hop and two hop from a seed symbol",
+      "expected_files": [
+        "neighborhood.py"
+      ],
+      "ranked_files": [
+        "neighborhood.py",
+        "hybrid_retriever.py",
+        "reranker.py",
+        "index_queries.py",
+        "learned_weights.json",
+        "context_builder.py",
+        "vector_store.py",
+        "numpy_vector_store.py",
+        "candidate.py",
+        "sqlite_vec_store.py"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 577,
+      "context_tokens": 832,
+      "savings_pct": -0.4419410745233969
+    },
+    {
+      "query": "cache the loaded index keyed by generation to avoid rematerializing it",
+      "expected_files": [
+        "index_cache.py"
+      ],
+      "ranked_files": [
+        "index_cache.py",
+        "index_queries.py",
+        "reranker.py",
+        "sqlite_vec_store.py",
+        "tokenizer.py",
+        "hybrid_retriever.py",
+        "context_builder.py",
+        "ranking.py",
+        "numpy_vector_store.py",
+        "candidate.py"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 362,
+      "context_tokens": 860,
+      "savings_pct": -1.3756906077348066
+    },
+    {
+      "query": "count tokens with a real BPE tokenizer and a chars-per-token fallback",
+      "expected_files": [
+        "tokenizer.py"
+      ],
+      "ranked_files": [
+        "tokenizer.py",
+        "reranker.py",
+        "hybrid_retriever.py",
+        "context_builder.py",
+        "index_queries.py",
+        "index_cache.py",
+        "learned_weights.json"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 245,
+      "context_tokens": 860,
+      "savings_pct": -2.510204081632653
+    },
+    {
+      "query": "vector search served by the sqlite-vec extension",
+      "expected_files": [
+        "sqlite_vec_store.py"
+      ],
+      "ranked_files": [
+        "sqlite_vec_store.py",
+        "vector_store.py",
+        "numpy_vector_store.py",
+        "hybrid_retriever.py",
+        "index_queries.py",
+        "learned_weights.json",
+        "reranker.py",
+        "candidate.py",
+        "context_builder.py",
+        "tokenizer.py"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 298,
+      "context_tokens": 827,
+      "savings_pct": -1.7751677852348995
+    },
+    {
+      "query": "in-memory numpy fallback vector store when sqlite-vec is unavailable",
+      "expected_files": [
+        "numpy_vector_store.py"
+      ],
+      "ranked_files": [
+        "sqlite_vec_store.py",
+        "numpy_vector_store.py",
+        "vector_store.py",
+        "index_queries.py",
+        "tokenizer.py",
+        "hybrid_retriever.py",
+        "index_cache.py",
+        "reranker.py",
+        "candidate.py",
+        "learned_weights.json"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "baseline_tokens": 415,
+      "context_tokens": 799,
+      "savings_pct": -0.925301204819277
+    },
+    {
+      "query": "abstract vector store interface and search hit result type",
+      "expected_files": [
+        "vector_store.py"
+      ],
+      "ranked_files": [
+        "vector_store.py",
+        "numpy_vector_store.py",
+        "sqlite_vec_store.py",
+        "index_queries.py",
+        "hybrid_retriever.py",
+        "index_cache.py",
+        "reranker.py",
+        "learned_weights.json",
+        "neighborhood.py",
+        "candidate.py"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 144,
+      "context_tokens": 905,
+      "savings_pct": -5.284722222222222
+    },
+    {
+      "query": "hybrid retrieval that fuses exact match full-text vector and graph expansion",
+      "expected_files": [
+        "hybrid_retriever.py"
+      ],
+      "ranked_files": [
+        "hybrid_retriever.py",
+        "reranker.py",
+        "numpy_vector_store.py",
+        "vector_store.py",
+        "candidate.py",
+        "index_queries.py",
+        "sqlite_vec_store.py",
+        "context_builder.py",
+        "tokenizer.py",
+        "learned_weights.json"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 3773,
+      "context_tokens": 840,
+      "savings_pct": 0.7773654916512059
+    },
+    {
+      "query": "rerank candidates with relationship and exact-match boosts",
+      "expected_files": [
+        "reranker.py"
+      ],
+      "ranked_files": [
+        "reranker.py",
+        "hybrid_retriever.py",
+        "learned_weights.json",
+        "context_builder.py",
+        "index_cache.py",
+        "candidate.py",
+        "index_queries.py"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 3323,
+      "context_tokens": 811,
+      "savings_pct": 0.7559434246163106
+    },
+    {
+      "query": "build a context pack of definitions within a token budget",
+      "expected_files": [
+        "context_builder.py"
+      ],
+      "ranked_files": [
+        "context_builder.py",
+        "index_queries.py",
+        "reranker.py",
+        "hybrid_retriever.py",
+        "neighborhood.py",
+        "index_cache.py",
+        "tokenizer.py",
+        "learned_weights.json"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "baseline_tokens": 1122,
+      "context_tokens": 856,
+      "savings_pct": 0.2370766488413547
+    },
+    {
+      "query": "choose the vector store backend and wire retrieval onto a database path",
+      "expected_files": [
+        "index_queries.py"
+      ],
+      "ranked_files": [
+        "vector_store.py",
+        "index_queries.py",
+        "numpy_vector_store.py",
+        "sqlite_vec_store.py",
+        "hybrid_retriever.py",
+        "reranker.py",
+        "index_cache.py",
+        "context_builder.py",
+        "candidate.py",
+        "learned_weights.json"
+      ],
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "baseline_tokens": 724,
+      "context_tokens": 799,
+      "savings_pct": -0.10359116022099446
+    }
+  ]
+}

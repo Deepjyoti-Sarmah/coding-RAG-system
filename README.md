@@ -196,20 +196,53 @@ See `indexing/resource_governor.py:12 onnx_thread_cap CKG_ORT_THREADS` + `is_mem
 
 ---
 
-## Token methodology — how to cite X%
+## Token methodology — how to cite a savings number
 
-Do not cite `99% whole-repo`. Pair `mean_savings_pct + mean_recall@10 + p50` at fixed `budget 800`:
+Do not cite `99% whole-repo` — `evaluation/runner.py:202` hardcodes
+`token_reduction=0.0` specifically to refuse that number. The baseline is
+always `expected_files` content only (`evaluation/external.py:184`), never
+the whole repo, and a savings number is never cited without its paired
+`recall@10`.
 
 ```bash
-python benchmarks/run_external.py --repo https://github.com/fastapi/fastapi --source-dir . \
-  --queries path/to/your-own-queries.json --output benchmarks/results/fastapi.json
-python benchmarks/run_external.py --recompute "benchmarks/results/*.json"  # mean_savings + recall
-ckg eval-ab --manifest evaluation/tasks.json --condition both --output results/ --agent-command "$AGENT_CMD"
+python benchmarks/run_external.py --repo <url> --source-dir <dir> \
+  --queries path/to/your-own-queries.json --output benchmarks/results/<name>.json
+python benchmarks/run_external.py --recompute "benchmarks/results/*.json"
 ```
 
-* `baseline = expected_files only` (`evaluation/external.py:184`) `context = build_context_pack(budget 800)` (`:197`) `ExternalReport.mean_savings_pct` — honest.
-* `evaluation/runner.py:202 token_reduction=0.0` (whole-repo indefensible) `dashboard/server.py:94 savings sum-over-events` not per-query.
-* `eval-ab` `total_tokens null stays null` (`ab_runner.py:17` never fabricated) requires real agent `CKG_AB_* env`.
+**Cite `aggregate_savings_pct`, not `mean_savings_pct`.** The report carries
+both, and they can disagree in sign. `mean_savings_pct` is the mean of each
+query's own ratio — a mean of ratios with wildly different denominators, so
+a handful of small files (where the context pack's fixed structural
+overhead costs more than the file itself) can swing it deeply negative even
+when the set saves real tokens overall. `aggregate_savings_pct` weights by
+actual token volume (`1 - mean_context_tokens / mean_baseline_tokens`,
+equivalent to summing baseline and context across every query and taking
+one ratio) — that's the number a claim should use.
+
+This is not hypothetical — it happened on the first real run. 11
+original queries (`benchmarks/self_queries.json`, written by hand, not
+derived from any other project) against this repo's own `retrieval/`
+package (`benchmarks/results/self_retrieval.json`):
+
+| | |
+|---|---|
+| Recall@10 | **1.00** (11/11) |
+| `mean_savings_pct` | **−168%** (misleading — see below) |
+| `aggregate_savings_pct` | **+16.7%** |
+
+Two large files (`reranker.py` 401 lines, `hybrid_retriever.py` 490
+lines) saved 76–78% of tokens each — a full read costs 3,300–3,800
+tokens, a symbol-level context pack costs under 850. Small files
+(under ~700 tokens whole) cost *more* through the context pack than a
+direct read, because the pack's structural overhead is roughly constant
+regardless of file size. `mean_savings_pct` weights those small-file
+losses the same as the large-file wins and comes out negative;
+`aggregate_savings_pct` reflects what actually happened across the
+token budget spent. **The claim that holds up: CKG saves tokens on
+files large enough that "the whole file" costs more than "the
+definition plus its relationships" — and costs more on trivially small
+ones.** Full per-query breakdown in `benchmarks/results/self_retrieval.json`.
 
 ---
 

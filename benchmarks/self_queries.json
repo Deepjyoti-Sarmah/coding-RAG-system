@@ -1,0 +1,13 @@
+[
+  {"query": "reciprocal rank fusion of ranked lists", "expected_files": ["ranking.py"], "category": "definition"},
+  {"query": "expand graph neighborhood one hop and two hop from a seed symbol", "expected_files": ["neighborhood.py"], "category": "definition"},
+  {"query": "cache the loaded index keyed by generation to avoid rematerializing it", "expected_files": ["index_cache.py"], "category": "definition"},
+  {"query": "count tokens with a real BPE tokenizer and a chars-per-token fallback", "expected_files": ["tokenizer.py"], "category": "definition"},
+  {"query": "vector search served by the sqlite-vec extension", "expected_files": ["sqlite_vec_store.py"], "category": "definition"},
+  {"query": "in-memory numpy fallback vector store when sqlite-vec is unavailable", "expected_files": ["numpy_vector_store.py"], "category": "definition"},
+  {"query": "abstract vector store interface and search hit result type", "expected_files": ["vector_store.py"], "category": "definition"},
+  {"query": "hybrid retrieval that fuses exact match full-text vector and graph expansion", "expected_files": ["hybrid_retriever.py"], "category": "definition"},
+  {"query": "rerank candidates with relationship and exact-match boosts", "expected_files": ["reranker.py"], "category": "definition"},
+  {"query": "build a context pack of definitions within a token budget", "expected_files": ["context_builder.py"], "category": "definition"},
+  {"query": "choose the vector store backend and wire retrieval onto a database path", "expected_files": ["index_queries.py"], "category": "definition"}
+]

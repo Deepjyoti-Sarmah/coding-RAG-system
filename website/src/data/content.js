@@ -136,6 +136,22 @@ export const BENCHMARK = {
   ],
 };
 
+// Real token-savings measurement: 11 original queries (written by hand,
+// not derived from any other project) against this repo's own retrieval/
+// package. Full breakdown: benchmarks/results/self_retrieval.json.
+export const TOKEN_SAVINGS = {
+  recall: "1.00",
+  recallLabel: "11/11 recall@10",
+  aggregatePct: "+16.7%",
+  meanPct: "-168%",
+  biggestWin: {
+    file: "reranker.py, hybrid_retriever.py",
+    detail: "3,300-3,800 tokens to read whole → under 850 as a context pack (76-78% saved)",
+  },
+  caveat:
+    "On files small enough that the context pack's own structure costs more than the file, savings go negative -- averaging per-query ratios hides that the set still saves tokens in aggregate.",
+};
+
 // Real, verifiable — nothing here is a usage estimate.
 export const STATS = [
   ["657", "tests passing"],

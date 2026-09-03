@@ -127,7 +127,7 @@ class TestExternalScorer(unittest.TestCase):
         self.assertEqual(reciprocal_rank(expected, ranked_none), 0.0)
         self.assertEqual(recall_at_k(expected, ranked_none, k=10), 0.0)
 
-    def test_load_external_questions_parses_cce_shape(self):
+    def test_load_external_questions_parses_query_expected_files_shape(self):
         data = [
             {"query": "How does X work?", "expected_files": ["a.py", "b.py"], "category": "core"},
             {"query": "Another?", "expected_files": ["c.py"]},
@@ -216,6 +216,46 @@ class TestExternalScorer(unittest.TestCase):
             # Mean aggregates also paired
             self.assertTrue(hasattr(report, "mean_recall_at_10"))
             self.assertTrue(hasattr(report, "mean_savings_pct"))
+
+    def test_aggregate_savings_is_token_weighted_not_mean_of_ratios(self):
+        # A handful of tiny files (context-pack overhead exceeds the file's
+        # own size) alongside one large file should not let mean_savings_pct
+        # (mean of per-query ratios) drag a token-weighted claim negative.
+        # This is the exact skew a self-authored benchmark against
+        # retrieval/ hit in practice: mean_savings_pct came back -1.68
+        # while the set saved 16.7% of tokens in aggregate.
+        from evaluation.external import ExternalQuestion, run_external_evaluation
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            # Three tiny files: context-pack overhead will exceed their size.
+            for name in ("tiny_a.py", "tiny_b.py", "tiny_c.py"):
+                (repo / name).write_text("def f(): pass\n", encoding="utf-8")
+            # One large file: real savings should show up here.
+            (repo / "big.py").write_text(
+                "\n".join(f"def fn_{i}():\n    return {i}\n" for i in range(200)),
+                encoding="utf-8",
+            )
+
+            questions = [
+                ExternalQuestion(query=name.split(".")[0], expected_files=frozenset({name}))
+                for name in ("tiny_a.py", "tiny_b.py", "tiny_c.py", "big.py")
+            ]
+            report = run_external_evaluation(repo, questions, provider=None, top_k=5, file_k=10)
+
+            self.assertTrue(hasattr(report, "aggregate_savings_pct"))
+            # The token-weighted number must match summing baseline/context
+            # across all queries and taking one ratio — not a bare average
+            # of report.mean_savings_pct-style per-query ratios.
+            total_baseline = sum(q.baseline_tokens for q in report.questions)
+            total_context = sum(q.context_tokens for q in report.questions)
+            expected_aggregate = 1.0 - (total_context / total_baseline)
+            self.assertAlmostEqual(report.aggregate_savings_pct, expected_aggregate, delta=1e-6)
+            # The two statistics must be able to disagree in sign — that's
+            # the whole reason aggregate_savings_pct exists.
+            if report.mean_savings_pct < 0:
+                self.assertGreater(report.aggregate_savings_pct, report.mean_savings_pct)
 
 
 if __name__ == "__main__":
