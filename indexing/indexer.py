@@ -53,6 +53,13 @@ class IndexRunReport:
 def reindex_index(db_path: str, root_dir: str, *, on_progress=None) -> IndexRunReport:
     from indexing.resource_governor import ProjectIndexLock
 
+    # Own the database directory rather than inheriting it. It used to appear
+    # only as a side effect of ProjectIndexLock writing .sg/.index.lock — and
+    # that lock is a no-op wherever fcntl is missing (Windows), so the
+    # directory never appeared and sqlite failed with "unable to open database
+    # file". Creating it here makes reindex_index correct on its own terms.
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
     with ProjectIndexLock(root_dir):
         previous_states = _load_previous_states(db_path)
         scan = scan_files(root_dir, previous_states)

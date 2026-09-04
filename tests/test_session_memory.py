@@ -3,6 +3,7 @@ import shutil
 import sqlite3
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 from session_memory import SessionService
@@ -40,7 +41,7 @@ class SessionMemoryTests(unittest.TestCase):
         first.decision("A" * 5000, "B" * 5000)
         second.decision("private other project")
         self.assertFalse(first.recall("private other"))
-        with sqlite3.connect(first.db_path) as conn:
+        with closing(sqlite3.connect(first.db_path)) as conn:
             row = conn.execute("select decision, reason from decisions").fetchone()
             self.assertLessEqual(len(row[0]), 2000); self.assertLessEqual(len(row[1]), 2000)
         self.assertEqual(first.prune(9999)["sessions"], 0)

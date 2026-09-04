@@ -15,7 +15,9 @@ _UUID_PATTERN = re.compile(
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 )
 _TIMESTAMP_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?\+00:00")
-_TMPDIR_PATTERN = re.compile(r"/tmp/tmp[A-Za-z0-9_]+")
+# Matches a temp root on either platform. repr() of a Windows path escapes
+# its separators, so the pattern has to tolerate "\\\\" as well as "/".
+_TMPDIR_PATTERN = re.compile(r"(?:/tmp|[A-Za-z]:(?:\\\\|/)[^'\"]*?[Tt]emp)(?:\\\\|/)tmp[A-Za-z0-9_]+")
 _MTIME_PATTERN = re.compile(r"\b1[0-9]{18}\b")
 _GENERATION_PATTERN = re.compile(r"\('generation', '[0-9]+'\)")
 
@@ -172,6 +174,9 @@ class TestDeltaPersistence(unittest.TestCase):
                 text = repr(tuple(row))
                 text = _UUID_PATTERN.sub("<uuid>", text)
                 text = _TIMESTAMP_PATTERN.sub("<ts>", text)
+                # repr() doubles backslashes, so the raw path never matches
+                # on Windows unless the escaped form is masked too.
+                text = text.replace(root_path.replace("\\", "\\\\"), "<root>")
                 text = text.replace(root_path, "<root>")
                 text = _TMPDIR_PATTERN.sub("<root>", text)
                 text = _MTIME_PATTERN.sub("<mtime>", text)

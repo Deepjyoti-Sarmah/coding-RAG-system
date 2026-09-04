@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 from indexing.indexer import reindex_index
@@ -15,7 +16,7 @@ class TestFallbackChunking(unittest.TestCase):
             self.assertGreater(report.parsed_files, 0)
             # check chunks contain a.html
             import sqlite3
-            with sqlite3.connect(db) as conn:
+            with closing(sqlite3.connect(db)) as conn:
                 rows = conn.execute("SELECT relative_path FROM chunks WHERE relative_path='a.html'").fetchall()
                 self.assertGreater(len(rows), 0)
 
@@ -25,7 +26,7 @@ class TestFallbackChunking(unittest.TestCase):
             db = default_db_path(tmp)
             reindex_index(db, tmp)
             import sqlite3
-            with sqlite3.connect(db) as conn:
+            with closing(sqlite3.connect(db)) as conn:
                 rows = conn.execute("SELECT relative_path FROM chunks WHERE relative_path='notes.md'").fetchall()
                 self.assertGreater(len(rows), 0)
 
@@ -35,6 +36,6 @@ class TestFallbackChunking(unittest.TestCase):
             db = default_db_path(tmp)
             reindex_index(db, tmp)
             import sqlite3
-            with sqlite3.connect(db) as conn:
+            with closing(sqlite3.connect(db)) as conn:
                 rows = conn.execute("SELECT relative_path FROM chunks WHERE relative_path='empty.md'").fetchall()
                 self.assertEqual(len(rows), 0)
