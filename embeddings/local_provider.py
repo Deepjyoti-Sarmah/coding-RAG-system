@@ -1,3 +1,6 @@
+from importlib import import_module
+from typing import Any
+
 import numpy as np
 
 from embeddings.provider import EmbeddingProvider
@@ -12,7 +15,12 @@ class LocalEmbeddingProvider(EmbeddingProvider):
         device: str | None = None,
     ) -> None:
         try:
-            from sentence_transformers import SentenceTransformer
+            # This import is deliberately lazy: sentence-transformers is an
+            # optional extra, so it is not installed in the base environment.
+            # Dynamic loading also keeps static analyzers from requiring an
+            # optional dependency that users may not have installed.
+            sentence_transformers: Any = import_module("sentence_transformers")
+            SentenceTransformer: Any = sentence_transformers.SentenceTransformer
         except ImportError as exc:
             raise RuntimeError(
                 "Local embeddings require 'sentence-transformers'. "
