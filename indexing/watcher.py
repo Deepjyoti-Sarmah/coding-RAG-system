@@ -6,6 +6,7 @@ quiet for a debounce window. Writes to the index database itself (the
 """
 
 import threading
+import time
 from pathlib import Path
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -39,6 +40,7 @@ class _DebouncedReindexer(FileSystemEventHandler):
         self._index_dir = Path(db_path).parent.resolve()
         self._lock = threading.Lock()
         self._timer: threading.Timer | None = None
+        self._last_event_at = 0.0
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         if event.is_directory:
@@ -57,6 +59,7 @@ class _DebouncedReindexer(FileSystemEventHandler):
             return
 
         with self._lock:
+            self._last_event_at = time.monotonic()
             if self._timer is not None:
                 self._timer.cancel()
 
@@ -68,6 +71,20 @@ class _DebouncedReindexer(FileSystemEventHandler):
             self._timer.start()
 
     def _reindex(self) -> None:
+        # Timer cancellation is best-effort: a callback may already be
+        # starting when another filesystem event arrives. Re-check the quiet
+        # period here so a burst still produces one reindex on slower CI
+        # runners.
+        with self._lock:
+            remaining = self._debounce_seconds - (
+                time.monotonic() - self._last_event_at
+            )
+            if remaining > 0:
+                self._timer = threading.Timer(remaining, self._reindex)
+                self._timer.daemon = True
+                self._timer.start()
+                return
+
         Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
         report = reindex_index(self._db_path, self._root)
 
