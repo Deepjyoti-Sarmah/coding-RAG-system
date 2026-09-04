@@ -180,17 +180,134 @@
 - [ ] Already `retrieval/reranker.py:20 learned_weights.json` stub + `session_memory/service.py:203 retrieval` logging. Add a training loop: `evaluation/ab_runner.py:129` paired `with_sg/without_sg` 20 tasks `evaluation/tasks.json` → logistic `REL/EXACT/GRAPH_DISTANCE` → `retrieval/learned_weights.json`. Gate `sg eval --embed mean_recall≥0.90` in `tests/test_evaluation_metrics.py:1` (fixture `0.83/0.78` `symbolgraph/cli.py:295` baseline).
 - Verify: `sg eval --embed | grep mean_recall` + `ls retrieval/learned_weights.json`
 
-### P5-4: Large-repo proof + observability
+### P5-4: Large-repo proof + token/$ savings
 
-- [ ] Run `benchmarks/run_external.py --repo <url> --source-dir <dir> --queries <path> --output benchmarks/results/<name>.json` against a real repo with a self-authored query set (write your own `{query, expected_files}` list — don't reuse someone else's benchmark suite), weekly via `cron`/`ci.yml`. Store `ExternalReport mean_savings+recall p50` `evaluation/external.py:262`. Add `GET /api/metrics` `initial_ms/incremental_ms/cache_hit_rate` from `evaluation/runner.py:300` to `symbolgraph/dashboard/app.py:98`.
-- Verify: `python benchmarks/run_external.py --recompute "benchmarks/results/*.json" | grep mean_savings` + `curl -s :8765/api/metrics | jq .cache_hit_rate`
+> **The one rule this task exists to enforce:** you do not pick the benchmark
+> to fit the number. A plan that says "choose repos where `expected_files` are
+> large, so the percentage clears 90" has selected its denominator to reach a
+> predetermined headline — which is exactly what makes a competitor's 94%
+> unbelievable, and adopting it with a better baseline definition just makes it
+> a better-documented version of the same thing. The one asset this project has
+> is that it publishes the unflattering number. Spend that and there is nothing
+> left to sell.
+>
+> The finding is already in hand and it is not a single percentage: **savings
+> scale with file size.** `benchmarks/results/self_retrieval.json` shows 76-78%
+> on the two large files (`hybrid_retriever.py` 3773→840, `reranker.py`
+> 3323→811) and deeply negative on small ones (`ranking.py` 96→845) because the
+> context pack's fixed structure costs ~800 tokens regardless. Report *that*,
+> segmented, and the large-file rows are credible precisely because the small
+> ones are printed next to them.
+
+#### P5-4a — Pre-registration (do this first, in its own commit, before any run)
+
+- [ ] Pick 3 repos on a criterion recorded **before** measuring, not after.
+      Default: `local_fastapi/`, `local_django/`, `local_fiber/` — already
+      pinned on disk (no clone drift), spanning Python/Python/Go. Write the
+      criterion and the pinned commit SHAs into `benchmarks/PREREGISTRATION.md`.
+- [ ] Write 15-20 original `{query, expected_files, category}` per repo by
+      reading the code, using `benchmarks/self_queries.json` as the shape.
+      **Do not look at file sizes while writing them**, and do not consult any
+      other project's query list (`P6-6`). Commit the query files **before**
+      the first run, so git history proves they weren't tuned to the outcome.
+- [ ] In the same commit, pre-declare in `PREREGISTRATION.md`: the recall gate
+      (`mean_recall_at_10 >= 0.90` to headline a repo), the size buckets below,
+      and **that every repo run gets published whatever it returns**. A repo may
+      only be dropped from a *headline* for failing the pre-declared recall
+      gate — its numbers still get printed.
+- [ ] Write down what would falsify the claim: if the >4k bucket does not clear
+      ~60% aggregate, the "savings scale with size" story is wrong and the
+      honest output is the negative result.
+
+#### P5-4b — Harness (real gap, verified)
+
+`evaluation/external.py` already computes `mean_baseline_tokens`,
+`mean_context_tokens`, `mean_savings_pct` and `aggregate_savings_pct`, and
+`run_external_evaluation` already takes `token_budget: int = 800` — but
+`benchmarks/run_external.py` **serializes none of it**: its `output_data` dict
+carries only precision/recall/MRR/latency, and its CLI has no budget flag.
+`self_retrieval.json` only has token fields because they were written in by hand.
+
+- [ ] `benchmarks/run_external.py`: add `--token-budget` (default 800) and
+      `--budgets 800,1200,2000`; loop `run_external_evaluation(...,
+      token_budget=b)` and nest as `budgets: {"800": {...}, ...}`, keeping the
+      flat top-level keys for back-compat with existing readers.
+- [ ] Serialize the token fields per budget — `mean_baseline_tokens`,
+      `mean_context_tokens`, `mean_savings_pct`, `aggregate_savings_pct` — plus
+      per-question `baseline_tokens`/`context_tokens`/`savings_pct` (the fields
+      already exist on `ExternalQuestionResult`).
+- [ ] Add `baseline_bucket` per question: `<1k`, `1k-4k`, `>4k` by
+      `baseline_tokens`, and aggregate per bucket per budget. **This is the
+      headline unit, not the whole-run mean.**
+- [ ] Extend `_recompute_file` to recompute per-budget and per-bucket aggregates
+      (it already recomputes `aggregate_savings_pct` and enforces strict
+      equality on stored precision/recall/RR — keep that check).
+- [ ] **No change to `evaluation/external.py:196` baseline logic.**
+      `baseline = expected_files` content is the honesty moat; whole-repo stays
+      refused at `evaluation/runner.py:202`.
+
+#### P5-4c — Tests (extend, don't replace)
+
+- [ ] `test_multi_budget_monotonic` — across 800/1200/2000, `context_tokens` is
+      non-decreasing and `aggregate_savings_pct` is non-increasing. Catches a
+      budget that silently isn't applied.
+- [ ] `test_bucket_assignment_boundaries` — 999/1000/4000/4001 land in the
+      intended buckets; a bucket with no questions reports null, not 0.0
+      (0.0 would read as "no savings" rather than "no data").
+- [ ] `test_recompute_strict_equality` — already the behaviour of
+      `_recompute_file`; pin it so a recompute can never quietly restate a
+      stored metric.
+- [ ] Keep `test_aggregate_savings_is_token_weighted_not_mean_of_ratios` green —
+      it is the reason the bucket table is aggregate-weighted.
+
+#### P5-4d — Dollar conversion
+
+- [ ] `retrieval/pricing.py`: a small **dated** table, written from the current
+      published rates, not copied from another project. As of **2026-06-24**:
+      Claude Opus 5 `$5.00/$25.00`, Sonnet 5 `$2.00/$10.00`, Haiku 4.5
+      `$1.00/$5.00` per 1M input/output. Default `sonnet`. Include the date in
+      the module and print it with every dollar figure.
+- [ ] Input tokens only in v1: `dollars_saved = (mean_baseline_tokens -
+      mean_context_tokens) * price_in / 1e6`, computed from the aggregate, never
+      from the mean of per-query ratios. Say "input tokens only" in the output.
+- [ ] Dollars are a **projection, not a measurement** — they depend on a model
+      price and a query volume this project does not control. Always render as
+      a formula with its inputs visible (`N queries × tokens saved × $/1M`),
+      never as a bare "saves $X".
+- [ ] `sg savings --json` reads `benchmarks/results/*.json`; `GET /api/savings`
+      returns `{bucket, budget, aggregate_pct, tokens_saved, dollars_saved,
+      model, price_date, recall_at_10}`.
+- [ ] Fix the stale hardcoded metrics in `symbolgraph/dashboard/app.py`
+      (coverage/tests_passed drift from the measured `658` / `80.54%`).
+
+#### P5-4e — Publication
+
+- [ ] `benchmarks/results/SUMMARY.md` — repo × budget × bucket, with commit SHA
+      and queries-file link per row. (Note: the old `SUMMARY.md` was deleted
+      deliberately in the third-party purge, not lost.)
+- [ ] `README.md` `## Token methodology` gains the bucket table and the dollar
+      formula. `website/src/data/content.js` `TOKEN_SAVINGS` becomes per-repo ×
+      per-bucket; keep the struck-through mean-of-ratios and the `+16.7%`
+      self row as the small-file anchor.
+- [ ] Every published claim string carries: aggregate% **+ recall@10 + p50 +
+      budget + bucket + baseline definition + commit SHA**. No dollar figure
+      without model + price + price date.
+
+- **Acceptance:** the table can be regenerated from a clean checkout by running
+  the pinned commands, and every number in `README.md` and the website is
+  `grep`-able in a tracked `benchmarks/results/*.json`.
+- **Verify:** `uv run python benchmarks/run_external.py --recompute "benchmarks/results/*.json"` (strict equality passes) · `uv run pytest tests/test_external_eval.py tests/test_context_builder.py tests/test_tokenizer_fallback.py -q` · `uv run pytest -q` stays at or above `658 passed`, coverage `>=80%`.
+
+- **Effort:** query authorship is the bottleneck at ~2-3 days and cannot be
+  shortcut — it is the part that makes the result mean anything. Harness +
+  pricing ~1 day, runs ~0.5 day/repo, publication ~0.5 day.
 
 ### P5-5: Correctness guardrails
 
 - [ ] **Parse-once invariant** — assert `Tree` not re-parsed per file `analysis/pipeline.py:70 run_extraction_passes` thread-local `parsing/tree_sitter_parser.py:14` + `hypothesis` on shadowing `tests/test_name_resolution.py:166` `member_expressions 292` `len(path)>2 → UNRESOLVED`.
 - Verify: `uv run pytest tests/test_name_resolution.py tests/test_member_expressions.py -v` + `hypothesis 10k` no crash
 
-**Execute order:** `S1+S2 (done) → S4+P5-2 (done) → P5-3 train (needs a real agent) → P5-4 benchmark (needs original queries)`.
+**Execute order:** `S1+S2 (done) → S4+P5-2 (done) → P5-3 train (needs a real agent) → P5-4 benchmark`. Within `P5-4` the order is not negotiable: `P5-4a` pre-registration (queries committed **before** the first run) → `P5-4b` harness → `P5-4c` tests → `P5-4d` dollars → `P5-4e` publish. Running before the queries are committed forfeits the only thing that makes the result credible, because nothing afterwards can prove the queries weren't tuned to the outcome.
 
 > **Honesty note on P5-3:** `retrieval/learned_weights.json` currently self-documents as `"_method": "grid search relationship/exact vs heuristic"` on the fixture. A 2-parameter grid search over a self-authored 20-task fixture is a *tuned heuristic*, not a learned reranker. Either finish P5-3 by fitting on external repos (fitting on the same fixture you measure against just overfits it more precisely), or call it "tuned weights" everywhere it's described — not "learns." Both are fine. Both at once is not.
 
