@@ -317,11 +317,11 @@
 - **Why:** 217 commits, **zero tags**. There is no installable known-good CKG and no way to say "fixed in 0.1.1". The hard half is already done — `.github/workflows/ci.yml:19-37` `build` installs the wheel and runs `ckg init` from outside the checkout, which is exactly the check that proves the packaging config.
 - **Target:** `.github/workflows/publish.yml` (new), modelled on `code-context-engine/.github/workflows/publish.yml`
 - **Tasks:**
-  - [ ] `publish.yml` — trigger `on: push: tags: ['v*']`; `uv build`; publish via PyPI **trusted publishing** (OIDC, `permissions: id-token: write`) — no API token in secrets.
-  - [ ] Require the `test` job to pass before publish.
-  - [ ] Only after `P6-1..P6-5` are green: `git tag -a v0.1.0 -m "..." && git push origin v0.1.0`.
-- **Acceptance:** tag push produces a PyPI release; `uv tool install code-knowledge-graph` works from a clean machine.
-- **Verify:** `git tag | grep v0.1.0 && test -f .github/workflows/publish.yml`
+  - [x] `.github/workflows/publish.yml` — trigger `on: push: tags: ['v*']`; three jobs: `test` (full `ubuntu/macos/windows × 3.11/3.12/3.13` matrix, ruff + pytest + 80% gate, same as `ci.yml`) → `build` (asserts the pushed tag matches `pyproject.toml`'s `version` before building, `uv build`, uploads the dist artifact) → `publish` (PyPI **trusted publishing**, OIDC, `permissions: id-token: write`, `environment: pypi` — no API token in secrets, unlike CCE's token-based `code-context-engine/.github/workflows/publish.yml`).
+  - [x] `test` gates `build` gates `publish` via `needs:` — nothing publishes without a green full matrix on the tagged commit.
+  - [ ] **Not done — needs your decision, not mine:** `git tag -a v0.1.0 -m "..." && git push origin v0.1.0`. Pushing a tag is what actually triggers `publish.yml`; if PyPI trusted publishing isn't configured yet (one-time step on pypi.org: project → Publishing → add this repo + `publish.yml` + environment `pypi` as a trusted publisher) the `publish` job will fail closed rather than leak a token, but the tag itself is still an outward, hard-to-cleanly-reverse action on a shared branch. Left for explicit go-ahead.
+- **Acceptance:** tag push produces a PyPI release; `uv tool install code-knowledge-graph` works from a clean machine. — **Workflow DONE 2026-09-04** (valid YAML, verified). **Tag/publish: pending.**
+- **Verify:** `git tag | grep v0.1.0 && test -f .github/workflows/publish.yml` — `publish.yml` exists; tag not yet pushed.
 
 ### P6-9: `server.json` — MCP registry listing
 
