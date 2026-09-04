@@ -1,0 +1,22 @@
+[
+  {"query": "Model save delete and refresh_from_db persistence methods", "expected_files": ["db/models/base.py"], "category": "models"},
+  {"query": "QuerySet filter exclude annotate and aggregation chaining", "expected_files": ["db/models/query.py"], "category": "orm"},
+  {"query": "model field classes CharField IntegerField ForeignKey", "expected_files": ["db/models/fields/__init__.py"], "category": "models"},
+  {"query": "field lookups exact in contains gt lt transforms", "expected_files": ["db/models/lookups.py"], "category": "orm"},
+  {"query": "migration autodetector detecting model changes", "expected_files": ["db/migrations/autodetector.py"], "category": "migrations"},
+  {"query": "migration state ModelState rendering from models", "expected_files": ["db/migrations/state.py"], "category": "migrations"},
+  {"query": "reverse() URL reversing by view name", "expected_files": ["urls/base.py"], "category": "urls"},
+  {"query": "URLResolver path converters and route matching", "expected_files": ["urls/resolvers.py"], "category": "urls"},
+  {"query": "class based View dispatch and as_view", "expected_files": ["views/generic/base.py"], "category": "views"},
+  {"query": "ListView pagination with paginate_by", "expected_files": ["views/generic/list.py"], "category": "views"},
+  {"query": "Form full_clean is_valid and cleaned_data validation", "expected_files": ["forms/forms.py"], "category": "forms"},
+  {"query": "ModelForm save and Meta model binding", "expected_files": ["forms/models.py"], "category": "forms"},
+  {"query": "ModelAdmin list_display search_fields configuration", "expected_files": ["contrib/admin/options.py"], "category": "admin"},
+  {"query": "authenticate login and logout user session functions", "expected_files": ["contrib/auth/__init__.py"], "category": "auth"},
+  {"query": "password hashers make_password and check_password", "expected_files": ["contrib/auth/hashers.py"], "category": "auth"},
+  {"query": "local memory cache backend get set delete", "expected_files": ["core/cache/backends/locmem.py"], "category": "cache"},
+  {"query": "template Node Parser and rendering compiled templates", "expected_files": ["template/base.py"], "category": "templates"},
+  {"query": "CommonMiddleware APPEND_SLASH and PREPEND_WWW handling", "expected_files": ["middleware/common.py"], "category": "middleware"},
+  {"query": "Signal send and post_save receiver dispatch", "expected_files": ["dispatch/dispatcher.py"], "category": "signals"},
+  {"query": "test Client get and post requests in tests", "expected_files": ["test/client.py"], "category": "testing"}
+]

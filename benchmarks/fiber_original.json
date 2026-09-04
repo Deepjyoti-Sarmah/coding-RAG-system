@@ -1,0 +1,22 @@
+[
+  {"query": "App routing Get Post Put Delete and Listen startup", "expected_files": ["app.go"], "category": "routing"},
+  {"query": "Ctx Params Query BodyParser request context accessors", "expected_files": ["ctx.go"], "category": "context"},
+  {"query": "router stack matching named parameters and wildcards", "expected_files": ["router.go"], "category": "routing"},
+  {"query": "route grouping with Group prefix and middleware", "expected_files": ["group.go"], "category": "routing"},
+  {"query": "binding JSON body query and form values into structs", "expected_files": ["bind.go"], "category": "binding"},
+  {"query": "HTTP error creation with NewError status codes", "expected_files": ["error.go"], "category": "errors"},
+  {"query": "redirect helpers To Route and Back", "expected_files": ["redirect.go"], "category": "redirect"},
+  {"query": "hooks OnRoute OnListen OnShutdown lifecycle events", "expected_files": ["hooks.go"], "category": "hooks"},
+  {"query": "CORS middleware configuration and preflight handling", "expected_files": ["middleware/cors/cors.go"], "category": "middleware"},
+  {"query": "logger middleware request logging output", "expected_files": ["middleware/logger/default_logger.go"], "category": "middleware"},
+  {"query": "rate limiter fixed window request throttling", "expected_files": ["middleware/limiter/limiter_fixed.go"], "category": "middleware"},
+  {"query": "request struct AcquireReq and method headers access", "expected_files": ["req.go"], "category": "request"},
+  {"query": "response Send SendString SendStatus and JSON helpers", "expected_files": ["res.go"], "category": "response"},
+  {"query": "registering handlers with Add method and route names", "expected_files": ["register.go"], "category": "routing"},
+  {"query": "path matching and parameter extraction from routes", "expected_files": ["path.go"], "category": "routing"},
+  {"query": "mounting sub-applications with Mount", "expected_files": ["mount.go"], "category": "mount"},
+  {"query": "TLS listener and graceful shutdown with Listener", "expected_files": ["listen.go"], "category": "server"},
+  {"query": "prefork child processes for multi-core serving", "expected_files": ["prefork.go"], "category": "server"},
+  {"query": "cluster CPU and memory constraints detection", "expected_files": ["constraint.go"], "category": "server"},
+  {"query": "storage interface Get Set Delete for sessions and cache", "expected_files": ["storage_interface.go"], "category": "storage"}
+]
