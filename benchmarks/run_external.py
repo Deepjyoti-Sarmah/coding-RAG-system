@@ -132,6 +132,12 @@ def _recompute_file(path: Path) -> None:
         if stored_rr is not None and exp_rr != stored_rr:
             raise ValueError(f"{path}: reciprocal_rank mismatch for query {q.get('query')!r}: stored {stored_rr} != recomputed {exp_rr}")
 
+        # Backfill when a hand-written report lacks a stored metric; the
+        # strict checks above still fire whenever a stored value exists.
+        q.setdefault("precision_at_10", exp_prec)
+        q.setdefault("recall_at_10", exp_rec)
+        q.setdefault("reciprocal_rank", exp_rr)
+
         ceiling = _precision_ceiling_at_k(expected, k=10)
         normalized = (exp_prec / ceiling) if ceiling > 0 else 0.0
         over_ret = _precision_over_returned(expected, ranked)

@@ -39,7 +39,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 96,
       "context_tokens": 845,
-      "savings_pct": -7.802083333333334
+      "savings_pct": -7.802083333333334,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "baseline_bucket": "<1k"
     },
     {
       "query": "expand graph neighborhood one hop and two hop from a seed symbol",
@@ -62,7 +67,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 577,
       "context_tokens": 832,
-      "savings_pct": -0.4419410745233969
+      "savings_pct": -0.4419410745233969,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "baseline_bucket": "<1k"
     },
     {
       "query": "cache the loaded index keyed by generation to avoid rematerializing it",
@@ -85,7 +95,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 362,
       "context_tokens": 860,
-      "savings_pct": -1.3756906077348066
+      "savings_pct": -1.3756906077348066,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "baseline_bucket": "<1k"
     },
     {
       "query": "count tokens with a real BPE tokenizer and a chars-per-token fallback",
@@ -105,7 +120,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 245,
       "context_tokens": 860,
-      "savings_pct": -2.510204081632653
+      "savings_pct": -2.510204081632653,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.14285714285714285,
+      "baseline_bucket": "<1k"
     },
     {
       "query": "vector search served by the sqlite-vec extension",
@@ -128,7 +148,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 298,
       "context_tokens": 827,
-      "savings_pct": -1.7751677852348995
+      "savings_pct": -1.7751677852348995,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "baseline_bucket": "<1k"
     },
     {
       "query": "in-memory numpy fallback vector store when sqlite-vec is unavailable",
@@ -151,7 +176,12 @@
       "reciprocal_rank": 0.5,
       "baseline_tokens": 415,
       "context_tokens": 799,
-      "savings_pct": -0.925301204819277
+      "savings_pct": -0.925301204819277,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "baseline_bucket": "<1k"
     },
     {
       "query": "abstract vector store interface and search hit result type",
@@ -174,7 +204,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 144,
       "context_tokens": 905,
-      "savings_pct": -5.284722222222222
+      "savings_pct": -5.284722222222222,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "baseline_bucket": "<1k"
     },
     {
       "query": "hybrid retrieval that fuses exact match full-text vector and graph expansion",
@@ -197,7 +232,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 3773,
       "context_tokens": 840,
-      "savings_pct": 0.7773654916512059
+      "savings_pct": 0.7773654916512059,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "baseline_bucket": "1k-4k"
     },
     {
       "query": "rerank candidates with relationship and exact-match boosts",
@@ -217,7 +257,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 3323,
       "context_tokens": 811,
-      "savings_pct": 0.7559434246163106
+      "savings_pct": 0.7559434246163106,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.14285714285714285,
+      "baseline_bucket": "1k-4k"
     },
     {
       "query": "build a context pack of definitions within a token budget",
@@ -238,7 +283,12 @@
       "reciprocal_rank": 1.0,
       "baseline_tokens": 1122,
       "context_tokens": 856,
-      "savings_pct": 0.2370766488413547
+      "savings_pct": 0.2370766488413547,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.125,
+      "baseline_bucket": "1k-4k"
     },
     {
       "query": "choose the vector store backend and wire retrieval onto a database path",
@@ -261,7 +311,36 @@
       "reciprocal_rank": 0.5,
       "baseline_tokens": 724,
       "context_tokens": 799,
-      "savings_pct": -0.10359116022099446
+      "savings_pct": -0.10359116022099446,
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "baseline_bucket": "<1k"
     }
-  ]
+  ],
+  "mean_precision_over_returned": 0.11006493506493507,
+  "buckets": {
+    "<1k": {
+      "count": 8,
+      "mean_baseline_tokens": 357.625,
+      "mean_context_tokens": 840.875,
+      "aggregate_savings_pct": -1.351275777700105,
+      "mean_recall_at_10": 1.0
+    },
+    "1k-4k": {
+      "count": 3,
+      "mean_baseline_tokens": 2739.3333333333335,
+      "mean_context_tokens": 835.6666666666666,
+      "aggregate_savings_pct": 0.6949379411048917,
+      "mean_recall_at_10": 1.0
+    },
+    ">4k": {
+      "count": 0,
+      "mean_baseline_tokens": null,
+      "mean_context_tokens": null,
+      "aggregate_savings_pct": null,
+      "mean_recall_at_10": null
+    }
+  }
 }
