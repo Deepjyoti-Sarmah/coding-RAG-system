@@ -21,6 +21,7 @@ def create_app(project: str):
     # Reuse logic from DashboardHandler by instantiating a dummy server
     # For simplicity, we proxy to the same handlers via direct calls
     import sqlite3
+    from contextlib import closing
     from pathlib import Path
 
     from session_memory import session_db_path
@@ -55,11 +56,11 @@ def create_app(project: str):
         if Path(db).exists():
             x = cmd_status(db)
             out.update(index_generation=x.get("generation"), document_count=x.get("documents", 0), symbol_count=x.get("symbols", 0), chunk_count=x.get("chunks", 0))
-            with sqlite3.connect(db) as c:
+            with closing(sqlite3.connect(db)) as c:
                 out["relationship_count"] = c.execute("select count(*) from relationships").fetchone()[0]
         sdb = Path(session_db_path(project))
         if sdb.exists():
-            with sqlite3.connect(sdb) as c:
+            with closing(sqlite3.connect(sdb)) as c:
                 out["active_sessions"] = c.execute("select count(*) from sessions where status='active'").fetchone()[0]
                 out["completed_sessions"] = c.execute("select count(*) from sessions where status='completed'").fetchone()[0]
                 out["retrieval_events"], out["context_tokens"], out["baseline_tokens"] = c.execute("select count(*),coalesce(sum(context_tokens),0),coalesce(sum(baseline_tokens),0) from retrieval_events").fetchone()
@@ -77,7 +78,7 @@ def create_app(project: str):
         p = Path(session_db_path(project))
         rows = []
         if p.exists():
-            with sqlite3.connect(p) as c:
+            with closing(sqlite3.connect(p)) as c:
                 c.row_factory = sqlite3.Row
                 for r in c.execute("select s.*, (select count(*) from session_events e where e.session_id=s.id) event_count,(select count(*) from decisions d where d.session_id=s.id) decision_count,(select count(*) from code_areas a where a.session_id=s.id) code_area_count,(select count(*) from retrieval_events v where v.session_id=s.id) retrieval_event_count from sessions s order by started_at desc limit 100"):
                     rows.append(dict(r))
@@ -104,7 +105,7 @@ def create_app(project: str):
         db = default_db_path(project)
         if not Path(db).exists():
             return {"files": []}
-        with sqlite3.connect(db) as c:
+        with closing(sqlite3.connect(db)) as c:
             rows = c.execute("select relative_path, count(*) as chunks from chunks group by relative_path order by relative_path").fetchall()
             return {"files": [{"path": r[0], "chunks": r[1]} for r in rows]}
 
@@ -117,7 +118,7 @@ def create_app(project: str):
         if not sdb.exists():
             out: dict = {"savings_percentage": None, "retrieval_events": 0}
         else:
-            with sqlite3.connect(sdb) as c:
+            with closing(sqlite3.connect(sdb)) as c:
                 row = c.execute("select count(*),coalesce(sum(context_tokens),0),coalesce(sum(baseline_tokens),0) from retrieval_events").fetchone()
                 cnt, ct, bt = row
                 pct = round((1 - ct / bt) * 100, 2) if bt else None
@@ -167,7 +168,7 @@ def create_app(project: str):
             try:
                 import sqlite3
 
-                with sqlite3.connect(db) as c:
+                with closing(sqlite3.connect(db)) as c:
                     row = c.execute("SELECT value FROM index_metadata WHERE key='merkle_root'").fetchone()
                     if row:
                         out["merkle_root"] = row[0]

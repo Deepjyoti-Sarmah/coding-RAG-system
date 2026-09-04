@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, cast
@@ -134,10 +135,10 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
         db=default_db_path(project); out: dict[str, Any]={"project":Path(project).name,"project_path":project,"index_generation":None,"document_count":0,"symbol_count":0,"chunk_count":0,"relationship_count":0,"active_sessions":0,"completed_sessions":0,"retrieval_events":0,"context_tokens":0,"baseline_tokens":0,"savings_percentage":None}
         if Path(db).exists():
             x=cmd_status(db); out.update(index_generation=x.get("generation"),document_count=x.get("documents",0),symbol_count=x.get("symbols",0),chunk_count=x.get("chunks",0))
-            with sqlite3.connect(db) as c: out["relationship_count"]=c.execute("select count(*) from relationships").fetchone()[0]
+            with closing(sqlite3.connect(db)) as c: out["relationship_count"]=c.execute("select count(*) from relationships").fetchone()[0]
         sdb=Path(session_db_path(project))
         if sdb.exists():
-            with sqlite3.connect(sdb) as c:
+            with closing(sqlite3.connect(sdb)) as c:
                 out["active_sessions"]=c.execute("select count(*) from sessions where status='active'").fetchone()[0]; out["completed_sessions"]=c.execute("select count(*) from sessions where status='completed'").fetchone()[0]
                 out["retrieval_events"],out["context_tokens"],out["baseline_tokens"]=c.execute("select count(*),coalesce(sum(context_tokens),0),coalesce(sum(baseline_tokens),0) from retrieval_events").fetchone()
         if out["baseline_tokens"]:  # type: ignore[truthy-function]
@@ -150,7 +151,7 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
         project = cast(DashboardServer, self.server).project
         rows: list[dict[str, Any]]=[]; p=Path(session_db_path(project))
         if p.exists():
-            with sqlite3.connect(p) as c:
+            with closing(sqlite3.connect(p)) as c:
                 c.row_factory=sqlite3.Row
                 for r in c.execute("select s.*, (select count(*) from session_events e where e.session_id=s.id) event_count,(select count(*) from decisions d where d.session_id=s.id) decision_count,(select count(*) from code_areas a where a.session_id=s.id) code_area_count,(select count(*) from retrieval_events v where v.session_id=s.id) retrieval_event_count from sessions s order by started_at desc limit 100"): rows.append(dict(r))
         return self._send({"sessions":rows})
@@ -158,7 +159,7 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
         project = cast(DashboardServer, self.server).project
         p=Path(session_db_path(project))
         if not p.exists(): return self._send({"error":"session not found"},404)
-        with sqlite3.connect(p) as c:
+        with closing(sqlite3.connect(p)) as c:
             c.row_factory=sqlite3.Row; s=c.execute("select * from sessions where id=? and project_path=?",(sid,project)).fetchone()
             if not s:return self._send({"error":"session not found"},404)
             def all_(table: str) -> list[dict[str, Any]]: return [dict(x) for x in c.execute(f"select * from {table} where session_id=? order by timestamp,id",(sid,))]
@@ -173,7 +174,7 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
         out: dict[str, Any] = {"merkle_root": None, "generation": None, "timestamp": int(time.time())}
         if Path(db).exists():
             try:
-                with sqlite3.connect(db) as c:
+                with closing(sqlite3.connect(db)) as c:
                     row = c.execute("SELECT value FROM index_metadata WHERE key='merkle_root'").fetchone()
                     if row:
                         out["merkle_root"] = row[0]

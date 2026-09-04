@@ -59,8 +59,15 @@ def iter_repo_files(path: str | Path) -> Iterator[tuple[Path, str]]:
         if should_skip_file(file_path):
             continue
 
+        # as_posix(), not str(): str() renders OS-native separators, so the
+        # same repo indexed on Windows would store "src\auth.ts" while every
+        # query, ignore rule and import resolver speaks "src/auth.ts". This is
+        # the single point where a path enters the index, so normalising here
+        # keeps the whole store platform-independent.
         relative_path = (
-            file_path.name if is_single_file else str(file_path.relative_to(root_path))
+            file_path.name
+            if is_single_file
+            else file_path.relative_to(root_path).as_posix()
         )
 
         if ignore_rules is not None and ignore_rules.is_ignored(relative_path):
