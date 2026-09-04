@@ -51,6 +51,55 @@ def clone_repo(repo_url: str, dest: Path, commit: str | None = None) -> str:
         return actual
 
 
+def baseline_bucket(baseline_tokens: float) -> str:
+    """Size bucket for a question by its baseline tokens.
+
+    Buckets are the pre-registered headline unit (PREREGISTRATION.md): the
+    whole-run mean mixes 96-token files with 3,800-token files, so report
+    per bucket. Boundaries pinned by test_bucket_assignment_boundaries.
+    """
+    if baseline_tokens < 1000:
+        return "<1k"
+    if baseline_tokens <= 4000:
+        return "1k-4k"
+    return ">4k"
+
+
+BUCKETS = ("<1k", "1k-4k", ">4k")
+
+
+def _bucket_aggregates(questions: list[dict]) -> dict:
+    """Aggregate savings + recall per baseline bucket.
+
+    A bucket with no questions reports null fields, not 0.0 — 0.0 would
+    read as "no savings" rather than "no data".
+    """
+    from evaluation.metrics import mean, token_reduction
+
+    out: dict = {}
+    for bucket in BUCKETS:
+        members = [q for q in questions if q.get("baseline_bucket") == bucket]
+        if not members:
+            out[bucket] = {
+                "count": 0,
+                "mean_baseline_tokens": None,
+                "mean_context_tokens": None,
+                "aggregate_savings_pct": None,
+                "mean_recall_at_10": None,
+            }
+            continue
+        mean_baseline = mean(q["baseline_tokens"] for q in members)
+        mean_context = mean(q["context_tokens"] for q in members)
+        out[bucket] = {
+            "count": len(members),
+            "mean_baseline_tokens": mean_baseline,
+            "mean_context_tokens": mean_context,
+            "aggregate_savings_pct": token_reduction(mean_context, mean_baseline) if mean_baseline else 0.0,
+            "mean_recall_at_10": mean(q["recall_at_10"] for q in members),
+        }
+    return out
+
+
 def _recompute_file(path: Path) -> None:
     """Recompute ceiling-aware metrics for an existing report in-place."""
     from evaluation.external import (
@@ -112,6 +161,28 @@ def _recompute_file(path: Path) -> None:
     if "mean_baseline_tokens" in data and "mean_context_tokens" in data:
         data["aggregate_savings_pct"] = token_reduction(data["mean_context_tokens"], data["mean_baseline_tokens"])
 
+    # Backfill baseline buckets + per-bucket aggregates for reports that
+    # predate them (bucket missing or reports without per-question tokens).
+    needs_buckets = any("baseline_bucket" not in q for q in questions)
+    if needs_buckets and all("baseline_tokens" in q and "context_tokens" in q for q in questions):
+        for q in questions:
+            q["baseline_bucket"] = baseline_bucket(q.get("baseline_tokens", 0))
+    if any("baseline_bucket" in q for q in questions):
+        data["buckets"] = _bucket_aggregates(questions)
+
+    # Per-budget blocks (multi-budget runs): recompute each block's
+    # aggregates and buckets the same way, keeping strict-equality checks above.
+    for block in data.get("budgets", {}).values():
+        bq = block.get("questions", [])
+        if all("baseline_tokens" in q and "context_tokens" in q for q in bq):
+            for q in bq:
+                q.setdefault("baseline_bucket", baseline_bucket(q.get("baseline_tokens", 0)))
+            block["buckets"] = _bucket_aggregates(bq)
+        if "mean_baseline_tokens" in block and "mean_context_tokens" in block:
+            block["aggregate_savings_pct"] = token_reduction(
+                block["mean_context_tokens"], block["mean_baseline_tokens"]
+            )
+
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     print(f"Recomputed {path}: P@10 {mean_prec:.3f} ceiling {mean_ceiling:.3f} norm {mean_norm:.3f} over_ret {mean_over:.3f}", file=sys.stderr)
 
@@ -124,6 +195,8 @@ def main() -> int:
     parser.add_argument("--commit", default=None, help="Commit SHA to pin (default: HEAD)")
     parser.add_argument("--output", default=None, help="Output JSON path")
     parser.add_argument("--no-embed", action="store_true", help="Disable vector search (default: enabled)")
+    parser.add_argument("--token-budget", type=int, default=800, help="Context-pack token budget for the run (default: 800)")
+    parser.add_argument("--budgets", default=None, help="Comma-separated budgets to run, e.g. 800,1200,2000 (overrides --token-budget; results nested under 'budgets')")
     parser.add_argument("--recompute", default=None, help="Recompute ceiling-aware metrics for existing report(s) in-place")
     args = parser.parse_args()
 
@@ -157,6 +230,10 @@ def main() -> int:
     queries_path = args.queries
     commit = args.commit
     output = args.output
+    if args.budgets:
+        budgets = [int(b.strip()) for b in args.budgets.split(",") if b.strip()]
+    else:
+        budgets = [args.token_budget]
 
     questions = load_external_questions(queries_path)
     print(f"Loaded {len(questions)} queries from {queries_path}", file=sys.stderr)
@@ -191,60 +268,90 @@ def main() -> int:
                 print(f"Failed to load embedding model: {e}", file=sys.stderr)
                 provider = None
 
-        print(f"Indexing {repo_dir} ...", file=sys.stderr)
-        report = run_external_evaluation(
-            repo_dir,
-            questions,
-            provider=provider,
-            db_path=db_path,
-        )
-        report.repo = repo_url
-        report.source_dir = source_dir
-        report.commit = actual_commit
+        def _serialize(report) -> dict:
+            qdicts = []
+            for r in report.questions:
+                bucket = baseline_bucket(r.baseline_tokens)
+                qdicts.append(
+                    {
+                        "query": r.query,
+                        "expected_files": sorted(r.expected_files),
+                        "ranked_files": r.ranked_files,
+                        "precision_at_10": r.precision_at_10,
+                        "precision_ceiling_at_10": r.precision_ceiling_at_10,
+                        "precision_at_10_normalized": r.precision_at_10_normalized,
+                        "precision_over_returned": r.precision_over_returned,
+                        "recall_at_10": r.recall_at_10,
+                        "reciprocal_rank": r.reciprocal_rank,
+                        "latency_seconds": r.latency_seconds,
+                        "category": r.category,
+                        "baseline_tokens": r.baseline_tokens,
+                        "context_tokens": r.context_tokens,
+                        "savings_pct": r.savings_pct,
+                        "baseline_bucket": bucket,
+                    }
+                )
+            return {
+                "total_questions": report.total_questions,
+                "mean_precision_at_10": report.mean_precision_at_10,
+                "mean_precision_ceiling_at_10": report.mean_precision_ceiling_at_10,
+                "mean_precision_at_10_normalized": report.mean_precision_at_10_normalized,
+                "mean_precision_over_returned": report.mean_precision_over_returned,
+                "mean_recall_at_10": report.mean_recall_at_10,
+                "mean_reciprocal_rank": report.mean_reciprocal_rank,
+                "p50_latency_seconds": report.p50_latency_seconds,
+                "p95_latency_seconds": report.p95_latency_seconds,
+                "index_seconds": report.index_seconds,
+                "mean_baseline_tokens": report.mean_baseline_tokens,
+                "mean_context_tokens": report.mean_context_tokens,
+                "mean_savings_pct": report.mean_savings_pct,
+                "aggregate_savings_pct": report.aggregate_savings_pct,
+                "buckets": _bucket_aggregates(qdicts),
+                "questions": qdicts,
+            }
 
+        budget_blocks: dict = {}
+        for budget in budgets:
+            print(f"Indexing {repo_dir} (budget {budget}) ...", file=sys.stderr)
+            report = run_external_evaluation(
+                repo_dir,
+                questions,
+                provider=provider,
+                db_path=db_path,
+                token_budget=budget,
+            )
+            report.repo = repo_url
+            report.source_dir = source_dir
+            report.commit = actual_commit
+            budget_blocks[str(budget)] = _serialize(report)
+
+        # Flat top-level keys stay for back-compat readers (first budget).
+        primary = budget_blocks[str(budgets[0])]
         # Build output dict
         output_data = {
             "repo": repo_url,
             "source_dir": source_dir,
             "commit": actual_commit,
             "queries_file": str(queries_path),
-            "total_questions": report.total_questions,
-            "mean_precision_at_10": report.mean_precision_at_10,
-            "mean_precision_ceiling_at_10": report.mean_precision_ceiling_at_10,
-            "mean_precision_at_10_normalized": report.mean_precision_at_10_normalized,
-            "mean_precision_over_returned": report.mean_precision_over_returned,
-            "mean_recall_at_10": report.mean_recall_at_10,
-            "mean_reciprocal_rank": report.mean_reciprocal_rank,
-            "p50_latency_seconds": report.p50_latency_seconds,
-            "p95_latency_seconds": report.p95_latency_seconds,
-            "index_seconds": report.index_seconds,
-            "questions": [
-                {
-                    "query": r.query,
-                    "expected_files": sorted(r.expected_files),
-                    "ranked_files": r.ranked_files,
-                    "precision_at_10": r.precision_at_10,
-                    "precision_ceiling_at_10": r.precision_ceiling_at_10,
-                    "precision_at_10_normalized": r.precision_at_10_normalized,
-                    "precision_over_returned": r.precision_over_returned,
-                    "recall_at_10": r.recall_at_10,
-                    "reciprocal_rank": r.reciprocal_rank,
-                    "latency_seconds": r.latency_seconds,
-                    "category": r.category,
-                }
-                for r in report.questions
-            ],
+            "token_budget": budgets[0],
+            "token_budgets": budgets,
+            **primary,
         }
+        if len(budgets) > 1:
+            output_data["budgets"] = budget_blocks
 
         # Print summary to stderr
-        print(f"\nResults for {repo_url} @ {actual_commit[:8]} ({source_dir})", file=sys.stderr)
-        print(f"  Questions: {report.total_questions}", file=sys.stderr)
-        print(f"  P@10: {report.mean_precision_at_10:.3f}", file=sys.stderr)
-        print(f"  R@10: {report.mean_recall_at_10:.3f}", file=sys.stderr)
-        print(f"  MRR: {report.mean_reciprocal_rank:.3f}", file=sys.stderr)
-        print(f"  p50 latency: {report.p50_latency_seconds*1000:.1f} ms", file=sys.stderr)
-        print(f"  p95 latency: {report.p95_latency_seconds*1000:.1f} ms", file=sys.stderr)
-        print(f"  Index time: {report.index_seconds:.1f} s", file=sys.stderr)
+        for budget in budgets:
+            block = budget_blocks[str(budget)]
+            print(f"\nResults for {repo_url} @ {actual_commit[:8]} ({source_dir}) budget {budget}", file=sys.stderr)
+            print(f"  Questions: {block['total_questions']}", file=sys.stderr)
+            print(f"  P@10: {block['mean_precision_at_10']:.3f}", file=sys.stderr)
+            print(f"  R@10: {block['mean_recall_at_10']:.3f}", file=sys.stderr)
+            print(f"  MRR: {block['mean_reciprocal_rank']:.3f}", file=sys.stderr)
+            print(f"  p50 latency: {block['p50_latency_seconds']*1000:.1f} ms", file=sys.stderr)
+            print(f"  p95 latency: {block['p95_latency_seconds']*1000:.1f} ms", file=sys.stderr)
+            print(f"  Index time: {block['index_seconds']:.1f} s", file=sys.stderr)
+            print(f"  Aggregate savings: {block['aggregate_savings_pct']*100:.1f}% (baseline {block['mean_baseline_tokens']:.0f} -> context {block['mean_context_tokens']:.0f})", file=sys.stderr)
 
         if output:
             Path(output).parent.mkdir(parents=True, exist_ok=True)
