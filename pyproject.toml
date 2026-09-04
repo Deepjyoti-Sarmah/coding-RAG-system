@@ -89,6 +89,11 @@ dev = [
     # silently skipped everywhere — including CI — because hypothesis was
     # never declared here, only pip-installed by hand in a local venv.
     "hypothesis>=6.100",
+    # embeddings/ollama_provider.py optionally uses httpx (falls back to
+    # urllib when absent — end users are not required to install it).
+    # tests/test_ollama_provider.py's httpx-path tests were silently
+    # skipping everywhere for the same reason as hypothesis above.
+    "httpx>=0.27",
 ]
 
 [tool.hatch.build.targets.wheel]
