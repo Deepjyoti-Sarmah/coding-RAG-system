@@ -307,10 +307,10 @@
 - **Why:** CCE ships all three (`code-context-engine/CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`). Their absence is the tell separating "someone's project" from "a project". `SECURITY.md` is not boilerplate here: CKG reads source trees and redacts credentials (`indexing/secrets.py:1`, 15 regexes + Luhn), so a disclosure path is on-topic.
 - **Target:** `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md` (all new)
 - **Tasks:**
-  - [ ] `CHANGELOG.md` — Keep-a-Changelog. Seed `0.1.0` from the `feat(P*)` commit subjects (`git log --oneline --grep='^feat'`), which are already well formed.
-  - [ ] `CONTRIBUTING.md` — `uv sync`, `uv run pytest -q`, `uv run ruff check .`, the `--cov-fail-under=80` gate, and the rule at `README.md:241 ## Engineering rule`.
-  - [ ] `SECURITY.md` — supported version, private disclosure contact, plus what CKG deliberately never does (no network egress, index stays in `.ckg/`, secrets redacted pre-index).
-- **Verify:** `ls CHANGELOG.md CONTRIBUTING.md SECURITY.md && head -5 CHANGELOG.md`
+  - [x] `CHANGELOG.md` — Keep-a-Changelog, `0.1.0` seeded from `git log --oneline --grep='^feat'` (224 total commits), grouped by area not a raw commit dump; `[Unreleased]` present.
+  - [x] `CONTRIBUTING.md` — `uv sync`, the three CI checks (`ruff`, `--cov-fail-under=80`, `-m "not slow"`), the `README.md ## Engineering rule` quote, and a directory map flagging `analysis/retrieval/indexing/storage` as the semantic core.
+  - [x] `SECURITY.md` — supported version (`0.1.x`), GitHub private vulnerability reporting (no fabricated email), explicit "what CKG deliberately does / does not do" split.
+- **Verify:** `ls CHANGELOG.md CONTRIBUTING.md SECURITY.md && head -5 CHANGELOG.md` — **DONE 2026-09-04**, all three present, `657 passed` / `ruff` clean unaffected.
 
 ### P6-8: Tag `v0.1.0` + `publish.yml`
 
