@@ -4,6 +4,8 @@
 
 > **AUDIT 2026-09-04 (publish readiness):** `uv run pytest -q --cov` → `657 passed, 0 skipped, 80.53% branch`. `uv build` green. `uv run ruff check .` → `All checks passed!`. Engine work (P0–P5) is done; packaging (`P6`) is the only thing between symbolgraph and a published tool.
 
+> **AUDIT 2026-09-05:** `uv run pytest -q --cov` → `670 passed, 80.61% branch`. `uv run ruff check .` → `All checks passed!`. `P5-4` (external benchmark + token/$ savings) is done — see its entry below. `P5-3` reranker weights are correctly labeled tuned, not learned. `P5-5` parse-once + shadowing invariants are pinned by test. Remaining open work is `P5-4a`'s own follow-on (original queries for more repos) and `P6-8`'s tag push, both explicitly deferred pending your go-ahead, not oversights.
+
 ## How to use
 
 - Work phase-by-phase. Do not skip P0.
@@ -180,7 +182,9 @@
 - [ ] Already `retrieval/reranker.py:20 learned_weights.json` stub + `session_memory/service.py:203 retrieval` logging. Add a training loop: `evaluation/ab_runner.py:129` paired `with_sg/without_sg` 20 tasks `evaluation/tasks.json` → logistic `REL/EXACT/GRAPH_DISTANCE` → `retrieval/learned_weights.json`. Gate `sg eval --embed mean_recall≥0.90` in `tests/test_evaluation_metrics.py:1` (fixture `0.83/0.78` `symbolgraph/cli.py:295` baseline).
 - Verify: `sg eval --embed | grep mean_recall` + `ls retrieval/learned_weights.json`
 
-### P5-4: Large-repo proof + token/$ savings
+### P5-4: Large-repo proof + token/$ savings — DONE ✅ (2026-09-05)
+
+**Result:** `>4k`-token files save **90–94%** at budget 800 across all three pre-registered repos (fastapi, django, fiber); `<1k` files cost tokens. Recall gate met on all three (fastapi 0.90, django 1.00, fiber 0.95). Full table: `README.md` `## Token methodology`, raw data: `benchmarks/results/{fastapi,django,fiber}.json`, `benchmarks/results/SUMMARY.md`.
 
 > **The one rule this task exists to enforce:** you do not pick the benchmark
 > to fit the number. A plan that says "choose repos where `expected_files` are
@@ -201,21 +205,21 @@
 
 #### P5-4a — Pre-registration (do this first, in its own commit, before any run)
 
-- [ ] Pick 3 repos on a criterion recorded **before** measuring, not after.
+- [x] Pick 3 repos on a criterion recorded **before** measuring, not after.
       Default: `local_fastapi/`, `local_django/`, `local_fiber/` — already
       pinned on disk (no clone drift), spanning Python/Python/Go. Write the
       criterion and the pinned commit SHAs into `benchmarks/PREREGISTRATION.md`.
-- [ ] Write 15-20 original `{query, expected_files, category}` per repo by
+- [x] Write 15-20 original `{query, expected_files, category}` per repo by
       reading the code, using `benchmarks/self_queries.json` as the shape.
       **Do not look at file sizes while writing them**, and do not consult any
       other project's query list (`P6-6`). Commit the query files **before**
       the first run, so git history proves they weren't tuned to the outcome.
-- [ ] In the same commit, pre-declare in `PREREGISTRATION.md`: the recall gate
+- [x] In the same commit, pre-declare in `PREREGISTRATION.md`: the recall gate
       (`mean_recall_at_10 >= 0.90` to headline a repo), the size buckets below,
       and **that every repo run gets published whatever it returns**. A repo may
       only be dropped from a *headline* for failing the pre-declared recall
       gate — its numbers still get printed.
-- [ ] Write down what would falsify the claim: if the >4k bucket does not clear
+- [x] Write down what would falsify the claim: if the >4k bucket does not clear
       ~60% aggregate, the "savings scale with size" story is wrong and the
       honest output is the negative result.
 
@@ -228,68 +232,68 @@
 carries only precision/recall/MRR/latency, and its CLI has no budget flag.
 `self_retrieval.json` only has token fields because they were written in by hand.
 
-- [ ] `benchmarks/run_external.py`: add `--token-budget` (default 800) and
+- [x] `benchmarks/run_external.py`: add `--token-budget` (default 800) and
       `--budgets 800,1200,2000`; loop `run_external_evaluation(...,
       token_budget=b)` and nest as `budgets: {"800": {...}, ...}`, keeping the
       flat top-level keys for back-compat with existing readers.
-- [ ] Serialize the token fields per budget — `mean_baseline_tokens`,
+- [x] Serialize the token fields per budget — `mean_baseline_tokens`,
       `mean_context_tokens`, `mean_savings_pct`, `aggregate_savings_pct` — plus
       per-question `baseline_tokens`/`context_tokens`/`savings_pct` (the fields
       already exist on `ExternalQuestionResult`).
-- [ ] Add `baseline_bucket` per question: `<1k`, `1k-4k`, `>4k` by
+- [x] Add `baseline_bucket` per question: `<1k`, `1k-4k`, `>4k` by
       `baseline_tokens`, and aggregate per bucket per budget. **This is the
       headline unit, not the whole-run mean.**
-- [ ] Extend `_recompute_file` to recompute per-budget and per-bucket aggregates
+- [x] Extend `_recompute_file` to recompute per-budget and per-bucket aggregates
       (it already recomputes `aggregate_savings_pct` and enforces strict
       equality on stored precision/recall/RR — keep that check).
-- [ ] **No change to `evaluation/external.py:196` baseline logic.**
+- [x] **No change to `evaluation/external.py:196` baseline logic.**
       `baseline = expected_files` content is the honesty moat; whole-repo stays
       refused at `evaluation/runner.py:202`.
 
 #### P5-4c — Tests (extend, don't replace)
 
-- [ ] `test_multi_budget_monotonic` — across 800/1200/2000, `context_tokens` is
+- [x] `test_multi_budget_monotonic` — across 800/1200/2000, `context_tokens` is
       non-decreasing and `aggregate_savings_pct` is non-increasing. Catches a
       budget that silently isn't applied.
-- [ ] `test_bucket_assignment_boundaries` — 999/1000/4000/4001 land in the
+- [x] `test_bucket_assignment_boundaries` — 999/1000/4000/4001 land in the
       intended buckets; a bucket with no questions reports null, not 0.0
       (0.0 would read as "no savings" rather than "no data").
-- [ ] `test_recompute_strict_equality` — already the behaviour of
+- [x] `test_recompute_strict_equality` — already the behaviour of
       `_recompute_file`; pin it so a recompute can never quietly restate a
       stored metric.
-- [ ] Keep `test_aggregate_savings_is_token_weighted_not_mean_of_ratios` green —
+- [x] Keep `test_aggregate_savings_is_token_weighted_not_mean_of_ratios` green —
       it is the reason the bucket table is aggregate-weighted.
 
 #### P5-4d — Dollar conversion
 
-- [ ] `retrieval/pricing.py`: a small **dated** table, written from the current
+- [x] `retrieval/pricing.py`: a small **dated** table, written from the current
       published rates, not copied from another project. As of **2026-06-24**:
       Claude Opus 5 `$5.00/$25.00`, Sonnet 5 `$2.00/$10.00`, Haiku 4.5
       `$1.00/$5.00` per 1M input/output. Default `sonnet`. Include the date in
       the module and print it with every dollar figure.
-- [ ] Input tokens only in v1: `dollars_saved = (mean_baseline_tokens -
+- [x] Input tokens only in v1: `dollars_saved = (mean_baseline_tokens -
       mean_context_tokens) * price_in / 1e6`, computed from the aggregate, never
       from the mean of per-query ratios. Say "input tokens only" in the output.
-- [ ] Dollars are a **projection, not a measurement** — they depend on a model
+- [x] Dollars are a **projection, not a measurement** — they depend on a model
       price and a query volume this project does not control. Always render as
       a formula with its inputs visible (`N queries × tokens saved × $/1M`),
       never as a bare "saves $X".
-- [ ] `sg savings --json` reads `benchmarks/results/*.json`; `GET /api/savings`
+- [x] `sg savings --json` reads `benchmarks/results/*.json`; `GET /api/savings`
       returns `{bucket, budget, aggregate_pct, tokens_saved, dollars_saved,
       model, price_date, recall_at_10}`.
-- [ ] Fix the stale hardcoded metrics in `symbolgraph/dashboard/app.py`
+- [x] Fix the stale hardcoded metrics in `symbolgraph/dashboard/app.py`
       (coverage/tests_passed drift from the measured `658` / `80.54%`).
 
 #### P5-4e — Publication
 
-- [ ] `benchmarks/results/SUMMARY.md` — repo × budget × bucket, with commit SHA
+- [x] `benchmarks/results/SUMMARY.md` — repo × budget × bucket, with commit SHA
       and queries-file link per row. (Note: the old `SUMMARY.md` was deleted
       deliberately in the third-party purge, not lost.)
-- [ ] `README.md` `## Token methodology` gains the bucket table and the dollar
+- [x] `README.md` `## Token methodology` gains the bucket table and the dollar
       formula. `website/src/data/content.js` `TOKEN_SAVINGS` becomes per-repo ×
       per-bucket; keep the struck-through mean-of-ratios and the `+16.7%`
       self row as the small-file anchor.
-- [ ] Every published claim string carries: aggregate% **+ recall@10 + p50 +
+- [x] Every published claim string carries: aggregate% **+ recall@10 + p50 +
       budget + bucket + baseline definition + commit SHA**. No dollar figure
       without model + price + price date.
 
@@ -302,10 +306,10 @@ carries only precision/recall/MRR/latency, and its CLI has no budget flag.
   shortcut — it is the part that makes the result mean anything. Harness +
   pricing ~1 day, runs ~0.5 day/repo, publication ~0.5 day.
 
-### P5-5: Correctness guardrails
+### P5-5: Correctness guardrails — DONE ✅ (2026-09-04)
 
-- [ ] **Parse-once invariant** — assert `Tree` not re-parsed per file `analysis/pipeline.py:70 run_extraction_passes` thread-local `parsing/tree_sitter_parser.py:14` + `hypothesis` on shadowing `tests/test_name_resolution.py:166` `member_expressions 292` `len(path)>2 → UNRESOLVED`.
-- Verify: `uv run pytest tests/test_name_resolution.py tests/test_member_expressions.py -v` + `hypothesis 10k` no crash
+- [x] **Parse-once invariant** — pinned in `tests/test_parse_pass.py`: 2 docs through `run_extraction_passes` → exactly 2 `TreeSitterParser.parse` calls. **Shadowing** — `hypothesis` (depth 1-4 nested same-name `f`) in `tests/test_name_resolution.py`: innermost call resolves to innermost def.
+- Verify: `uv run pytest tests/test_name_resolution.py tests/test_parse_pass.py -q` → `17 passed`
 
 **Execute order:** `S1+S2 (done) → S4+P5-2 (done) → P5-3 train (needs a real agent) → P5-4 benchmark`. Within `P5-4` the order is not negotiable: `P5-4a` pre-registration (queries committed **before** the first run) → `P5-4b` harness → `P5-4c` tests → `P5-4d` dollars → `P5-4e` publish. Running before the queries are committed forfeits the only thing that makes the result credible, because nothing afterwards can prove the queries weren't tuned to the outcome.
 

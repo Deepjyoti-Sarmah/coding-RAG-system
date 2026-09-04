@@ -102,5 +102,55 @@ class TestSavingsSummary(unittest.TestCase):
             self.assertEqual(cmd_savings(str(Path(tmp) / "absent"), model="sonnet"), [])
 
 
+class TestSavingsCommand(unittest.TestCase):
+    def test_savings_command_human_and_json(self):
+        import contextlib
+        import io
+
+        from symbolgraph.cli import main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, "demo.json").write_text(
+                json.dumps(
+                    {
+                        "repo": "https://example.com/repo",
+                        "token_budget": 800,
+                        "total_questions": 1,
+                        "mean_baseline_tokens": 2000,
+                        "mean_context_tokens": 800,
+                        "mean_savings_pct": 0.6,
+                        "aggregate_savings_pct": 0.6,
+                        "mean_recall_at_10": 1.0,
+                        "questions": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = main(["savings", "--results-dir", tmp])
+            self.assertEqual(rc, 0)
+            self.assertIn("60.0% aggregate", buf.getvalue())
+
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = main(["savings", "--results-dir", tmp, "--json"])
+            self.assertEqual(rc, 0)
+            rows = json.loads(buf.getvalue())
+            self.assertEqual(rows[0]["budget"], 800)
+
+    def test_savings_command_no_results_is_exit_1(self):
+        import contextlib
+        import io
+
+        from symbolgraph.cli import main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = main(["savings", "--results-dir", str(Path(tmp) / "absent")])
+            self.assertEqual(rc, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

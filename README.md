@@ -58,7 +58,7 @@ Restart your editor. Every question now hits the local index — not `grep` + re
 | | Capability | How |
 |---|---|---|
 | **🔍** | **Hybrid retrieval** | Exact symbol + `CALLS/IMPORTS` graph expansion + FTS5 `porter` + vector cosine (sqlite-vec / numpy fallback), fused by RRF `k=60` + reranker + per-file cap |
-| **🔄** | **True incremental** | File hash + `interface_fingerprint` invalidation + `stable_key` identity + `Merkle root_hash` + append-only `INSERT OR REPLACE` chunks — reindex of a 2k-file edit `<200ms` |
+| **🔄** | **True incremental** | File hash + `interface_fingerprint` invalidation + `stable_key` identity + `Merkle root_hash` + append-only `INSERT OR REPLACE` chunks — unchanged files are never re-parsed (`<50ms` measured on the fixture; a no-change reindex of this repo's own 381 files is ~5.7s wall clock, not the `<200ms` this line used to claim unqualified) |
 | **🔒** | **Local-first, no cloud** | SQLite `WAL` `synchronous=NORMAL` `busy_timeout 5000` + disposable derived state; source is truth |
 | **🧠** | **MCP 13 tools** | `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_*` `record_decision/code_area` — `sg-mcp` over stdio, `IdleTracker 30m` + memory backoff |
 | **🖥️** | **Multi-editor** | `sg init --agent auto|all` detects `.vscode` `.cursor` `opencode.json` + writes ` ~/.codex/config.toml [mcp_servers.sg-<hash>]` TOML-escaped + versioned `<!-- sg-block-version:1 -->` |
@@ -347,7 +347,7 @@ Most local code-search tools tag functions and classes as text chunks — `FUNCT
 
 - **Symbol identity, not a text span.** Every function, class, and interface member gets a `stable_key` — the same symbol keeps the same identity across edits, renames included, so incremental reindexing can tell "this changed" from "this is new."
 - **Typed relationships, not just imports.** `CALLS` / `EXTENDS` / `IMPLEMENTS` / `HAS_TYPE` / `RETURNS` edges, including cross-file resolution through `export * from` re-exports and member paths like `auth.client.createAuth`.
-- **Hash + Merkle incremental**, not a snapshot rewrite — a 2,000-file edit reindexes in under 200ms because only what changed gets touched.
+- **Hash + Merkle incremental**, not a snapshot rewrite — only what changed gets touched (`<50ms` measured on the fixture; a no-change reindex of this repo's own 381 files is ~5.7s wall clock).
 - **RRF fusion with graph expansion and a tuned reranker** (grid-searched weights on the fixture, not fitted on agent runs — see `ROADMAP.md` P5-3 honesty note), not similarity search alone.
 
 The moat is symbol, not chunk — graph before vector, measured against a fixed fixture with a stated baseline, not a whole-repo estimate. See `## Benchmark` above for what that produces.
