@@ -81,6 +81,22 @@ Measured on `tests/fixtures/evaluation_repo` with fixed `token_budget=800` `o200
 
 Token savings are reported as `ExternalReport.mean_savings_pct` at `budget 800` with `baseline = expected_files only` (`evaluation/external.py:184`) — whole-repo `99%` is intentionally `0.0` (`evaluation/runner.py:202`). Cited with `mean_recall@10 + p50` or not at all. See `benchmarks/run_external.py`.
 
+### External repos (file-level, pinned commits)
+
+`tests/fixtures/evaluation_repo` is a fixture written for this project. These five are real repositories, not fixtures — pinned commit, run once, result committed to `benchmarks/results/*.json`, read back here without re-running or rounding:
+
+| Repo | Commit | Questions | recall@10 | MRR | p50 latency | Index time |
+|---|---|---|---|---|---|---|
+| [django/django](https://github.com/django/django) | `3b767c5` | 22 | **0.818** | 0.647 | 55ms | 59.9s |
+| [fastapi/fastapi](https://github.com/fastapi/fastapi) | `4903347` | 20 | **0.700** | 0.508 | 46ms | 1.0s |
+| [expressjs/express](https://github.com/expressjs/express) | `023767f` | 20 | **1.000** | 0.875 | 15ms | 0.04s |
+| [go-chi/chi](https://github.com/go-chi/chi) | `36611d2` | 18 | **0.917** | 0.833 | 59ms | 0.72s |
+| [gofiber/fiber](https://github.com/gofiber/fiber) | `e7229b1` | 19 | **0.737** | 0.418 | 223ms | 63.5s |
+
+`precision@10` is reported ceiling-aware (`mean_precision_at_10_normalized`, dividing by `min(10, |expected_files|)` rather than a flat 10) because most queries here expect far fewer than 10 files — a raw precision@10 would look artificially low for a system that is finding all of them. The normalized column is identical to the recall@10 column above by construction; see `evaluation/external.py:244`.
+
+The 99 queries (`express 20 / fastapi 20 / chi 18 / fiber 19 / django 22`) are derived from `code-context-engine`'s own benchmark set — see `benchmarks/ATTRIBUTION.md` for the per-file breakdown and the two counts (`chi`, `fiber`) that were edited from upstream.
+
 ---
 
 ## Supported languages

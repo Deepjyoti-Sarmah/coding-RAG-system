@@ -295,11 +295,11 @@
 - **Why:** Every number a reader currently sees comes from `tests/fixtures/evaluation_repo` — a fixture the author wrote. That is the weakest load-bearing claim in the project, and it does not have to be: `benchmarks/results/django.json` holds a real result on a pinned Django commit. "recall@10 0.818 on Django, 55ms p50, full index in 60s" is categorically stronger than any fixture number, and five repos across three languages (`django/fastapi/express/chi/fiber`, 99 queries per `benchmarks/ATTRIBUTION.md:14`) is stronger still.
 - **Target:** `README.md:69` `## Benchmark` (add a second table), read-only from `benchmarks/results/*.json`
 - **Tasks:**
-  - [ ] Add `### External repos (file-level, pinned commits)` under `README.md:69` with columns repo / commit / questions / `mean_recall_at_10` / `mean_reciprocal_rank` / `p50_latency_seconds` / `index_seconds`.
-  - [ ] Fill **only** from the tracked JSON — `django.json`, `fastapi.json`, `express.json`, `chi.json`, `fiber.json`. Do not re-run, do not round up, do not average across repos.
-  - [ ] Note that `precision@10` is reported normalized (`mean_precision_at_10_normalized`, ceiling-aware) and say why in one line, so the low raw `0.0909` is not mistaken for a hidden weakness.
-  - [ ] Link `benchmarks/ATTRIBUTION.md` — the queries come from CCE, and saying so is an asset, not a liability.
-- **Acceptance:** every README number is `grep`-able in a tracked file under `benchmarks/results/`.
+  - [x] Added `### External repos (file-level, pinned commits)` under `README.md:69` with columns repo / commit / questions / recall@10 / MRR / p50 latency / index time.
+  - [x] Filled **only** from the tracked JSON — `django.json`, `fastapi.json`, `express.json`, `chi.json`, `fiber.json`. Not re-run; every number cross-checked against a `python -c "json.load(...)"` read in the same session.
+  - [x] Noted `precision@10` is reported ceiling-aware (`mean_precision_at_10_normalized`) and explained why in one line (most queries expect far fewer than 10 files, so raw precision@10 understates a system that finds all of them).
+  - [x] Linked `benchmarks/ATTRIBUTION.md`.
+- **Acceptance:** every README number is `grep`-able in a tracked file under `benchmarks/results/`. — **DONE 2026-09-04**, all 5 recall@10 + commit values verified to match their JSON source exactly.
 - **Verify:** `python -c "import json,glob; [print(f, json.load(open(f)).get('mean_recall_at_10'), json.load(open(f)).get('commit')) for f in ['benchmarks/results/django.json','benchmarks/results/fastapi.json','benchmarks/results/express.json','benchmarks/results/chi.json','benchmarks/results/fiber.json']]"`
 
 ### P6-7: `CHANGELOG.md` + `CONTRIBUTING.md` + `SECURITY.md`
