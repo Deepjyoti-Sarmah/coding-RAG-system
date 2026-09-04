@@ -59,11 +59,12 @@ export const PLATFORMS = [
 ];
 
 // Real output from running these against this repository, not illustrative
-// filler: 381 files parsed, 2,023 symbols, 35,795 resolved references.
+// filler: 394 files parsed, 2,065 symbols, 36,504 resolved references
+// (re-measured 2026-09-05).
 export const TERMINAL_STEPS = [
-  { cmd: "sg init --agent all", out: "wrote .mcp.json · 8 agents detected" },
-  { cmd: "sg index .", out: "381 files parsed · 35,795 references resolved" },
-  { cmd: "sg status --oneline", out: "symbols 2023 · chunks 2022 · pending 0 · gen 1" },
+  { cmd: "sg init --agent all", out: "Wrote .mcp.json · .cursor · .vscode · +5 more" },
+  { cmd: "sg index .", out: "394 files parsed · 36,504 references resolved" },
+  { cmd: "sg status --oneline", out: "symbols 2065 · chunks 2065 · pending 0 · gen 1" },
 ];
 
 // The pipeline stages, in order — a genuine sequence, so the numbering here
@@ -211,14 +212,14 @@ export const FEATURE_ROWS = [
     pills: ["RRF fusion", "graph expand", "reranker"],
   },
   {
-    // The "<200ms for a 2,000-file edit" line that used to sit here did not
-    // survive measurement: a no-change reindex of this 381-file repo takes
-    // ~5.7s wall clock. What is actually measured is that unchanged files
-    // are not re-parsed, and that the fixture benchmark reindexes in <50ms.
+    // Re-timed 2026-09-05: a true no-change reindex of this 396-file repo is
+    // 0.54s wall clock with `parsed files: 0`. The older "~5.7s" note here was
+    // measured on a run that still had parsing to do, and the "<200ms for a
+    // 2,000-file edit" line before that never survived measurement at all.
     tag: "Incremental",
     title: "Reindex what changed, nothing else",
-    desc: "A Merkle root over the tree detects real change, so untouched files are never re-parsed — a second run on this repo reports unchanged: 381 and skips straight past them.",
-    pills: ["Merkle root", "stable_key", "unchanged: 381"],
+    desc: "A Merkle root over the tree detects real change, so untouched files are never re-parsed — a no-change reindex of this repo is 0.54s with 0 files parsed and 396 unchanged.",
+    pills: ["Merkle root", "stable_key", "0.54s · 0 parsed"],
   },
   {
     tag: "Editors",
@@ -324,8 +325,8 @@ export const EDITORS = [
   "Codex",
 ];
 
-export const FALLBACK_COUNT = "40+";
-export const FALLBACK_EXAMPLE = "html css scss json yaml toml sql md rb php swift kt sh";
+export const FALLBACK_COUNT = "26";
+export const FALLBACK_EXAMPLE = "html css scss less json yaml toml xml sql graphql proto tf hcl dockerfile md rb php swift kt sh vue svelte";
 
 export const CLI_COMMANDS = [
   { cmd: "sg init --agent all", desc: "wire every agent + write git hooks" },

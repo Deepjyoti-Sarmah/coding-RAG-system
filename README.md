@@ -1,361 +1,488 @@
 # symbolgraph
 
 <p align="center">
-  <strong>Understand your repository before the LLM sees it.<br>Local-first semantic index for AI coding agents — no cloud, no estimates.</strong>
+  <strong>Your AI coding agent shouldn't have to read your whole repo to answer one question.</strong><br>
+  A local-first code index that gives agents exact definitions and their relationships — not 50k tokens of file dumps.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.0-blue?style=flat-square" alt="version">
-  <img src="https://img.shields.io/badge/tests-658%20passed-brightgreen?style=flat-square" alt="tests">
-  <img src="https://img.shields.io/badge/coverage-80.54%25%20branch-brightgreen?style=flat-square" alt="coverage">
+  <img src="https://img.shields.io/badge/tests-677%20passed-brightgreen?style=flat-square" alt="tests">
+  <img src="https://img.shields.io/badge/coverage-80.68%25%20branch-brightgreen?style=flat-square" alt="coverage">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square" alt="python">
-  <img src="https://img.shields.io/badge/MCP-2.0%20ready-purple?style=flat-square" alt="mcp">
   <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square" alt="license">
-  <img src="https://img.shields.io/github/actions/workflow/status/Deepjyoti-Sarmah/coding-RAG-system/ci.yml?style=flat-square&label=CI" alt="CI">
 </p>
 
 <p align="center">
-  <sub>Python 3.11+ · macOS · Linux · Windows · SQLite + sqlite-vec</sub>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Claude_Code-352318?style=for-the-badge&logo=anthropic" alt="Claude Code">&nbsp;
-  <img src="https://img.shields.io/badge/Cursor-000?style=for-the-badge" alt="Cursor">&nbsp;
-  <img src="https://img.shields.io/badge/VS_Code-007ACC?style=for-the-badge&logo=visualstudiocode" alt="VS Code">&nbsp;
-  <img src="https://img.shields.io/badge/Codex-412991?style=for-the-badge" alt="Codex">&nbsp;
-  <img src="https://img.shields.io/badge/Gemini-4285F4?style=for-the-badge&logo=google" alt="Gemini">&nbsp;
-  <img src="https://img.shields.io/badge/OpenCode-22C55E?style=for-the-badge" alt="OpenCode">
-</p>
-
-<p align="center">
-  <sub>One index. Every agent. Your code stays on your machine.</sub>
+  <sub>Python 3.11+ · macOS · Linux · Windows · Your code never leaves your machine</sub>
 </p>
 
 ---
 
-## Quick start — 30 seconds
+## What is this?
+
+When you ask a coding agent *"where does login happen?"*, it usually greps, opens
+half a dozen files, and burns thousands of tokens rebuilding context you already
+have on disk.
+
+symbolgraph reads your repository **once** and builds a real index of it: every
+function, class and method, plus the typed relationships between them — what
+calls what, what extends what, what returns what. Your agent then asks the index
+a question and gets back *the definition it needed and the things connected to
+it*, inside a token budget.
+
+Three things make it different from plain text search:
+
+- **It indexes symbols, not text spans.** A result is always a complete
+  definition, never the middle of a function.
+- **It knows relationships.** `CALLS`, `EXTENDS`, `IMPLEMENTS`, `HAS_TYPE`,
+  `RETURNS` — resolved across files, so callers and callees come back with the
+  answer instead of needing a second search.
+- **It runs entirely on your machine.** One SQLite file inside your repo. No
+  account, no upload, no telemetry.
+
+---
+
+## Install
+
+Requires **Python 3.11+**. `symbolgraph` is not on PyPI yet, so install from a
+checkout:
 
 ```bash
-uv tool install .              # from checkout — installs `sg` + `sg-mcp`
-# or: pipx install . / pip install -e .
+git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system
+cd coding-RAG-system
 
-sg --version                  # 0.1.0
-sg init --agent all           # auto-wires .mcp.json + .vscode/.cursor/opencode + ~/.codex/config.toml + AGENTS.md
-sg index .                    # build or update .sg/index.sqlite
-sg status --oneline           # symbols 342 chunks 342 pending 0 gen 12
-sg search "auth flow" --top-k 5
-sg doctor .                   # ✓ index present ✓ lock free ✓ git hook ✓ backend
+uv tool install .        # recommended
+# or: pipx install .
+# or: pip install -e .   # for development
 ```
 
-Restart your editor. Every question now hits the local index — not `grep` + re-reading files.
+This installs two commands: **`sg`** (the CLI) and **`sg-mcp`** (the MCP server
+your agent talks to).
 
-> **Already have Ollama?** `sg` auto-detects `http://localhost:11434` (`nomic-embed-text 768d`). Without it, `FTS + graph` already gives `definition 0.83 / recall 0.78` on the fixture; `sg embed` adds vectors when you want them.
-
----
-
-## What you get
-
-| | Capability | How |
-|---|---|---|
-| **🔍** | **Hybrid retrieval** | Exact symbol + `CALLS/IMPORTS` graph expansion + FTS5 `porter` + vector cosine (sqlite-vec / numpy fallback), fused by RRF `k=60` + reranker + per-file cap |
-| **🔄** | **True incremental** | File hash + `interface_fingerprint` invalidation + `stable_key` identity + `Merkle root_hash` + append-only `INSERT OR REPLACE` chunks — unchanged files are never re-parsed (`<50ms` measured on the fixture; a no-change reindex of this repo's own 381 files is ~5.7s wall clock, not the `<200ms` this line used to claim unqualified) |
-| **🔒** | **Local-first, no cloud** | SQLite `WAL` `synchronous=NORMAL` `busy_timeout 5000` + disposable derived state; source is truth |
-| **🧠** | **MCP 13 tools** | `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_*` `record_decision/code_area` — `sg-mcp` over stdio, `IdleTracker 30m` + memory backoff |
-| **🖥️** | **Multi-editor** | `sg init --agent auto|all` detects `.vscode` `.cursor` `opencode.json` + writes ` ~/.codex/config.toml [mcp_servers.sg-<hash>]` TOML-escaped + versioned `<!-- sg-block-version:1 -->` |
-| **📊** | **Dashboard + ops** | `sg dashboard --no-browser` FastAPI 8 endpoints `GET /api/status/files/sessions/savings` `POST /api/reindex` `DELETE /api/files/{path}` `CSRF Sec-Fetch-Site + bearer hmac` + `sg doctor` |
+```bash
+sg --version    # 0.1.0
+```
 
 ---
 
-## Benchmark — measured, not estimated
+## Quick start
 
-Measured on `tests/fixtures/evaluation_repo` with fixed `token_budget=800` `o200k_base` + `len//4` fallback:
+Run these three commands inside any repository you want indexed.
 
-| Metric | Without vectors `FTS+graph` | With vectors |
-|---|---|---|
-| **definition accuracy** | **0.83** | 0.92 |
-| **mean recall@5** | **0.78** | 0.97 |
-| **MRR** | 0.71 | 0.94 |
-| **initial indexing** | ~18ms (fixture) | same + embed queue |
-| **incremental (`parsed_files==0`)** | `<50ms` | `cache_hit_rate 1.0` |
-| **coverage** | **80.54% branch** | `658 passed 0 skipped` |
+**1. Build the index**
 
-Token savings are reported as `ExternalReport.aggregate_savings_pct` at budgets `800/1200/2000` with `baseline = expected_files only` (`evaluation/external.py:196`) — whole-repo `99%` is intentionally `0.0` (`evaluation/runner.py:202`). Cited with `mean_recall@10 + p50 + budget + bucket` or not at all. See `benchmarks/run_external.py` and `sg savings`.
+```bash
+$ sg index .
+Indexed into .sg/index.sqlite
+  parsed files:        394
+  resolved references: 36504
+  new: 396
+```
 
-Real-repo runs (original queries written from scratch, pre-registered in `benchmarks/PREREGISTRATION.md`, full table in `benchmarks/results/SUMMARY.md`):
+Everything lives in `.sg/index.sqlite` inside your project. Delete that folder
+and it's gone — your source is never modified.
 
-| Repo | Budget 800 aggregate | Recall@10 | p50 | Result file |
-|---|---|---|---|---|
-| Django (20 qs) | **90.9%** (8909 → 811) | 1.00 | 18.2ms | `benchmarks/results/django.json` |
-| Fiber (20 qs) | **84.7%** (5272 → 804) | 0.95 | 9.3ms | `benchmarks/results/fiber.json` |
-| FastAPI (20 qs) | **83.1%** (4923 → 831) | 0.90 | 3.8ms | `benchmarks/results/fastapi.json` |
-| self `retrieval/` (11 qs) | **16.7%** (1007 → 839) | 1.00 | 1.6ms | `benchmarks/results/self_retrieval.json` |
+**2. Connect your agent**
 
-The segmented finding, not a single percentage: `>4k`-token files save 90–94% at budget 800 on all three repos; `<1k` files cost tokens (context-pack structure ~800 regardless). Fixture numbers above remain reproducible with `sg eval --embed` on `tests/fixtures/evaluation_repo`.
+```bash
+$ sg init --agent all
+Wrote .mcp.json
+Wrote .cursor/mcp.json
+Wrote .vscode/mcp.json
+Wrote opencode.json
+Wrote .gemini/settings.json
+Wrote .github/copilot-instructions.md
+Wrote AGENTS.md
+already configured: ~/.codex/config.toml
+```
+
+This detects which coding agents you have installed and writes the MCP config
+for each one. Re-running it is safe — anything already correct is left alone.
+
+**3. Restart your editor, and ask it something**
+
+That's it. Your agent now has 15 new tools and will use the index instead of
+grepping. You can check it works from the terminal first:
+
+```bash
+$ sg search "auth flow"
+Authenticator.__init__ (method) — auth.py [score=0.266 sources=fts]
+validate_token (function) — auth.py [score=0.216 sources=fts]
+create_session (function) — auth.py [score=0.199 sources=fts]
+handle_request (function) — api.py [score=0.032 sources=fts]
+AdminAuthenticator.login (method) — admin.py [score=0.029 sources=fts]
+```
+
+> **Optional — better semantic search.** Out of the box symbolgraph uses
+> full-text + graph search, which needs no model and scores `0.83` definition
+> accuracy on the test fixture. If you have [Ollama](https://ollama.com)
+> running, it's detected automatically and `sg embed` adds vector search,
+> lifting that to `0.92`.
 
 ---
 
-## Supported languages
+## Using it with your agent
 
-**AST-aware (tree-sitter, stable extractors):**
+After `sg init`, your agent has these tools. You never call them by hand — the
+agent picks the right one — but it helps to know what it can do:
 
-| Language | Extensions | Symbol kinds |
-|---|---|---|
-| TypeScript / TSX / JavaScript / JSX | `.ts .tsx .js .jsx` | `function class method variable interface type_alias` + `property_signature/method_signature` children |
-| Python | `.py` | `function class` (decorators preserved) |
-| Go | `.go` | `function method type_spec (struct embedding → EXTENDS)` |
-| Java | `.java` | `class interface enum record method field` |
-| Rust | `.rs` | `function struct enum trait type const mod` |
-| C# | `.cs` | `class struct enum record interface method property field` |
-| C / C++ | `.c .h .cpp .hpp .hh` | `function declaration struct enum class namespace` + `DEFINITION_OF` |
+| Your agent can ask… | Tool |
+|---|---|
+| Where is this defined? | `definition` |
+| What calls this? | `callers` |
+| What does this call? | `callees` |
+| What does this file import? | `imports` |
+| Find code related to X | `search` |
+| Give me context on X within N tokens | `context` |
+| Is the index fresh? | `repository_status`, `index_repository` |
+| Remember/recall decisions across a session | `session_*`, `record_decision`, `record_code_area` |
 
-**Fallback (40+ extensions, `MODULE` synthetic symbol via `chunking/symbol_chunker.py:37`):**
-`html css scss less vue svelte json yaml toml xml sql graphql proto tf hcl dockerfile md` + `rb php swift kt sh bash` — indexed as `module <path>` chunks, searchable like code.
+If your agent isn't picking them up: restart the editor, then run
+`sg doctor .` (below).
+
+<details>
+<summary><b>Manual MCP setup</b> (if your agent wasn't auto-detected)</summary>
+
+Add this to your agent's MCP config file:
+
+```json
+{
+  "mcpServers": {
+    "symbolgraph": { "command": "sg-mcp" }
+  }
+}
+```
+
+`sg init --agent all` writes this automatically for Claude Code, Cursor,
+VS Code, OpenCode, Gemini, Copilot, Pi and Codex.
+</details>
 
 ---
 
-## CLI at a glance
+## Everyday commands
 
-| Command | Example | What it does |
-|---|---|---|
-| `sg index <path> [--embed] [--no-background]` | `sg index .` | Build/update `.sg/index.sqlite` (only changed files reparsed) |
-| `sg status [path] [--oneline]` | `sg status --oneline` | `symbols 342 chunks 342 pending 0 gen 12` |
-| `sg search <query> [path] [--top-k N] [--no-vector]` | `sg search "login"` | Hybrid RRF search |
-| `sg definition <name>` | `sg definition createAuth` | Exact symbol definition |
-| `sg callers <name>` | `sg callers login` | `CALLS` incoming 1-hop |
-| `sg callees <name>` | `sg callees login` | `CALLS` outgoing 1-hop |
-| `sg imports <file>` | `sg imports api.ts` | Imports + resolved `::symbol` |
-| `sg context <query> [--budget N] [--top-k N]` | `sg context "how does login work?" --budget 800` | Token-budgeted `primary/supporting` pack |
-| `sg eval [--embed] [--top-k N]` | `sg eval` | Fixed fixture metrics |
-| `sg savings [--model sonnet] [--json]` | `sg savings` | Benchmark token/$ rows from `benchmarks/results/*.json` |
-| `sg watch <path> [--no-embed] [--debounce 0.5]` | `sg watch .` | `watchdog` debounced reindex + `embed limit 200` |
-| `sg init [path] [--agent auto|all] [--plugin]` | `sg init --agent all` | Wire MCP for all detected editors + git hooks |
-| `sg uninstall [path]` | `sg uninstall` | Remove MCP entries + hooks |
-| `sg embed [path] [--limit N]` | `sg embed` | Drain `PENDING → DONE` queue (`content_hash` reuse) |
-| `sg doctor [path] [--verbose]` | `sg doctor .` | `index present / lock free / queue pending / git hook / backend` |
-| `sg dashboard [path] [--port 8765] [--allow-remote]` | `sg dashboard --no-browser` | `127.0.0.1` read-only, `CSRF + SG_DASHBOARD_TOKEN hmac`, `POST /api/reindex` `DELETE /api/files/{path}` |
-| `sg sessions <start|list|status|timeline|recall|export|prune>` | `sg sessions recall auth .` | Local `session.sqlite` decisions/code_areas/retrieval history |
-| `sg eval-ab --manifest evaluation/tasks.json [--agent-command "$CMD"]` | `sg eval-ab --pilot --preflight` | Paired `with_sg/without_sg` worktrees, `null stays null` |
+These are the ones you'll actually use:
 
-`sg --help` shows per-command examples. Override DB with `sg --db /tmp/x.sqlite <cmd>`.
+```bash
+sg index .                       # build or update the index
+sg search "how does login work"  # hybrid search
+sg definition Authenticator      # where is it defined
+sg callers login                 # who calls it
+sg context "auth flow" --budget 800   # a token-budgeted context pack
+sg status --oneline              # symbols 2065 chunks 2065 pending 0 gen 1
+sg doctor .                      # check everything is healthy
+sg watch .                       # keep the index fresh as you edit
+```
 
-**11 MCP tools + 2 session tools** via `sg-mcp` stdio: `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_start/end/status/recall/timeline` `record_decision/code_area`.
+`sg doctor` is the first thing to run when something seems off:
+
+```bash
+$ sg doctor .
+✓ index present: .sg/index.sqlite
+✓ lock free: free
+✓ embedding queue: pending=0
+✗ git hook: no hook — run `sg init`
+✗ embedding backend: none - FTS+graph only (ok)
+```
+
+A `✗` is not necessarily a problem. The last two lines above are what you see
+without Ollama installed and without the git hook — search still works, it just
+uses full-text plus the graph. Each line tells you the command that fixes it.
+
+<details>
+<summary><b>All 18 commands</b></summary>
+
+| Command | What it does |
+|---|---|
+| `sg index <path> [--embed]` | Build/update the index; only changed files are re-parsed |
+| `sg status [--oneline]` | Index generation and counts |
+| `sg search <query> [--top-k N]` | Hybrid search across the index |
+| `sg definition <name>` | Where a symbol is defined |
+| `sg callers <name>` | Incoming `CALLS` edges |
+| `sg callees <name>` | Outgoing `CALLS` edges |
+| `sg imports <file>` | A file's imports, with resolved symbols |
+| `sg context <query> [--budget N]` | Token-budgeted context pack |
+| `sg eval [--embed]` | Run the fixed benchmark |
+| `sg savings [--json]` | Token/$ figures from benchmark results |
+| `sg watch <path>` | Reindex on file change (debounced) |
+| `sg init [--agent auto\|all]` | Wire up MCP for detected agents + git hooks |
+| `sg uninstall` | Remove MCP entries and hooks |
+| `sg embed [--limit N]` | Drain the embedding queue |
+| `sg doctor [--verbose]` | Health check |
+| `sg dashboard [--port 8765]` | Local web UI on `127.0.0.1` |
+| `sg sessions <start\|list\|recall\|…>` | Session memory |
+| `sg eval-ab --manifest <file>` | Paired A/B task evaluation |
+
+`sg --help` and `sg <command> --help` show full options. Override the database
+location with `sg --db /tmp/x.sqlite <command>`.
+</details>
 
 ---
 
 ## How it works
 
 ```text
-Repository
-    ↓  .gitignore/.sgignore — ingestion/loader.py
-Scan + hash (mtime fast-path)
-    ↓  indexing/diff.py + merkle.py root_hash
-ParsedDocument (tree parsed once, thread-local)
-    ↓  parsing/tree_sitter_parser.py
-Symbol / Import / Export / Reference passes
-    ↓  analysis/pipeline.py + symbol_handlers/*
-Resolution (scope climb inner→outer→module→imports) + heritage
-    ↓  analysis/semantic/* + import_resolver
-Relationships CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS/DEFINES
-    ↓  CodeGraph graph/code_graph.py
-Semantic chunks (symbol + parent + calls + called_by + imports)
-    ↓  chunking/symbol_chunker.py content_hash v1
-FTS5 porter + vector sqlite-vec/numpy + EmbeddingJob PENDING→DONE
-    ↓  storage/schema.py generation
-Hybrid RRF(k=60) + graph expand (budget 6+2) + reranker + per-file cap 3 + budget 800
-    ↓  retrieval/hybrid_retriever.py + reranker.py + context_builder.py
-LLM gets primary/supporting + relationships + file_paths — not 50k tokens
+Your repository
+    │  respects .gitignore / .sgignore
+    ▼
+Scan + hash          only files whose hash changed go further
+    │
+    ▼
+Parse once           tree-sitter builds one AST per file, reused by every pass
+    │
+    ▼
+Extract symbols      every function/class/method gets a stable identity
+    │                that survives edits and renames
+    ▼
+Resolve references   scope climbing, imports, re-exports, member paths
+    │
+    ▼
+Build relationships  CALLS · EXTENDS · IMPLEMENTS · HAS_TYPE · RETURNS
+    │
+    ▼
+Store                one SQLite file: symbols, edges, chunks, FTS5, vectors
+    │
+    ▼
+Retrieve             exact + full-text + vector + graph expansion,
+    │                fused by reciprocal rank, then reranked
+    ▼
+Answer               definitions and their relationships, inside a token budget
 ```
 
-Reindex after edit: `Merkle` subtree check → `interface_fingerprint` importers → `stable_key` `INSERT OR REPLACE` → `content_hash` reuse → `bump_generation`.
+**Why "parse once" matters.** Each file is turned into a syntax tree a single
+time and that tree is reused by every extraction pass. Re-parsing per feature is
+the usual reason these tools get slow on big repos.
 
----
+**Why identity matters.** Each symbol gets a `stable_key` derived from what it
+*is*, not where it sits in the file. Add a line above a function and its
+identity is unchanged — so a reindex can tell "this was edited" from "this is
+new", and only touch what actually moved.
 
-## Dashboard + ops
+**What incremental actually does.** A Merkle hash over the tree finds the
+changed subtree; unchanged files are never re-parsed. Measured on this
+repository:
 
 ```bash
-sg dashboard . --no-browser --port 8765
-# → http://127.0.0.1:8765  GET /api/status /api/files /api/sessions /api/savings
-# POST /api/reindex  DELETE /api/files/a.html  (400 on .., 401 on bad bearer, 403 on cross-site)
+$ sg index .          # nothing edited since the last run
+  parsed files:        0
+  unchanged:           396
+0.54 s
 
-SG_DASHBOARD_TOKEN=secret sg dashboard --allow-remote  # remote needs flag + token
-sg doctor --verbose
-# ✓ index present: .sg/index.sqlite
-# ✓ lock free: free (.sg/.index.lock fcntl)
-# ✓ embedding queue: pending=0
-# ✓ git hook: .git/hooks/post-commit symbolgraph keep-fresh
-# ✓ embedding backend: local:all-MiniLM-L6-v2:384 (FALLBACK: FTS+graph 0.83/0.78 ok)
+$ sg index .          # after editing three files
+  parsed files:        3
+  unchanged:           393
 ```
 
-Git hook `indexing/git_hooks.py` on `sg init`: `post-commit/post-checkout/post-merge nice -n10 sg index &` with `/tmp/sg-index-hook.lock` stale PID + `watcher.py` debounced `0.5s` secondary.
+So a re-index costs roughly half a second when nothing changed, and only the
+files you actually touched get parsed again.
 
 ---
 
-## Security — redacted before it is indexed
+## What the benchmark says
 
-| Layer | Detail | File |
+Two separate things get measured, and they answer different questions.
+
+### 1. Does it find the right code?
+
+Measured on `tests/fixtures/evaluation_repo`, token budget 800. Reproduce with
+`sg eval --embed`:
+
+| Metric | Full-text + graph | With vectors |
 |---|---|---|
-| **Skip** | `.env* credentials.json secrets.yml .env.local .pem/.key/.p12/.jks` filename deny-list before open | `indexing/secrets.py:58 is_secret_filename` |
-| **Content 15 regex** | `AKIA aws_secret_access_key ghp_ github_pat_ ghs/gho/ghu/ghr xox[abprs]- sk_live sk-..T3BlbkFJ sk-ant- AIza eyJ..JWT PRIVATE KEY + GENERIC_CREDENTIAL dotenv 16+` | `indexing/secrets.py:6` |
-| **Placeholder exempt** | `your-api-key xxxxx my-api-key your-secret test_key` not redacted | `indexing/secrets.py:24` |
-| **PII** | `EMAIL IPV4 SSN PHONE E164 + CARD Luhn` (`411111… valid → [REDACTED:CARD]`, `1234… invalid → keep`) | `indexing/secrets.py:84 redact_pii` |
-| **Traversal** | `resolved.relative_to(project)` in `indexer/pipeline.py`, `dashboard DELETE .. \ / 400` | `storage/index_store.py` |
-| **WAL** | `PRAGMA journal_mode=WAL synchronous=NORMAL foreign_keys=ON busy_timeout 5000` | `storage/db.py:11` |
-| **Lock** | `fcntl.flock .sg/.index.lock LOCK_EX|LOCK_NB` + `ProjectIndexLock` context | `indexing/resource_governor.py:61` |
+| Definition accuracy | 0.83 | **0.92** |
+| Mean recall@5 | 0.78 | **0.97** |
+| MRR | 0.71 | **0.94** |
+| Incremental reindex | `<50ms` | cache hit rate 1.0 |
 
-See `indexing/resource_governor.py:12 onnx_thread_cap SG_ORT_THREADS` + `is_memory_pressured PSI avg10>25` + `MAX_FILE 2MB` + `TOKENIZERS_PARALLELISM false`.
+The first column is what you get with no model installed at all.
 
----
+### 2. Does it actually save tokens?
 
-## Token methodology — how to cite a savings number
+**Yes — but only on files big enough to be worth packing, and the honest answer
+is a range, not one number.**
 
-Do not cite `99% whole-repo` — `evaluation/runner.py:202` hardcodes
-`token_reduction=0.0` specifically to refuse that number. The baseline is
-always `expected_files` content only (`evaluation/external.py:184`), never
-the whole repo, and a savings number is never cited without its paired
-`recall@10`.
+A context pack has a fixed structure costing roughly 800 tokens. On a file
+*smaller* than that, packing it costs more than just sending the file, and the
+saving goes negative. Publishing one blended percentage would bury that, so the
+results are segmented by file size:
+
+| Baseline file size | Django | Fiber | FastAPI |
+|---|---|---|---|
+| **> 4k tokens** | **+93.9%** | **+90.4%** | **+94.4%** |
+| 1k – 4k tokens | +65.8% | +53.3% | +60.3% |
+| < 1k tokens | +11.3% | −21.1% | −293.3% |
+
+Read that as: **on the large files where context actually hurts, symbolgraph
+saves 90–94% of the tokens. On tiny files it costs you tokens** — so it is worth
+using where files are big, which is exactly where agents struggle.
+
+Whole-run aggregates, all of which cleared a recall gate declared *before* the
+runs happened:
+
+| Repo | Tokens/query | Saving | Recall@10 | p50 latency |
+|---|---|---|---|---|
+| Django | 8,909 → 811 | **90.9%** | 1.00 | 18.2ms |
+| Fiber | 5,272 → 804 | **84.7%** | 0.95 | 9.3ms |
+| FastAPI | 4,923 → 831 | **83.1%** | 0.90 | 3.8ms |
+
+<details>
+<summary><b>How these numbers are kept honest</b></summary>
+
+- **Pre-registered.** The repos, their commit SHAs, the queries, the recall
+  gate and the size buckets were all committed to git *before* the first run
+  (`benchmarks/PREREGISTRATION.md`). The commit order is the proof — nothing
+  was tuned after seeing a result.
+- **The baseline is never the whole repo.** It is the content of the files a
+  query was expected to need. Comparing a context pack against "read the entire
+  repository" would manufacture a ~99% saving that means nothing;
+  `evaluation/runner.py` hard-codes that number to `0.0` specifically to refuse
+  it.
+- **Savings are never quoted without recall.** A number that retrieves less is
+  not a saving. Every row above passed a recall@10 gate of 0.90.
+- **The aggregate is quoted, not the mean of ratios.** Averaging each query's
+  own percentage lets a few tiny files swing the result wildly negative even
+  when the set saves real tokens — on FastAPI the mean-of-ratios is `−1268%`
+  for the same run whose true aggregate is `+83.1%`. The reported figure weights
+  by actual token volume.
+- **The losing rows are published.** The negative `<1k` numbers are printed
+  above rather than dropped; they are what make the large-file rows believable.
+
+Reproduce or verify:
 
 ```bash
-python benchmarks/run_external.py --repo <url> --source-dir <dir> \
-  --queries path/to/your-own-queries.json --output benchmarks/results/<name>.json
+sg savings                                              # read stored results
 python benchmarks/run_external.py --recompute "benchmarks/results/*.json"
 ```
 
-**Cite `aggregate_savings_pct`, not `mean_savings_pct`.** The report carries
-both, and they can disagree in sign. `mean_savings_pct` is the mean of each
-query's own ratio — a mean of ratios with wildly different denominators, so
-a handful of small files (where the context pack's fixed structural
-overhead costs more than the file itself) can swing it deeply negative even
-when the set saves real tokens overall. `aggregate_savings_pct` weights by
-actual token volume (`1 - mean_context_tokens / mean_baseline_tokens`,
-equivalent to summing baseline and context across every query and taking
-one ratio) — that's the number a claim should use.
+**Costs are a projection, not a measurement** — input tokens only, at
+`sonnet $2.00/1M` as of `2026-06-24` (`retrieval/pricing.py`). Django at budget
+800 works out to `$0.0162/query`. Always cite the model, price and date.
+</details>
 
-This is not hypothetical — it happened on the first real run. 11
-original queries (`benchmarks/self_queries.json`, written by hand, not
-derived from any other project) against this repo's own `retrieval/`
-package (`benchmarks/results/self_retrieval.json`):
+---
 
-| | |
+## Supported languages
+
+**Full graph support** — symbols, typed relationships and imports:
+
+| Language | Extensions |
 |---|---|
-| Recall@10 | **1.00** (11/11) |
-| `mean_savings_pct` | **−168%** (misleading — see below) |
-| `aggregate_savings_pct` | **+16.7%** |
+| TypeScript / TSX | `.ts .tsx` |
+| JavaScript / JSX | `.js .jsx` |
+| Python | `.py` |
+| Go | `.go` |
+| Rust | `.rs` |
+| Java | `.java` |
+| C# | `.cs` |
+| C / C++ | `.c .h .cpp .hpp .cc .hh .cxx .hxx` |
 
-Two large files (`reranker.py` 401 lines, `hybrid_retriever.py` 490
-lines) saved 76–78% of tokens each — a full read costs 3,300–3,800
-tokens, a symbol-level context pack costs under 850. Small files
-(under ~700 tokens whole) cost *more* through the context pack than a
-direct read, because the pack's structural overhead is roughly constant
-regardless of file size. `mean_savings_pct` weights those small-file
-losses the same as the large-file wins and comes out negative;
-`aggregate_savings_pct` reflects what actually happened across the
-token budget spent. **The claim that holds up: symbolgraph saves tokens on
-files large enough that "the whole file" costs more than "the
-definition plus its relationships" — and costs more on trivially small
-ones.** Full per-query breakdown in `benchmarks/results/self_retrieval.json`.
+**Text-indexed** — searchable, but no syntax tree (26 more extensions):
 
-That self-repo pattern now replicates on three pre-registered external
-repos (`benchmarks/results/SUMMARY.md`, 20 original queries each,
-budgets `800/1200/2000`, recall gate `>= 0.90` — all three clear it):
-
-| Repo @ 800 | `<1k` | `1k-4k` | `>4k` |
-|---|---|---|---|
-| Django (R 1.00) | +11.3% (n=1) | +65.8% (n=7) | **+93.9%** (n=12) |
-| Fiber (R 0.95) | −21.1% (n=2) | +53.3% (n=7) | **+90.4%** (n=11) |
-| FastAPI (R 0.90) | −293.3% (n=10) | +60.3% (n=4) | **+94.4%** (n=6) |
-
-The `>4k` bucket clears the pre-declared `~60%` falsifiability bar on all
-three. The negative `<1k` rows are published alongside — they are what make
-the large-file rows credible. FastAPI's whole-run mean-of-ratios is
-`−1268%` at the same run whose aggregate is `+83.1%`: the starkest case yet
-for citing the aggregate.
-
-**Dollars** are a projection, not a measurement: input tokens only,
-`dollars = (mean_baseline − mean_context) × price_in / 1e6` from the
-aggregate, default `sonnet $2.00/1M` as of `2026-06-24`
-(`retrieval/pricing.py`). E.g. Django @ 800: `8098 tokens/query × $2/1M =
-$0.0162/query`. Always rendered with model + price + price date
-(`sg savings [--json]`, `GET /api/savings`), never as a bare `$X`.
+`bash css dockerfile gql graphql hcl htm html json kt less md php proto rb scss
+sh sql svelte swift tf toml vue xml yaml yml`
 
 ---
 
-## Current status — what 0.1.0 is, what is not
+## Privacy and security
 
-**Shipped (658p 80.54% branch, `docs/IMPLEMENTATION.md` phases `COMPLETE`):** tree-sitter parse once, document load, symbol/index, reference + member-expression `auth.client.createAuth`, cross-file import/export resolve incl. `re_export export * from` + `export {x} from`, `CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS`, interface `property_signature/method_signature` as child symbols, SQLite `13 tables + vec0 + FTS5 porter`, incremental `hash + Merkle root_hash + interface-aware reresolve`, semantic chunks `content_hash`, `FTS + vector + exact + graph expand 6+2 + RRF + reranker + per-file cap 3 + budget 800`, `FTS+graph 0.83/0.78` out-of-box, `sg 13 cmds + sg-mcp 13 tools`, `doctor + dashboard 8 endpoints CSRF+bearer hmac`, `eval + eval-ab 20 tasks`.
+Your code stays on your machine. There is no account, no upload and no
+telemetry. The only network call symbolgraph ever makes is to a local Ollama
+instance, and only if you have one running.
 
-**Not yet (deliberate, not oversights):** `learned_weights.json` heuristic `relationship 1.15` needs real `AGENT_CMD` train; `export *` wildcard `target_symbol None`; `P5-2` append-only already `INSERT OR REPLACE` but `chunks_fts prune_not_in` not yet `HNSW`.
+Secrets are stripped **before** anything is indexed:
 
-**In progress:** `P5` `learned reranker train + large-repo proof + parse-once hypothesis`.
+- **Files skipped entirely:** `.env*`, `credentials.json`, `secrets.yml`,
+  `.pem` / `.key` / `.p12` / `.jks`.
+- **Content redacted:** AWS keys, GitHub tokens, Slack tokens, Stripe keys,
+  OpenAI / Anthropic / Google API keys, JWTs, private key blocks.
+- **PII redacted:** emails, IPv4 addresses, phone numbers, SSNs, and card
+  numbers that pass a Luhn check.
+- **Obvious placeholders are left alone** — `your-api-key`, `test_key` and
+  friends stay readable.
 
-**Planned:** `Docker remote` `fastembed→sqlite-vec HNSW` `C/C++ overload DEFINITION_OF refinement`.
-
-`docs/IMPLEMENTATION.md` per-phase `### Implemented` is authoritative.
-
----
-
-## v1 definition of done
-
-- [x] TS/JS reliable, parse once
-- [x] Symbols/imports/exports/references resolved for common cases (cross-file + member)
-- [x] Graph persisted SQLite + generations
-- [x] Incremental detected (Merkle) + chunk reuse via `content_hash`
-- [x] FTS + vector locally + graph expansion + hybrid top-k
-- [x] Context from entities not whole files (budget 800)
-- [x] Agent can `sg search/definition/callers/callees/context` via MCP
-- [x] Eval measures `recall/MRR/latency/tokens` + `doctor` prod check
-
----
-
-## Engineering rule
+You can watch this work on symbolgraph itself: indexing this repository prints
 
 ```
-Correctness → Semantic completeness → Persistence → Incremental → Retrieval → Performance → Agents
+Skipping .../docs/IMPLEMENTATION.md: contains secrets
+Skipping .../indexing/secrets.py: contains secrets
 ```
 
-> Understand the repository first. Retrieve only what matters. Then let the LLM reason.
+because both files contain example key patterns. They are excluded from the
+index rather than redacted in place — the files on disk are never modified.
 
-Only the next layer may be optimized; never embed before resolution is trustworthy. See `specs/` + `docs/IMPLEMENTATION.md` phases `0..24`.
+The dashboard binds to `127.0.0.1` only; exposing it needs both an explicit
+flag and a token.
 
 ---
 
-## Session memory + dashboard (local only)
+## Troubleshooting
+
+**My agent isn't using it.**
+Restart your editor after `sg init` — MCP servers are only picked up at startup.
+Then `sg doctor .` to confirm the index and config exist.
+
+**Search returns nothing.**
+Check the index was actually built: `sg status --oneline`. If symbol counts are
+`0`, run `sg index .` and watch for skipped files.
+
+**Results feel stale.**
+`sg index .` again, or `sg watch .` to keep it live. `sg init` also installs a
+post-commit hook that refreshes it in the background.
+
+**Semantic search isn't as good as advertised.**
+The `0.92 / 0.97` figures need vectors. Install Ollama, then `sg embed`.
+`sg doctor` reports which backend is active.
+
+**Something is locked.**
+`sg doctor` shows lock state. A stale lock lives at `.sg/.index.lock`.
+
+**Start over.**
+`rm -rf .sg/` removes the entire index. Your source is untouched — it is only
+ever read.
+
+---
+
+## Project status
+
+`0.1.0` is an early but genuinely working release: 677 tests passing at 80.68%
+branch coverage, 11 language profiles, 15 MCP tools, and the benchmark numbers
+above are reproducible from the commands given.
+
+Known gaps, deliberately listed rather than hidden:
+
+- Reranker weights are **tuned by grid search**, not learned from real agent
+  runs. `ROADMAP.md` explains why the honest label matters and what a real fit
+  would need.
+- `export *` wildcard re-exports resolve the file but not always the specific
+  symbol.
+- Vector search uses a flat index; no HNSW yet.
+
+`ROADMAP.md` tracks what's next. `docs/IMPLEMENTATION.md` is the authoritative
+per-phase detail.
+
+---
+
+## Contributing
+
+Contributions are welcome — see `CONTRIBUTING.md`. The one rule that matters:
+
+> If you can't point to the line and the test, it isn't done.
 
 ```bash
-sg sessions start . && sg sessions recall "auth decision" --limit 10
-sg dashboard . --no-browser  # http://127.0.0.1:8765 read-only, localhost by default
-rm -rf .sg/session.sqlite    # wipe memory
+uv sync --all-extras
+uv run pytest -q                          # 677 passed
+uv run pytest --cov --cov-fail-under=80   # coverage gate
+uv run ruff check .                       # lint
 ```
 
-Bounded `MAX_TEXT 2000` `redact_secrets + redact_pii` on `_bounded`. Raw source/tool output never stored. `prune --days 30`.
-
----
-
-## Release smoke
-
-```bash
-uv build
-python scripts/release_smoke.py  # wheel outside checkout: sg --help + init + index + search + sg-mcp startup
-```
-
-Offline needs `uv cache` wheels.
-
----
-
-## Why symbol, not chunk
-
-Most local code-search tools tag functions and classes as text chunks — `FUNCTION`/`CLASS` labels over a span of source, connected by little more than "imports this file." symbolgraph builds an actual graph instead:
-
-- **Symbol identity, not a text span.** Every function, class, and interface member gets a `stable_key` — the same symbol keeps the same identity across edits, renames included, so incremental reindexing can tell "this changed" from "this is new."
-- **Typed relationships, not just imports.** `CALLS` / `EXTENDS` / `IMPLEMENTS` / `HAS_TYPE` / `RETURNS` edges, including cross-file resolution through `export * from` re-exports and member paths like `auth.client.createAuth`.
-- **Hash + Merkle incremental**, not a snapshot rewrite — only what changed gets touched (`<50ms` measured on the fixture; a no-change reindex of this repo's own 381 files is ~5.7s wall clock).
-- **RRF fusion with graph expansion and a tuned reranker** (grid-searched weights on the fixture, not fitted on agent runs — see `ROADMAP.md` P5-3 honesty note), not similarity search alone.
-
-The moat is symbol, not chunk — graph before vector, measured against a fixed fixture with a stated baseline, not a whole-repo estimate. See `## Benchmark` above for what that produces.
+Security issues: please use GitHub's private vulnerability reporting rather than
+a public issue. See `SECURITY.md`.
 
 ---
 
 ## License
 
-MIT — see `LICENSE`. Authors: see `pyproject.toml` `Fazle Elahee / Raj` fork + `Deepjyoti` parity landings `symbolgraph/editors` `secrets Luhn` `merkle`.
+MIT — see `LICENSE`.
 
-*If symbolgraph saves you tokens, give it a star and cite `budget 800 + commit SHA`.*
+<p align="center"><sub>If symbolgraph saves you tokens, a star helps. When citing a number, include the token budget and commit SHA.</sub></p>
