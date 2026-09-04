@@ -1,6 +1,5 @@
 """Shared fixtures: tmp_db with WAL cleanup, tmp_repo."""
 
-import tempfile
 from pathlib import Path
 
 import pytest

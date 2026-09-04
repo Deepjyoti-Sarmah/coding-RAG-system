@@ -1,9 +1,8 @@
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 
-from retrieval.hybrid_retriever import _select_with_per_file_cap, HybridCandidate
+from retrieval.hybrid_retriever import HybridCandidate, _select_with_per_file_cap
 from storage.repositories.chunk_fts_repository import (
     BM25_WEIGHT_CHUNK_ID,
     BM25_WEIGHT_CHUNK_TEXT,
@@ -96,8 +95,6 @@ class TestWeightedBM25(unittest.TestCase):
 
     def test_weighted_query_is_well_formed_and_ordering_unchanged(self):
         # Verify that weighted bm25 still returns negative scores and ORDER BY score ASC holds
-        import tempfile
-        from pathlib import Path
         from analysis.build_graph import build_graph
         from storage.index_store import persist_index, search_lexical
 

@@ -194,9 +194,8 @@ class TestCliMain(unittest.TestCase):
         # argparse version action exits via SystemExit(0) and prints version
         stdout = io.StringIO()
         stderr = io.StringIO()
-        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-            with self.assertRaises(SystemExit) as cm:
-                parser.parse_args(["--version"])
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit) as cm:
+            parser.parse_args(["--version"])
         self.assertEqual(cm.exception.code, 0)
         output = stdout.getvalue() + stderr.getvalue()
         # version should be non-empty and match _get_version format
@@ -204,9 +203,8 @@ class TestCliMain(unittest.TestCase):
         # also via main entry point
         stdout2 = io.StringIO()
         stderr2 = io.StringIO()
-        with contextlib.redirect_stdout(stdout2), contextlib.redirect_stderr(stderr2):
-            with self.assertRaises(SystemExit) as cm2:
-                main(["--version"])
+        with contextlib.redirect_stdout(stdout2), contextlib.redirect_stderr(stderr2), self.assertRaises(SystemExit) as cm2:
+            main(["--version"])
         self.assertEqual(cm2.exception.code, 0)
         output2 = stdout2.getvalue() + stderr2.getvalue()
         self.assertTrue(output2.strip())

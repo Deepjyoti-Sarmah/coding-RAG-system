@@ -47,7 +47,10 @@ def walk(
 
     # Volume guard for type refs before visiting
     if node.type in profile.heritage_only_nodes:
-        from analysis.semantic.reference_kind import _in_return_type, _in_type_annotation
+        from analysis.semantic.reference_kind import (
+            _in_return_type,
+            _in_type_annotation,
+        )
         from models.entities.reference_kind import ReferenceKind
 
         # quick check to avoid creating 100s of type refs
@@ -111,7 +114,10 @@ def visit(
     # type_identifier extraction policy moved to walk() guard above; here just check identifier set
     if node.type in profile.heritage_only_nodes:
         if not in_heritage_clause(node, profile):
-            from analysis.semantic.reference_kind import _in_return_type, _in_type_annotation
+            from analysis.semantic.reference_kind import (
+                _in_return_type,
+                _in_type_annotation,
+            )
 
             if not (_in_type_annotation(node) or _in_return_type(node)):
                 return None

@@ -1,8 +1,14 @@
-import unittest
 import os
 import tempfile
-from pathlib import Path
-from indexing.resource_governor import adaptive_batch_size, should_skip_large_file, ProjectIndexLock, is_memory_pressured, IdleTracker
+import unittest
+
+from indexing.resource_governor import (
+    IdleTracker,
+    ProjectIndexLock,
+    adaptive_batch_size,
+    is_memory_pressured,
+    should_skip_large_file,
+)
 
 
 class TestResourceGovernor(unittest.TestCase):

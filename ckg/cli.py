@@ -116,7 +116,7 @@ def cmd_index(
                     )
                     if runnable == 0:
                         break
-                except Exception:  # noqa: BLE001 -- on_progress is user callback, must not crash indexing
+                except Exception:
                     break
 
     return report
@@ -234,7 +234,7 @@ def cmd_doctor(root: str = ".", verbose: bool = False) -> int:
         if free:
             lk.release()
         checks.append(("lock free", free, "locked" if not free else "free"))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         checks.append(("lock free", False, str(e)))
     # queue pending
     try:
@@ -244,7 +244,7 @@ def cmd_doctor(root: str = ".", verbose: bool = False) -> int:
             checks.append(("embedding queue", pending == 0, f"pending={pending}"))
         else:
             checks.append(("embedding queue", True, "no db"))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         checks.append(("embedding queue", False, str(e)))
     # git hook
     try:
@@ -260,7 +260,7 @@ def cmd_doctor(root: str = ".", verbose: bool = False) -> int:
     try:
         prov = _detect_provider()
         checks.append(("embedding backend", prov is not None, prov.model_id if prov else "none - FTS+graph only (ok)"))  # type: ignore[operator]
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         checks.append(("embedding backend", False, str(e)))
 
     ok = all(v for _, v, _ in checks)
@@ -358,7 +358,7 @@ def resolve_provider(db_path: str, *, use_vector: bool) -> EmbeddingProvider | N
         return _detect_provider()
     except RuntimeError:
         raise
-    except Exception:  # noqa: BLE001 -- auto-detection must degrade gracefully to FTS+graph
+    except Exception:
         return None
 
 
@@ -413,7 +413,12 @@ def _ensure_mcp_entry(path: Path, container_key: str | None) -> str:
 
 
 def cmd_init(root: str = ".", *, agents: list[str] | None = None) -> dict[str, str]:
-    from ckg.editors import EDITORS, atomic_write_text, detect_editors, project_storage_slug
+    from ckg.editors import (
+        EDITORS,
+        atomic_write_text,
+        detect_editors,
+        project_storage_slug,
+    )
 
     root_path = Path(root)
     if agents is None or agents == ["auto"]:
@@ -545,7 +550,7 @@ def cmd_embed(
                 )
                 if runnable == 0:
                     break
-            except Exception:  # noqa: BLE001 -- on_progress is user callback, must not crash indexing
+            except Exception:
                 break
         return last_report if last_report is not None else batch_report
     return run_embedding_worker(
@@ -593,7 +598,7 @@ def _maybe_spawn_background_embed(db_path: str) -> None:
         runnable = pending + max(0, failed - exhausted)
         if runnable == 0:
             return
-    except Exception:  # noqa: BLE001
+    except Exception:
         return
     if not _try_acquire_embed_lock(db_path):
         return
@@ -625,10 +630,10 @@ def _maybe_spawn_background_embed(db_path: str) -> None:
             stderr=subprocess.DEVNULL,
             stdin=subprocess.DEVNULL,
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         try:
             _background_lock_path(db_path).unlink()
-        except Exception:  # noqa: BLE001, S110
+        except Exception:
             pass
 
 
@@ -1147,7 +1152,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                             print(
                                 f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`"
                             )
-                except Exception:  # noqa: BLE001, S110
+                except Exception:
                     pass
             _print_candidates(
                 cmd_search(db_path, args.query, provider=provider, top_k=args.top_k)
@@ -1183,7 +1188,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                             print(
                                 f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`"
                             )
-                except Exception:  # noqa: BLE001, S110
+                except Exception:
                     pass
             _print_context_pack(
                 cmd_context(

@@ -48,7 +48,10 @@ class TestOllamaProvider(unittest.TestCase):
     def test_ollama_env_var_precedence(self):
         import os
 
-        from embeddings.ollama_provider import _resolve_ollama_model, _resolve_ollama_url
+        from embeddings.ollama_provider import (
+            _resolve_ollama_model,
+            _resolve_ollama_url,
+        )
 
         orig = os.environ.copy()
         try:
@@ -84,7 +87,6 @@ class TestOllamaProvider(unittest.TestCase):
                 # Don't fail if already imported by other tests, but check fresh import doesn't trigger
                 pass
         # Import fresh in subprocess would be ideal, but check that ollama_provider import itself doesn't touch torch
-        import importlib
 
         if "embeddings.ollama_provider" in sys.modules:
             del sys.modules["embeddings.ollama_provider"]

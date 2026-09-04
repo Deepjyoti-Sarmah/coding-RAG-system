@@ -2,8 +2,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import numpy as np
-
 from embeddings.fake_provider import FakeEmbeddingProvider
 from indexing.embedding_queue import queue_status, run_embedding_worker
 from indexing.indexer import reindex_index
@@ -36,8 +34,8 @@ class TestModelInvalidation(unittest.TestCase):
             self.assertGreater(len(vecs_a), 0)
 
             # Second model with same dimension should invalidate first
-            report_b = run_embedding_worker(db, provider_b)
-            vecs_b = load_chunk_vectors(db)
+            _report_b = run_embedding_worker(db, provider_b)
+            _vecs_b = load_chunk_vectors(db)
             # Vectors from different fake models should differ (different hash seed includes model? Fake model differs but vector generation doesn't use model name, so they would be same.
             # Instead check that second run did not just reuse cached embeddings (reused should be 0 after invalidation)
             # Our fake provider's vectors are deterministic on content, not model, so they'd be same; but invalidation ensures we don't reuse wrong model's cache
@@ -47,10 +45,8 @@ class TestModelInvalidation(unittest.TestCase):
             self.assertIn("DONE", status)
 
     def test_model_change_clears_vector_index(self):
-        import sqlite3
 
         from storage import db as dbmod
-        from storage.repositories import vec_index_repository
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "repo"

@@ -459,7 +459,7 @@ class TestTestExamplePenalty(unittest.TestCase):
 class TestIDFWeightedPathMatch(unittest.TestCase):
     def test_rare_basename_outranks_common_basename(self):
         # Corpus: "converters" appears in 1 of 100 docs (rare), "test" in 60 of 100 (common)
-        from retrieval.reranker import _idf_weight, _path_match, build_basename_token_df
+        from retrieval.reranker import _idf_weight, _path_match
 
         # build a synthetic df where converters is rare, test is common
         df = {"converters": 1, "test": 60}
@@ -481,7 +481,7 @@ class TestIDFWeightedPathMatch(unittest.TestCase):
 
         # Query contains both basenames
         query = "converters test"
-        tokens = set(["converters", "test"])
+        tokens = {"converters", "test"}
         pm_rare = _path_match(_candidate(foo, score=0.0), tokens, df, total_docs)
         pm_common = _path_match(_candidate(bar, score=0.0), tokens, df, total_docs)
         # converters.py's basename "converters" maps to foo only if foo's path is converters.py
@@ -524,7 +524,7 @@ class TestIDFWeightedKindMatch(unittest.TestCase):
             result = build_graph(str(root))
 
         symbols = {s.name: s for s in result.symbols}
-        cls0 = symbols["Cls0"]
+        _cls0 = symbols["Cls0"]
         # Create 9 class candidates + 1 function, but we test the class boost is damped
         candidates = []
         for i in range(9):

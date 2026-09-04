@@ -1,11 +1,19 @@
 import json
 import tempfile
 import unittest
-from unittest.mock import patch
 from pathlib import Path
+from unittest.mock import patch
 
 from evaluation.ab_metrics import score, summarize
-from evaluation.ab_runner import FakeAgentRunner, SubprocessAgentRunner, _provision_ckg, _validate_condition, load_tasks, parse_result, run
+from evaluation.ab_runner import (
+    FakeAgentRunner,
+    SubprocessAgentRunner,
+    _provision_ckg,
+    _validate_condition,
+    load_tasks,
+    parse_result,
+    run,
+)
 
 
 class AbEvaluationTests(unittest.TestCase):

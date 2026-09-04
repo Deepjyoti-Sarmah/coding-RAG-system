@@ -26,7 +26,7 @@ try:
     from indexing.resource_governor import IdleTracker
 
     _idle_tracker = IdleTracker(timeout_seconds=1800)
-except Exception:  # noqa: BLE001
+except Exception:
     _idle_tracker = None  # type: ignore[assignment]
 
 
@@ -34,7 +34,7 @@ def _touch_idle() -> None:
     if _idle_tracker is not None:
         try:
             _idle_tracker.touch()
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
 
 
@@ -46,7 +46,7 @@ def _get_mcp_provider():
             from ckg.cli import _detect_provider
 
             _mcp_provider = _detect_provider()
-        except Exception:  # noqa: BLE001
+        except Exception:
             return None
     return _mcp_provider
 
@@ -120,7 +120,7 @@ def is_idle() -> bool:
         return False
     try:
         return _idle_tracker.is_idle()
-    except Exception:  # noqa: BLE001
+    except Exception:
         return False
 
 
@@ -156,7 +156,7 @@ async def index_repository(path: str, embed: bool = False) -> dict[str, Any]:
 
             batch = 100 if is_memory_pressured() else 200
             run_embedding_worker(db_path, lazy_provider, limit=batch)
-    except Exception:  # noqa: BLE001, S110
+    except Exception:
         pass
 
     return {
@@ -244,7 +244,7 @@ async def search(query: str, path: str = ".", top_k: int = 5) -> dict[str, Any]:
 
         qs = queue_status(db_path)
         pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
-    except Exception:  # noqa: BLE001
+    except Exception:
         pending = 0
 
     result: dict[str, Any] = {
@@ -255,7 +255,7 @@ async def search(query: str, path: str = ".", top_k: int = 5) -> dict[str, Any]:
     if result["results"]:
         try:
             SessionService(path).retrieval(query, [f"{x['relative_path']}:{x['qualified_name']}" for x in result["results"]], 0, 0, (perf_counter()-started)*1000)
-        except Exception:  # noqa: BLE001, S110 -- best-effort session logging must not crash tool
+        except Exception:
             pass
     return result
 
@@ -295,7 +295,7 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
 
         qs = queue_status(db_path)
         pending = qs.get("PENDING", 0) + qs.get("FAILED", 0) - qs.get("exhausted", 0)
-    except Exception:  # noqa: BLE001
+    except Exception:
         pending = 0
 
     result: dict[str, Any] = {
@@ -315,7 +315,7 @@ async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: 
         try:
             baseline = int(getattr(pack, "baseline_tokens", 0) or 0)
             SessionService(path).retrieval(query, [f"{x['relative_path']}:{x['qualified_name']}" for x in selected], pack.total_tokens, baseline, (perf_counter()-started)*1000)
-        except Exception:  # noqa: BLE001, S110 -- best-effort session logging must not crash tool
+        except Exception:
             pass
     return result
 

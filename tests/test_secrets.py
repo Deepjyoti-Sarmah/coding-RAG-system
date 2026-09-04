@@ -1,5 +1,12 @@
 import unittest
-from indexing.secrets import contains_secret, is_secret_filename, redact_pii, redact_secrets, should_skip_file_content
+
+from indexing.secrets import (
+    contains_secret,
+    is_secret_filename,
+    redact_pii,
+    redact_secrets,
+    should_skip_file_content,
+)
 
 
 class TestSecrets(unittest.TestCase):

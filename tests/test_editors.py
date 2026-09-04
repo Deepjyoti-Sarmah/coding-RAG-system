@@ -1,10 +1,10 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
-import json
 
+from ckg.cli import _ensure_mcp_entry, cmd_init
 from ckg.editors import EDITORS, atomic_write_text, detect_editors
-from ckg.cli import cmd_init, _ensure_mcp_entry
 
 
 class TestEditors(unittest.TestCase):
@@ -55,17 +55,17 @@ class TestEditors(unittest.TestCase):
     def test_init_pi(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            results = cmd_init(str(root), agents=["pi"])
+            _results = cmd_init(str(root), agents=["pi"])
             self.assertTrue((root / "AGENTS.md").exists())
 
     def test_toml_escape(self):
-        from ckg.editors import toml_escape, project_storage_slug, ensure_block_content
+        from ckg.editors import ensure_block_content, project_storage_slug, toml_escape
         self.assertEqual(toml_escape('a\\b"c'), 'a\\\\b\\"c')
         self.assertIn("-", project_storage_slug("/tmp/foo\\bar"))
         content, already = ensure_block_content("")
         self.assertFalse(already)
         self.assertIn("ckg-block-version", content)
-        content2, already2 = ensure_block_content(content)
+        _content2, already2 = ensure_block_content(content)
         self.assertTrue(already2)
         # legacy upgrade
         old = "<!-- CKG MCP: ckg-mcp -->\nhello"

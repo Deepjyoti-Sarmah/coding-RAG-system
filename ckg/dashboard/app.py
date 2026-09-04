@@ -10,7 +10,6 @@ except ImportError:
     FastAPI = None  # type: ignore
 
 from ckg.dashboard.page import PAGE
-from ckg.dashboard.server import DashboardHandler, DashboardServer
 
 
 def create_app(project: str):
@@ -21,8 +20,9 @@ def create_app(project: str):
 
     # Reuse logic from DashboardHandler by instantiating a dummy server
     # For simplicity, we proxy to the same handlers via direct calls
+    import sqlite3
     from pathlib import Path
-    import json, sqlite3
+
     from ckg.cli import cmd_search, cmd_status, default_db_path
     from session_memory import session_db_path
 
@@ -40,7 +40,8 @@ def create_app(project: str):
     @app.get("/api/status")
     async def status(request: Request):
         # CSRF + token check reused
-        import hmac, os
+        import hmac
+        import os
 
         token = os.environ.get("CKG_DASHBOARD_TOKEN")
         if token and not hmac.compare_digest(f"Bearer {token}", request.headers.get("authorization", "")):
@@ -70,8 +71,8 @@ def create_app(project: str):
 
     @app.get("/api/sessions")
     async def sessions():
-        from pathlib import Path
         import sqlite3
+        from pathlib import Path
 
         p = Path(session_db_path(project))
         rows = []
@@ -97,8 +98,8 @@ def create_app(project: str):
 
     @app.get("/api/files")
     async def files():
-        from pathlib import Path
         import sqlite3
+        from pathlib import Path
 
         db = default_db_path(project)
         if not Path(db).exists():
@@ -109,8 +110,8 @@ def create_app(project: str):
 
     @app.get("/api/savings")
     async def savings():
-        from pathlib import Path
         import sqlite3
+        from pathlib import Path
 
         sdb = Path(session_db_path(project))
         if not sdb.exists():
@@ -123,7 +124,10 @@ def create_app(project: str):
 
     @app.post("/api/reindex")
     async def reindex(request: Request):
-        import hmac, os, subprocess, sys
+        import hmac
+        import os
+        import subprocess
+        import sys
 
         token = os.environ.get("CKG_DASHBOARD_TOKEN")
         if token and not hmac.compare_digest(f"Bearer {token}", request.headers.get("authorization", "")):
@@ -163,7 +167,8 @@ def create_app(project: str):
 
     @app.delete("/api/files/{path:path}")
     async def delete_file(path: str, request: Request):
-        import hmac, os
+        import hmac
+        import os
         from pathlib import Path as p
 
         token = os.environ.get("CKG_DASHBOARD_TOKEN")

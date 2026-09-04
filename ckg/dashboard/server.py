@@ -35,7 +35,8 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
     server: Any  # type: ignore[assignment]  # pyright: ignore[reportIncompatibleVariableOverride]
     server_version = "CKGDashboard/1.0"
     def _check_auth(self) -> bool:
-        import hmac, os
+        import hmac
+        import os
 
         token = os.environ.get("CKG_DASHBOARD_TOKEN")
         if token:
@@ -67,7 +68,7 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
             if path=="/api/metrics": return self._metrics()
             if path=="/api/search": return self._search(parse_qs(parsed.query))
             return self._send({"error":"not found"},404)
-        except Exception as e:  # noqa: BLE001 -- HTTP handler must return 500 for any handler error
+        except Exception as e:
             return self._send({"error":str(e)},500)
     def do_POST(self) -> None:
         if not self._check_auth():
@@ -75,7 +76,8 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
         parsed = urlparse(self.path)
         if parsed.path == "/api/reindex":
             try:
-                import subprocess, sys
+                import subprocess
+                import sys
 
                 subprocess.Popen([sys.executable, "-m", "ckg.cli", "index", cast(DashboardServer, self.server).project], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 return self._send({"status": "reindex started"})
@@ -164,7 +166,8 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
             out["token_totals"]={"context_tokens":sum(x["context_tokens"] for x in out["retrieval_events"]),"baseline_tokens":sum(x["baseline_tokens"] for x in out["retrieval_events"])}
         return self._send(out)
     def _metrics(self) -> None:
-        import time, sqlite3
+        import sqlite3
+        import time
         project = cast(DashboardServer, self.server).project
         db = default_db_path(project)
         out: dict[str, Any] = {"merkle_root": None, "generation": None, "coverage": 81.23, "tests_passed": 655, "timestamp": int(time.time())}

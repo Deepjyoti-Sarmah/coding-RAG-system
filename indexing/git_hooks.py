@@ -1,6 +1,5 @@
 """Git hooks keep-fresh — post-commit/post-checkout/post-merge triggers background ckg index."""
 
-import os
 import stat
 from pathlib import Path
 

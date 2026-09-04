@@ -463,8 +463,8 @@ class TestMerkleReuseAndGuardrails(unittest.TestCase):
             root = Path(tmp)
             db = str(root / "index.sqlite")
             _write(root, AUTH)
-            from embeddings.fake_provider import FakeEmbeddingProvider
             import indexing.embedding_queue as q
+            from embeddings.fake_provider import FakeEmbeddingProvider
             prov = FakeEmbeddingProvider(dimension=8)
             reindex_index(db, str(root))
             q.run_embedding_worker(db, prov)
@@ -497,6 +497,7 @@ class TestMerkleReuseAndGuardrails(unittest.TestCase):
             root = Path(tmp)
             _write(root, AUTH)
             from unittest.mock import patch
+
             from parsing.tree_sitter_parser import TreeSitterParser
             orig = TreeSitterParser.parse
             calls: list[str] = []

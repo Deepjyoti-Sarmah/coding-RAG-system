@@ -81,7 +81,7 @@ def ollama_available(base_url: str | None = None) -> bool:
             req = urllib.request.Request(f"{url}/api/tags")
             with urllib.request.urlopen(req, timeout=1.5) as resp:
                 return resp.status == 200
-    except Exception:  # noqa: BLE001 -- probe must return False on any network/client error
+    except Exception:
         return False
 
 

@@ -62,7 +62,7 @@ def reindex_index(db_path: str, root_dir: str, *, on_progress=None) -> IndexRunR
             if total >= 50:
                 try:
                     on_progress(f"Scanning {total} files...")
-                except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
+                except Exception:
                     pass
 
         if not previous_states:
@@ -320,7 +320,7 @@ def _build_documents(
         if on_progress is not None and idx % batch == 0:
             try:
                 on_progress(f"Parsed {idx}/{total} files...")
-            except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
+            except Exception:
                 pass
 
     return documents_by_path

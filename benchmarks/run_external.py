@@ -181,7 +181,7 @@ def main() -> int:
 
                 print("Loading embedding model all-MiniLM-L6-v2 ...", file=sys.stderr)
                 provider = LocalEmbeddingProvider()
-            except Exception as e:  # noqa: BLE001 -- embedding provider init may raise broad errors; fallback to no embeddings
+            except Exception as e:
                 print(f"Failed to load embedding model: {e}", file=sys.stderr)
                 provider = None
 

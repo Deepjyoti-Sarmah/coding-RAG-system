@@ -3,7 +3,6 @@ from pathlib import Path
 
 from analysis.build_graph import build_graph
 
-
 FIXTURE_REPO = str(Path(__file__).resolve().parent / "fixtures" / "c_repo")
 
 

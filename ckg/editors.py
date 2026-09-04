@@ -1,7 +1,6 @@
 """Multi-editor matrix — mirrors CCE editors.py (790 LOC) minimal."""
 
 import hashlib
-import json
 import os
 import tempfile
 from pathlib import Path

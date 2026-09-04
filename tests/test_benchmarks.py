@@ -1,6 +1,5 @@
 """Tests for benchmark harnesses — ensure they are not regressions-blind."""
 
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -38,12 +37,9 @@ class TestPruneDerived(unittest.TestCase):
         import tempfile
         from pathlib import Path
 
-        from analysis.build_graph import build_graph
-        from storage.index_store import _prune_derived
-        from storage import db
-        from storage import schema
         from chunking.symbol_chunker import SemanticChunk
-        from storage.repositories import chunk_repository, vec_index_repository
+        from storage import db, schema
+        from storage.index_store import _prune_derived
 
         with tempfile.TemporaryDirectory() as tmp:
             db_path = str(Path(tmp) / "index.sqlite")
@@ -52,7 +48,7 @@ class TestPruneDerived(unittest.TestCase):
                 schema.create_schema(conn)
                 # Insert 2 chunks, embeddings, vec, jobs
                 c1 = SemanticChunk(chunk_key="k1", symbol_id="s1", relative_path="a.py", embedding_text="t1", display_text="d1", content_hash="h1", chunk_version="v1")
-                c2 = SemanticChunk(chunk_key="k2", symbol_id="s1", relative_path="b.py", embedding_text="t2", display_text="d2", content_hash="h2", chunk_version="v1")
+                _c2 = SemanticChunk(chunk_key="k2", symbol_id="s1", relative_path="b.py", embedding_text="t2", display_text="d2", content_hash="h2", chunk_version="v1")
                 # Minimal seed: need symbols/documents for FK — skip FK check and test prune logic directly
                 # So test the core: _prune_derived with current_keys={k1} should leave only k1
                 # Instead test via count after manual insert of embeddings vec
@@ -76,11 +72,11 @@ class TestPruneDerived(unittest.TestCase):
                 conn.close()
 
     def test_prune_empty_current_clears_all(self):
-        from storage import db, schema
-        from storage.index_store import _prune_derived
-
         import tempfile
         from pathlib import Path
+
+        from storage import db, schema
+        from storage.index_store import _prune_derived
 
         with tempfile.TemporaryDirectory() as tmp:
             db_path = str(Path(tmp) / "index.sqlite")
@@ -97,10 +93,10 @@ class TestPruneDerived(unittest.TestCase):
 
 class TestExternalBenchmarkMetrics(unittest.TestCase):
     def test_run_external_produces_ceiling_and_over_returned(self):
-        from evaluation.external import run_external_evaluation, ExternalQuestion
-
         import tempfile
         from pathlib import Path
+
+        from evaluation.external import ExternalQuestion, run_external_evaluation
 
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp) / "repo"

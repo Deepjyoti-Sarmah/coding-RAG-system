@@ -95,7 +95,7 @@ def run(tasks,runner,conditions,output,dry_run=False):
                     if condition=="with_ckg":
                         try:
                             db,config=_provision_ckg(work);_validate_condition(work,condition);ckg={"enabled":True,"index":str(db),"mcp_config":str(config)}
-                        except Exception as e:  # noqa: BLE001 -- infrastructure provisioning must capture any failure
+                        except Exception as e:
                             result: dict[str, Any]={"status":"failure","exit_code":None,"files_changed":[],"files_found":[],"symbols_found":[],"input_tokens":None,"output_tokens":None,"total_tokens":None,"tool_calls":None,"ckg_tools_used":None,"ckg_queries":None,"infrastructure_failure":True,"failure_reason":f"CKG provisioning failed: {str(e)[:2000]}","ckg_retrieval":{"enabled":False},"elapsed_seconds":0,"timed_out":False}
                             result.update(task_id=task["id"],language=task["language"],condition=condition);result["success"]=False
                             fh.write(json.dumps(result,separators=(",",":"))+"\n");fh.flush();results.append(result);continue
@@ -121,7 +121,7 @@ def main(argv=None):
                     try:
                         if condition=="with_ckg": _provision_ckg(work)
                         _validate_condition(work,condition);statuses.append(f"{condition}=PASS")
-                    except Exception as e:  # noqa: BLE001 -- preflight must report any provisioning failure
+                    except Exception as e:
                         statuses.append(f"{condition}=FAIL ({e})")
             print(f"{task['id']} fixture={task['fixture']} " + " ".join(statuses))
         return 0

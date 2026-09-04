@@ -9,14 +9,16 @@ FALLBACK_DIVISOR = 4
 class TestTokenizerFallback(unittest.TestCase):
     def test_fallback_when_encoder_unavailable(self):
         # Simulate offline / missing cache -> _encoder raises
-        with patch("retrieval.tokenizer._encoder", side_effect=Exception("offline")):
-            with patch("retrieval.tokenizer._encoder_available", return_value=False):
-                # retrieval.tokenizer.count_tokens should use chars//4 fallback
-                # need to clear lru_cache for _encoder_available
-                text = "a" * 100
-                # directly call without encoder
-                result = count_tokens(text)
-                self.assertEqual(result, max(1, len(text) // FALLBACK_DIVISOR))
+        with (
+            patch("retrieval.tokenizer._encoder", side_effect=Exception("offline")),
+            patch("retrieval.tokenizer._encoder_available", return_value=False),
+        ):
+            # retrieval.tokenizer.count_tokens should use chars//4 fallback
+            # need to clear lru_cache for _encoder_available
+            text = "a" * 100
+            # directly call without encoder
+            result = count_tokens(text)
+            self.assertEqual(result, max(1, len(text) // FALLBACK_DIVISOR))
 
     def test_fallback_empty_is_zero(self):
         with patch("retrieval.tokenizer._encoder_available", return_value=False):

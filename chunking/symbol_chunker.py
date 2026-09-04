@@ -53,6 +53,7 @@ def build_semantic_chunks(result: BuildResult) -> list[SemanticChunk]:
             # Only for fallback languages or genuinely chunk-worthy docs (avoid empty __init__.py noise)
             # Create synthetic MODULE symbol first so FK passes, then chunk
             from analysis.passes.module_symbol_pass import build_module_symbol
+
             # Reuse module_symbol logic but without import/export guard for fallback langs
             # Check if fallback extension
             from ckg.config import FALLBACK_EXTENSIONS

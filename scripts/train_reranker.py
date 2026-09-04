@@ -17,7 +17,9 @@ for w in candidates:
     # temporarily write weights, reload reranker, run eval
     Path("retrieval/learned_weights.json").write_text(json.dumps(w))
     # force reload so new weights take effect (retrieval/reranker loads at import)
-    import importlib, retrieval.reranker
+    import importlib
+
+    import retrieval.reranker
     importlib.reload(retrieval.reranker)
     # also reload hybrid_retriever which cached reranker weights via import
     import retrieval.hybrid_retriever

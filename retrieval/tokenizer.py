@@ -22,7 +22,7 @@ def _encoder():
 def _encoder_available() -> bool:
     try:
         _encoder()
-    except Exception:  # noqa: BLE001 - any load failure means fallback
+    except Exception:
         return False
 
     return True

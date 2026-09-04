@@ -216,7 +216,7 @@ def run_embedding_worker(
                             on_progress(
                                 f"Embedding {min(idx + 50, len(embeddable))}/{len(embeddable)} chunks..."
                             )
-                        except Exception:  # noqa: BLE001, S110 -- on_progress is user callback, must not crash indexing
+                        except Exception:
                             pass
                     report.done = len(embeddable)
                     report.reused = len(embeddable) - total_missing
@@ -228,7 +228,7 @@ def run_embedding_worker(
                     )
                     report.done = len(embeddable)
                     report.reused = len(embeddable) - missing
-        except Exception as exc:  # noqa: BLE001 - any provider failure marks jobs failed instead of crashing the run
+        except Exception as exc:
             with db.transaction(conn):
                 for chunk in embeddable:
                     embedding_job_repository.mark_failed(

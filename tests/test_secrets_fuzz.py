@@ -1,9 +1,11 @@
 """Hypothesis fuzz for secrets redaction — must not crash on 10k random."""
 import unittest
+
 from indexing.secrets import contains_secret, redact_pii, redact_secrets
 
 try:
-    from hypothesis import given, settings, strategies as st
+    from hypothesis import given, settings  # noqa: F401 -- availability probe
+    from hypothesis import strategies as st  # noqa: F401 -- availability probe
 
     HAS_HYP = True
 except ImportError:
@@ -34,7 +36,9 @@ class TestSecretsFuzz(unittest.TestCase):
         self.assertEqual(build_semantic_chunks(br), [])
 
 if HAS_HYP:
-    from hypothesis import given as hyp_given, settings as hyp_settings, strategies as hyp_st
+    from hypothesis import given as hyp_given
+    from hypothesis import settings as hyp_settings
+    from hypothesis import strategies as hyp_st
 
     class TestHypothesisFuzz(unittest.TestCase):
         @hyp_settings(max_examples=500, deadline=None)

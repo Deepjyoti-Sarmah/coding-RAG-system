@@ -8,11 +8,11 @@ from scripts import release_smoke
 
 class ReleaseSmokeHelpersTests(unittest.TestCase):
     def test_timeout_and_nonzero_are_reported(self):
-        with patch("scripts.release_smoke.subprocess.run", side_effect=release_smoke.subprocess.TimeoutExpired(["x"], 1)):
-            with self.assertRaisesRegex(release_smoke.SmokeError, "timed out"): release_smoke.run_command(["x"], timeout=1)
+        with patch("scripts.release_smoke.subprocess.run", side_effect=release_smoke.subprocess.TimeoutExpired(["x"], 1)), self.assertRaisesRegex(release_smoke.SmokeError, "timed out"):
+            release_smoke.run_command(["x"], timeout=1)
         fake = type("P", (), {"returncode": 2, "stdout": "out", "stderr": "err"})()
-        with patch("scripts.release_smoke.subprocess.run", return_value=fake):
-            with self.assertRaisesRegex(release_smoke.SmokeError, "failed"): release_smoke.run_command(["x"])
+        with patch("scripts.release_smoke.subprocess.run", return_value=fake), self.assertRaisesRegex(release_smoke.SmokeError, "failed"):
+            release_smoke.run_command(["x"])
 
     def test_wheel_discovery_and_package_checks(self):
         with tempfile.TemporaryDirectory() as d:
@@ -31,9 +31,8 @@ class ReleaseSmokeHelpersTests(unittest.TestCase):
         self.assertNotEqual(str(Path.cwd()), str(Path(tempfile.gettempdir())))
 
     def test_missing_wheel_is_clear(self):
-        with tempfile.TemporaryDirectory() as d:
-            with self.assertRaisesRegex(release_smoke.SmokeError, "no CKG wheel"):
-                release_smoke.discover_wheel(d)
+        with tempfile.TemporaryDirectory() as d, self.assertRaisesRegex(release_smoke.SmokeError, "no CKG wheel"):
+            release_smoke.discover_wheel(d)
 
 
 if __name__ == "__main__": unittest.main()

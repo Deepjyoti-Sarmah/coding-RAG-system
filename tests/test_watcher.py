@@ -3,10 +3,9 @@ import time
 import unittest
 from pathlib import Path
 
-from indexing.watcher import _DebouncedReindexer
-
-
 import pytest
+
+from indexing.watcher import _DebouncedReindexer
 
 
 @pytest.mark.slow

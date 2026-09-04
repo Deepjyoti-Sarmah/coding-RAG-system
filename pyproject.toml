@@ -39,6 +39,11 @@ ckg-mcp = "ckg.mcp_server:main"
 dev = [
     "pytest>=9.1.1",
     "pytest-cov>=7.0",
+    "ruff>=0.13",
+    # tests/test_secrets_fuzz.py's TestHypothesisFuzz (500 examples) was
+    # silently skipped everywhere — including CI — because hypothesis was
+    # never declared here, only pip-installed by hand in a local venv.
+    "hypothesis>=6.100",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -76,6 +81,33 @@ exclude = [
 
 [tool.ruff]
 exclude = ["code-context-engine", "tests/fixtures", ".venv"]
+
+[tool.ruff.lint]
+# ruff 0.13+ defaults to a much broader rule set than this codebase has ever
+# been linted against (this repo had never run ruff before P6-2). The
+# mechanical findings (import sort, unused imports, dead locals) were fixed
+# directly. These four are left selected-out rather than fixed blind, because
+# fixing them means editing exception-handling / resource-lifecycle control
+# flow in indexing/, retrieval/, and analysis/ — real code review, not a
+# lint pass. Tracked as a follow-up in CKG_CCE_PARITY_PLAN.md P6-2.
+ignore = [
+    "BLE001", # blind `except Exception` — used deliberately for best-effort,
+              # non-fatal side operations (git hooks, resource-governor probes,
+              # dashboard reindex/DELETE handlers, reranker weight loading).
+    "S110",   # `try/except/pass` — same call sites as BLE001, same rationale.
+    "SIM102", # nested `if` in indexing/secrets.py — flatten needs a read of
+              # the secret-detection logic, not a blind restructure.
+    "SIM103", # "return the condition directly" in analysis/semantic/ and
+              # indexing/secrets.py — same, worth a real look not an autofix.
+    "SIM115", # indexing/resource_governor.py:73 opens a file without a
+              # context manager — possibly a real fd-lifecycle issue, flagged
+              # for review rather than silently wrapped.
+    "ASYNC220", # ckg/dashboard/app.py's async reindex handler calls
+                # subprocess.Popen (non-blocking, fire-and-forget — it does
+                # not wait()) inside `async def`; ruff flags process creation
+                # itself as a blocking risk. Left as-is pending a decision on
+                # whether to move to asyncio.create_subprocess_exec.
+]
 
 [tool.coverage.run]
 source = ["analysis", "chunking", "ckg", "embeddings", "evaluation", "graph", "indexing", "ingestion", "models", "parsing", "retrieval", "storage", "session_memory"]

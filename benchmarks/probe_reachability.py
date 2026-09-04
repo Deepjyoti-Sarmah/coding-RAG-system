@@ -46,7 +46,7 @@ def _embeddings_active() -> bool:
         from embeddings.ollama_provider import ollama_available
 
         return bool(ollama_available())
-    except Exception:  # noqa: BLE001 -- best-effort probe, never fatal
+    except Exception:
         return False
 
 
@@ -84,7 +84,7 @@ def _search_top_k(db_path: Path, query: str, task_prompt: str, top_k: int) -> li
     provider = None
     try:
         provider = resolve_provider(str(db_path), use_vector=True)
-    except Exception:  # noqa: BLE001 -- fall back to FTS+graph-only search
+    except Exception:
         provider = None
 
     retrieval = cmd_search(str(db_path), query, provider=provider, top_k=top_k)
