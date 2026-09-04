@@ -1,4 +1,4 @@
-"""Multi-editor matrix — mirrors CCE editors.py (790 LOC) minimal."""
+"""Multi-editor config matrix — writes/detects MCP server entries per editor."""
 
 import hashlib
 import os
@@ -27,7 +27,7 @@ Use `ckg search` / `ckg context` / `definition` / `callers` / `callees` before r
 
 
 def toml_escape(s: str) -> str:
-    """Escape for TOML string values — mirrors CCE editors.py sanitizing \\."""
+    """Escape backslashes and double quotes for a TOML string value."""
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 

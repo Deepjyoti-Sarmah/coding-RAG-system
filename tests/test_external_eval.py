@@ -102,7 +102,7 @@ class TestExternalScorer(unittest.TestCase):
         ranked_full = ["a.py", "b.py"]
         self.assertAlmostEqual(_precision_over_returned(expected, ranked_full), 1.0)
 
-        # CCE-like: if only 2 distinct files returned, precision is hits/2
+        # if only 2 distinct files returned, precision is hits/2
         expected_small = frozenset({"application.js"})
         ranked_small = ["express.js", "application.js"]
         self.assertAlmostEqual(_precision_over_returned(expected_small, ranked_small), 0.5)

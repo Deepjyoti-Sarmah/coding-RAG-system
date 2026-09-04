@@ -4,14 +4,14 @@ import os
 import time
 from pathlib import Path
 
-DEFAULT_MAX_FILE_BYTES = 2 * 1024 * 1024  # 2MB, matches CCE _MAX_FILE_BYTES
+DEFAULT_MAX_FILE_BYTES = 2 * 1024 * 1024  # 2MB — files larger than this skip parsing
 DEFAULT_BATCH_SIZE = 50
 DEFAULT_PARSE_BATCH = 50
 
 
 def onnx_thread_cap(n: int | None = None) -> None:
-    """Cap ONNX/sentence-transformers threads. Respects CCE_ORT_THREADS env."""
-    env_n = os.environ.get("CCE_ORT_THREADS")
+    """Cap ONNX/sentence-transformers threads. Respects CKG_ORT_THREADS env."""
+    env_n = os.environ.get("CKG_ORT_THREADS")
     explicit = False
     if env_n is not None:
         try:

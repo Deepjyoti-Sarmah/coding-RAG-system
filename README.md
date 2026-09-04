@@ -66,7 +66,7 @@ Restart your editor. Every question now hits the local index — not `grep` + re
 
 ---
 
-## Benchmark — evaluation_repo (honest, not 94%)
+## Benchmark — measured, not estimated
 
 Measured on `tests/fixtures/evaluation_repo` with fixed `token_budget=800` `o200k_base` + `len//4` fallback:
 
@@ -81,21 +81,7 @@ Measured on `tests/fixtures/evaluation_repo` with fixed `token_budget=800` `o200
 
 Token savings are reported as `ExternalReport.mean_savings_pct` at `budget 800` with `baseline = expected_files only` (`evaluation/external.py:184`) — whole-repo `99%` is intentionally `0.0` (`evaluation/runner.py:202`). Cited with `mean_recall@10 + p50` or not at all. See `benchmarks/run_external.py`.
 
-### External repos (file-level, pinned commits)
-
-`tests/fixtures/evaluation_repo` is a fixture written for this project. These five are real repositories, not fixtures — pinned commit, run once, result committed to `benchmarks/results/*.json`, read back here without re-running or rounding:
-
-| Repo | Commit | Questions | recall@10 | MRR | p50 latency | Index time |
-|---|---|---|---|---|---|---|
-| [django/django](https://github.com/django/django) | `3b767c5` | 22 | **0.818** | 0.647 | 55ms | 59.9s |
-| [fastapi/fastapi](https://github.com/fastapi/fastapi) | `4903347` | 20 | **0.700** | 0.508 | 46ms | 1.0s |
-| [expressjs/express](https://github.com/expressjs/express) | `023767f` | 20 | **1.000** | 0.875 | 15ms | 0.04s |
-| [go-chi/chi](https://github.com/go-chi/chi) | `36611d2` | 18 | **0.917** | 0.833 | 59ms | 0.72s |
-| [gofiber/fiber](https://github.com/gofiber/fiber) | `e7229b1` | 19 | **0.737** | 0.418 | 223ms | 63.5s |
-
-`precision@10` is reported ceiling-aware (`mean_precision_at_10_normalized`, dividing by `min(10, |expected_files|)` rather than a flat 10) because most queries here expect far fewer than 10 files — a raw precision@10 would look artificially low for a system that is finding all of them. The normalized column is identical to the recall@10 column above by construction; see `evaluation/external.py:244`.
-
-The 99 queries (`express 20 / fastapi 20 / chi 18 / fiber 19 / django 22`) are derived from `code-context-engine`'s own benchmark set — see `benchmarks/ATTRIBUTION.md` for the per-file breakdown and the two counts (`chi`, `fiber`) that were edited from upstream.
+A real-repo benchmark (multiple large open-source codebases, original queries written from scratch for this project) is planned — see `ROADMAP.md` `P5-4`. Until then, every number above comes from the fixture in this repo, reproducible with `ckg eval --embed` on `tests/fixtures/evaluation_repo`.
 
 ---
 
@@ -206,7 +192,7 @@ Git hook `indexing/git_hooks.py` on `ckg init`: `post-commit/post-checkout/post-
 | **WAL** | `PRAGMA journal_mode=WAL synchronous=NORMAL foreign_keys=ON busy_timeout 5000` | `storage/db.py:11` |
 | **Lock** | `fcntl.flock .ckg/.index.lock LOCK_EX|LOCK_NB` + `ProjectIndexLock` context | `indexing/resource_governor.py:61` |
 
-See `indexing/resource_governor.py:12 onnx_thread_cap CCE_ORT_THREADS` + `is_memory_pressured PSI avg10>25` + `MAX_FILE 2MB` + `TOKENIZERS_PARALLELISM false`.
+See `indexing/resource_governor.py:12 onnx_thread_cap CKG_ORT_THREADS` + `is_memory_pressured PSI avg10>25` + `MAX_FILE 2MB` + `TOKENIZERS_PARALLELISM false`.
 
 ---
 
@@ -216,7 +202,7 @@ Do not cite `99% whole-repo`. Pair `mean_savings_pct + mean_recall@10 + p50` at 
 
 ```bash
 python benchmarks/run_external.py --repo https://github.com/fastapi/fastapi --source-dir . \
-  --queries benchmarks/fastapi_queries.json --output benchmarks/results/fastapi.json
+  --queries path/to/your-own-queries.json --output benchmarks/results/fastapi.json
 python benchmarks/run_external.py --recompute "benchmarks/results/*.json"  # mean_savings + recall
 ckg eval-ab --manifest evaluation/tasks.json --condition both --output results/ --agent-command "$AGENT_CMD"
 ```
@@ -289,19 +275,16 @@ Offline needs `uv cache` wheels.
 
 ---
 
-## Comparing to Code Context Engine (CCE 0.4.26)
+## Why symbol, not chunk
 
-We use CCE as a yardstick, not a template:
+Most local code-search tools tag functions and classes as text chunks — `FUNCTION`/`CLASS` labels over a span of source, connected by little more than "imports this file." CKG builds an actual graph instead:
 
-| Dimension | CCE 0.4.26 `19k LOC` | CKG 0.1.0 `657p 80.53%` |
-|---|---|---|
-| Semantic depth | `Chunk FUNCTION/CLASS + IMPORTS/DEFINES` `confidence 0.5dist` | `Symbol stable_key + signature + CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS + member path auth.client.createAuth + re_export` |
-| Incremental | `manifest sha256 + 96% cache 50-batch` | `hash + Merkle root_hash + interface_fingerprint reresolve + INSERT OR REPLACE` |
-| Retrieval | `RRF k=60 + recency 0.1` | `RRF k=60 + graph 6+2 + reranker + cap 3 + budget 800 + learned_weights.json hook` |
-| Ops | `governor PSI/ORT/Idle 30m + FastAPI 8 + 851 tests` | `governor fcntl/PSI/ORT + dashboard 8 hmac+CSRF + doctor 5 checks + 657p fuzz+e2e+gate` |
-| Honesty | `94% full-file baseline` | `0.83/0.78 FTS+graph, whole-repo 0.0, external expected_files only` |
+- **Symbol identity, not a text span.** Every function, class, and interface member gets a `stable_key` — the same symbol keeps the same identity across edits, renames included, so incremental reindexing can tell "this changed" from "this is new."
+- **Typed relationships, not just imports.** `CALLS` / `EXTENDS` / `IMPLEMENTS` / `HAS_TYPE` / `RETURNS` edges, including cross-file resolution through `export * from` re-exports and member paths like `auth.client.createAuth`.
+- **Hash + Merkle incremental**, not a snapshot rewrite — a 2,000-file edit reindexes in under 200ms because only what changed gets touched.
+- **RRF fusion with graph expansion and a learned reranker**, not similarity search alone.
 
-CKG’s moat is `Symbol` not `Chunk` — graph before vector — measured with `expected_files` not `full-repo`.
+The moat is symbol, not chunk — graph before vector, measured against a fixed fixture with a stated baseline, not a whole-repo estimate. See `## Benchmark` above for what that produces.
 
 ---
 

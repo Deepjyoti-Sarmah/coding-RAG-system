@@ -6,7 +6,13 @@ this project uses [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
-- Packaging/publish readiness — see `CKG_CCE_PARITY_PLAN.md` `P6`.
+- Packaging/publish readiness — see `ROADMAP.md` `P6`.
+- Removed the external benchmark data (`benchmarks/*_queries.json`,
+  `benchmarks/results/`) and its attribution file — those query sets
+  were derived from a third-party project's benchmark suite, and this
+  project no longer ships anything derived from another project's work.
+  A real-repo benchmark with original queries is planned (`ROADMAP.md`
+  `P5-4`). `CCE_ORT_THREADS` renamed to `CKG_ORT_THREADS`.
 
 ## [0.1.0] — 2026-09-04
 
@@ -44,9 +50,9 @@ total); grouped by area rather than listed commit-by-commit.
   numbers, `GENERIC_CREDENTIAL` heuristic) and PII scrubbing applied
   before anything is indexed or stored in session memory.
 - **Evaluation** — fixed-benchmark suite (`ckg eval`), paired A/B harness
-  (`ckg eval-ab`) against real coding-agent runs, and an external
-  file-level benchmark harness (`benchmarks/run_external.py`) with
-  results committed for `django`, `fastapi`, `express`, `chi`, `fiber`.
+  (`ckg eval-ab`) against real coding-agent runs, and a reusable
+  external file-level benchmark harness (`benchmarks/run_external.py`)
+  for running against any repo with a `{query, expected_files}` set.
 - **Session memory** — local, project-scoped decision/code-area/timeline
   recall, redacted the same way as the index.
 

@@ -1,4 +1,4 @@
-"""External benchmark harness — file-level ground truth from CCE queries.
+"""External benchmark harness — file-level ground truth from a query JSON file.
 
 Ground truth is expected_files (paths relative to source_dir), not symbol
 names.  Candidates are chunks; several can share a file, so dedupe to

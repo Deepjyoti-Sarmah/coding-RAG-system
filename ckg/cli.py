@@ -216,7 +216,7 @@ def cmd_watch(
 
 
 def cmd_doctor(root: str = ".", verbose: bool = False) -> int:
-    """One-command ops check — like `cce services`."""
+    """One-command ops check: index, lock, git hook, embedding backend."""
     from pathlib import Path
 
     p = Path(root)
@@ -893,7 +893,7 @@ def build_parser() -> argparse.ArgumentParser:
     embed_parser.add_argument("path", nargs="?", default=".")
     embed_parser.add_argument("--limit", type=int, default=None)
 
-    doctor_parser = subparsers.add_parser("doctor", help="check index health, locks, hooks, and embedding backend (like cce services)")
+    doctor_parser = subparsers.add_parser("doctor", help="check index health, locks, hooks, and embedding backend")
     doctor_parser.add_argument("path", nargs="?", default=".")
     doctor_parser.add_argument("--verbose", action="store_true", help="show detailed checks")
 

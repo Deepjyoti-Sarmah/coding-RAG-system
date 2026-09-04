@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Clone a real repo, index its source_dir, and run file-level retrieval evaluation.
 
-Pin each repo to a commit SHA and record it in the output; CCE's runner
-clones HEAD, so its numbers drift.
+Pin each repo to a commit SHA and record it in the output — cloning HEAD
+makes numbers drift as the target repo changes underneath you.
 
 Usage:
-  python benchmarks/run_external.py --repo https://github.com/expressjs/express.git --source-dir lib --queries benchmarks/express_queries.json [--commit abc123] [--output benchmarks/results/express.json]
+  python benchmarks/run_external.py --repo https://github.com/expressjs/express.git --source-dir lib --queries path/to/queries.json [--commit abc123] [--output benchmarks/results/express.json]
 """
 import argparse
 import json
@@ -114,7 +114,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run external file-level benchmark")
     parser.add_argument("--repo", required=False, help="Clone URL")
     parser.add_argument("--source-dir", required=False, help="Source directory relative to repo root (e.g., lib, fastapi, .)")
-    parser.add_argument("--queries", required=False, help="Path to query JSON (CCE format)")
+    parser.add_argument("--queries", required=False, help="Path to query JSON — list of {query, expected_files}")
     parser.add_argument("--commit", default=None, help="Commit SHA to pin (default: HEAD)")
     parser.add_argument("--output", default=None, help="Output JSON path")
     parser.add_argument("--no-embed", action="store_true", help="Disable vector search (default: enabled)")

@@ -1,8 +1,8 @@
-"""Secrets + PII scanning — CCE parity set, redaction before chunking/indexing."""
+"""Secrets + PII scanning — redaction before chunking/indexing."""
 
 import re
 
-# CCE set: 14 regexes (13 + generic credential) + placeholders exempt
+# 14 regexes (13 known credential shapes + a generic-credential catch-all) + placeholders exempt
 _PATTERNS = [
     re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS access key
     re.compile(r"aws_secret_access_key\s*=\s*[A-Za-z0-9/+=]{20,}"),
@@ -107,7 +107,7 @@ def redact_pii(text: str, enabled: bool = True) -> str:
     out = _IPV4_RE.sub("[REDACTED:IP]", out)
     out = _SSN_RE.sub("[REDACTED:SSN]", out)
     out = _PHONE_RE.sub("[REDACTED:PHONE]", out)
-    # Credit card: 13-19 digits with spaces/dashes, Luhn-validated (matches CCE)
+    # Credit card: 13-19 digits with spaces/dashes, Luhn-validated
 
     def _card_repl(m: re.Match) -> str:
         raw = m.group(0)

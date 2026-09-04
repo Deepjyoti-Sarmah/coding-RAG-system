@@ -32,14 +32,14 @@ class TestResourceGovernor(unittest.TestCase):
             lock2.release()
 
     def test_onnx_thread_cap(self):
-        os.environ["CCE_ORT_THREADS"] = "2"
+        os.environ["CKG_ORT_THREADS"] = "2"
         try:
             from indexing.resource_governor import onnx_thread_cap
 
             onnx_thread_cap()
             self.assertEqual(os.environ.get("OMP_NUM_THREADS"), "2")
         finally:
-            os.environ.pop("CCE_ORT_THREADS", None)
+            os.environ.pop("CKG_ORT_THREADS", None)
             for k in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "ORT_NUM_THREADS"):
                 os.environ.pop(k, None)
 

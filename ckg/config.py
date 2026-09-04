@@ -18,7 +18,7 @@ INCLUDE_EXTENSIONS = {
     ".hxx",
 }
 
-# Fallback extensions that get MODULE chunk without tree-sitter (40+ per CCE parity, not strict)
+# Fallback extensions that get a synthetic MODULE chunk without a tree-sitter grammar
 FALLBACK_EXTENSIONS = {
     ".html",
     ".css",

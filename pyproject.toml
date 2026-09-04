@@ -37,11 +37,10 @@ classifiers = [
 ]
 dependencies = [
     # Bounded below 3: ckg/mcp_server.py imports mcp.server.mcpserver.MCPServer,
-    # a 2.x-only path. CCE hit this same class of break unbounded (mcp>=1.0
-    # silently resolved to 2.x, which dropped the decorator API their server
-    # used, and the MCP server stopped starting — see code-context-engine
-    # pyproject.toml's mcp pin comment, issue #147). Lift only after porting
-    # to whatever API a 3.x release ships.
+    # a 2.x-only path. An unbounded floor risks a future major resolving in
+    # and silently dropping that API, at which point the MCP server stops
+    # starting with no clear error. Lift only after porting to whatever API
+    # a 3.x release ships.
     "mcp>=2.0,<3",
     "numpy>=2.0",
     "pathspec>=1.1.1",
@@ -50,9 +49,10 @@ dependencies = [
     # Capped below 0.26: the tree-sitter 0.26 core changed the Node/Point ABI,
     # and the grammar wheels pinned below (tree-sitter-c, -cpp, -java) are
     # built against the 0.25.x ABI. Mixing a 0.26 core with 0.25-ABI grammars
-    # corrupts memory reading Node.start_point/end_point. CCE hit exactly
-    # this and it SIGSEGV'd `cce init` (their issues #113/#114) before they
-    # capped it the same way. `uv tool install` resolves fresh from PyPI and
+    # corrupts memory reading Node.start_point/end_point — this is not
+    # hypothetical, `uv tool install --force` on this exact machine had
+    # already resolved 0.26.0 unbounded before this cap was added (see
+    # ROADMAP.md P6-4). `uv tool install` resolves fresh from PyPI and
     # ignores uv.lock, so this cap — not the lockfile — is what protects an
     # end user. Lift only once tree-sitter-c/-cpp/-java ship 0.26-ABI builds.
     "tree-sitter>=0.25.2,<0.26",
@@ -139,7 +139,7 @@ exclude = ["code-context-engine", "tests/fixtures", ".venv"]
 # directly. These four are left selected-out rather than fixed blind, because
 # fixing them means editing exception-handling / resource-lifecycle control
 # flow in indexing/, retrieval/, and analysis/ — real code review, not a
-# lint pass. Tracked as a follow-up in CKG_CCE_PARITY_PLAN.md P6-2.
+# lint pass. Tracked as a follow-up in ROADMAP.md P6-2.
 ignore = [
     "BLE001", # blind `except Exception` — used deliberately for best-effort,
               # non-fatal side operations (git hooks, resource-governor probes,

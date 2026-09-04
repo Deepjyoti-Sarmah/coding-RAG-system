@@ -5,7 +5,7 @@ from pathlib import Path
 
 from evaluation.runner import run_evaluation
 
-# grid over relationship/exact weights (like CCE confidence tuning)
+# grid search over relationship/exact reranker weights
 best = None
 best_weights = None
 candidates = [

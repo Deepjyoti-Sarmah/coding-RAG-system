@@ -27,7 +27,7 @@ proves the packaging config, not just the source.
 Concretely: every change ships with a test that would fail without it,
 and every claim in `README.md` (a metric, a count, a "not yet") is
 sourced from a command that was actually run, not estimated. Numbers
-drift — see `CKG_CCE_PARITY_PLAN.md` `P6-5` for what that costs when
+drift — see `ROADMAP.md` `P6-5` for what that costs when
 caught late. Re-run the relevant `Verify:` command before claiming a
 task done, don't reason your way to a checkmark.
 
