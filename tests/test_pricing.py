@@ -152,5 +152,67 @@ class TestSavingsCommand(unittest.TestCase):
             self.assertEqual(rc, 1)
 
 
+class TestPooledClaim(unittest.TestCase):
+    """The pooled headline number is quoted in README.md and on the website,
+    so it is pinned here: if a result file changes, this fails rather than
+    letting the published claim silently drift away from the data."""
+
+    def _pooled(self):
+        from symbolgraph.cli import cmd_savings
+
+        rows = cmd_savings()
+        pooled = [r for r in rows if r["file"] == "(pooled)"]
+        self.assertEqual(len(pooled), 1, "expected exactly one pooled row")
+        return pooled[0]
+
+    def test_pooled_matches_the_published_claim(self):
+        row = self._pooled()
+
+        self.assertEqual(row["questions"], 60)
+        self.assertEqual(row["repo"], "django+fiber+fastapi")
+        # 87.2% and R@10 0.95 are the figures README.md and the website cite.
+        self.assertAlmostEqual(row["aggregate_pct"], 0.872, places=3)
+        self.assertAlmostEqual(row["recall_at_10"], 0.95, places=2)
+
+    def test_pooled_is_token_weighted_not_mean_of_repo_percentages(self):
+        """Pooling sums every question's tokens and takes one ratio. The mean
+        of the three repos' own percentages is a different number, and using
+        it would misweight repos with smaller files."""
+        import json
+        from pathlib import Path
+
+        from symbolgraph.cli import POOLED_REPOS
+
+        base = Path(__file__).resolve().parent.parent / "benchmarks" / "results"
+        per_repo = [
+            json.loads((base / f"{name}.json").read_text())["aggregate_savings_pct"]
+            for name in POOLED_REPOS
+        ]
+        mean_of_percentages = sum(per_repo) / len(per_repo)
+
+        self.assertNotAlmostEqual(
+            self._pooled()["aggregate_pct"], mean_of_percentages, places=3
+        )
+
+    def test_pooled_row_is_absent_when_a_repo_is_missing(self):
+        """A pooled number computed over a subset would still claim to cover
+        all three, so it must not be emitted at all."""
+        import json
+        import tempfile
+        from pathlib import Path
+
+        from symbolgraph.cli import cmd_savings
+
+        base = Path(__file__).resolve().parent.parent / "benchmarks" / "results"
+        with tempfile.TemporaryDirectory() as td:
+            for name in ("django", "fiber"):  # fastapi deliberately absent
+                data = json.loads((base / f"{name}.json").read_text())
+                (Path(td) / f"{name}.json").write_text(json.dumps(data))
+
+            rows = cmd_savings(td)
+
+        self.assertEqual([r for r in rows if r["file"] == "(pooled)"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

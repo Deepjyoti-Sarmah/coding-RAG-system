@@ -57,7 +57,48 @@ export default function Benchmark() {
         {/* Token savings — segmented, including the rows that go negative */}
         <div className="mt-20">
           <IndexTag n="B" tone="on-white">Token savings</IndexTag>
-          <h3 className="font-display mt-4 max-w-3xl text-[clamp(1.4rem,2.4vw,2rem)] leading-[1.25]">
+
+          {/* The pooled headline, given the weight it earns — then immediately
+              qualified, because the segmented finding below is the real one. */}
+          <div className="mt-6 border border-ultra/25 bg-ultra text-white">
+            <div className="grid gap-px sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="bg-ultra p-8">
+                <div className="font-display text-[clamp(3.25rem,8vw,6rem)] leading-[0.95] tracking-[-0.03em]">
+                  {TOKEN_SAVINGS.pooled.pct}
+                </div>
+                <p className="mt-3 max-w-md text-[13px] leading-[1.6] text-white/85">
+                  fewer context tokens across {TOKEN_SAVINGS.pooled.queries} on{" "}
+                  {TOKEN_SAVINGS.pooled.repos}, at recall@10{" "}
+                  {TOKEN_SAVINGS.pooled.recall}.
+                </p>
+                <p className="tag-index mt-4 text-white/70">
+                  {TOKEN_SAVINGS.pooled.scope}
+                </p>
+              </div>
+
+              <dl className="grid grid-cols-2 gap-px bg-white/25 sm:grid-cols-1 sm:content-start">
+                {[
+                  ["tokens", TOKEN_SAVINGS.pooled.tokens],
+                  ["per query", TOKEN_SAVINGS.pooled.perQuery],
+                  ["recall@10", TOKEN_SAVINGS.pooled.recall],
+                  ["$/query", TOKEN_SAVINGS.pooled.dollars],
+                ].map(([k, v]) => (
+                  <div key={k} className="bg-ultra px-8 py-4 sm:min-w-52">
+                    <dt className="tag-index text-white/70">{k}</dt>
+                    <dd className="mt-1 text-[13px] text-white">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div className="border-t border-white/25 px-8 py-3">
+              <span className="tag-index text-white/70">
+                Reproduce · sg savings → the (pooled) row
+              </span>
+            </div>
+          </div>
+
+          <h3 className="font-display mt-14 max-w-3xl text-[clamp(1.4rem,2.4vw,2rem)] leading-[1.25]">
             {TOKEN_SAVINGS.headline}
           </h3>
           <p className="mt-5 max-w-2xl text-[12.5px] leading-[1.7] text-ultra/70">

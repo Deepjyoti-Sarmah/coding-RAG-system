@@ -250,6 +250,22 @@ export const BENCHMARK = {
 // committed to git BEFORE the first run, so the history itself proves no
 // post-hoc tuning). Full data: benchmarks/results/*.json.
 export const TOKEN_SAVINGS = {
+  // The pooled headline. Verify with `sg savings` (the "(pooled)" row) —
+  // pooled over all 60 individual questions, not an average of the three
+  // repos' percentages (that would be 86.3%). Pinned by
+  // tests/test_pricing.py::TestPooledClaim so it cannot drift from the data.
+  pooled: {
+    pct: "87%",
+    queries: "60 queries",
+    repos: "Django · Fiber · FastAPI",
+    recall: "0.95",
+    tokens: "382,064 → 48,925",
+    perQuery: "5,552 tokens",
+    dollars: "$0.011",
+    // Scope matters: this is retrieval context size, not an agent's total cost
+    // to finish a task. The end-to-end claim would need paired agent runs.
+    scope: "Measured on retrieved context, not end-to-end agent cost.",
+  },
   headline: "Savings scale with file size — so the claim is segmented, not averaged",
   explainer:
     "A context pack has a fixed structure that costs roughly 800 tokens. On a file smaller than that, packing it costs more than sending it, and the saving goes negative. Those rows are printed rather than dropped — a single blended percentage would hide them.",

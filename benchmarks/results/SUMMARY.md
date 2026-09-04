@@ -13,7 +13,33 @@ Baseline is always `expected_files` content only
 input tokens only, `sonnet $2.00/1M` as of `2026-06-24`
 (`retrieval/pricing.py`), rendered as formula, never a bare `$X`.
 
-## Headline (budget 800, aggregate only, recall-gated)
+## Pooled headline — the citable number
+
+**87.2% fewer context tokens across 60 queries on Django, Fiber and FastAPI,
+at recall@10 0.95, budget 800.**
+
+| | |
+|---|---|
+| Questions | 60 (20 per repo) |
+| Baseline tokens | 382,064 |
+| Context tokens | 48,925 |
+| **Pooled aggregate** | **87.2%** |
+| Mean recall@10 | 0.95 |
+| Tokens saved / query | 5,552 |
+| $/query (sonnet, input only) | $0.0111 |
+
+Pooled over **individual questions** — every query's own `baseline_tokens` and
+`context_tokens` summed, then one ratio. It is deliberately *not* the mean of
+the three repos' percentages (that would be 86.3%), because averaging
+percentages weights a repo with small files the same as one with large files.
+
+Reproduce: `sg savings` (the `(pooled)` row) or `sg savings --json`. Pinned by
+`tests/test_pricing.py::TestPooledClaim` so the published claim cannot drift
+from the data. The self-repo run is excluded from the pool on purpose — it is
+a sanity anchor on this codebase's own `retrieval/` package, not an
+independent repository.
+
+## Per repo (budget 800, aggregate only, recall-gated)
 
 | Repo | Lang | Files | Aggregate | Recall@10 | p50 | $/query (sonnet) |
 |---|---|---|---|---|---|---|

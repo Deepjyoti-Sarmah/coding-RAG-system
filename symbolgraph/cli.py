@@ -278,7 +278,67 @@ def _benchmark_savings_rows(results_dir: str, model: str) -> list[dict[str, Any]
                         "recall_at_10": bucket.get("mean_recall_at_10"),
                     }
                 )
+    rows.extend(_pooled_rows(base, model))
     return rows
+
+
+# Repos that make up the pooled headline claim. The self-repo run is excluded
+# on purpose: it is an 11-question sanity anchor on this codebase's own
+# `retrieval/` package, not an independent repository, so folding it in would
+# let us grade our own homework.
+POOLED_REPOS = ("django", "fiber", "fastapi")
+
+
+def _pooled_rows(base: Path, model: str) -> list[dict[str, Any]]:
+    """One pooled row across POOLED_REPOS, at each repo's headline budget.
+
+    Pooling is over individual questions — every query's own baseline and
+    context tokens summed, then one ratio — not the mean of the three repos'
+    percentages. Averaging percentages would weight a 20-question repo with
+    small files the same as one with large files and quietly change the
+    answer. Requires every pooled repo to be present, otherwise the number
+    would silently describe a different set than it claims.
+    """
+    from retrieval.pricing import PRICE_DATE, dollars_saved, resolve_pricing
+
+    price_in, _ = resolve_pricing(model)
+    baseline = context = recall = 0.0
+    questions = 0
+    for name in POOLED_REPOS:
+        path = base / f"{name}.json"
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        for question in data.get("questions") or []:
+            b = question.get("baseline_tokens")
+            c = question.get("context_tokens")
+            if b is None or c is None:
+                continue
+            baseline += b
+            context += c
+            recall += question.get("recall_at_10") or 0.0
+            questions += 1
+    if questions == 0 or baseline <= 0:
+        return []
+
+    saved = (baseline - context) / questions
+    return [
+        {
+            "file": "(pooled)",
+            "repo": "+".join(POOLED_REPOS),
+            "budget": 800,
+            "bucket": None,
+            "aggregate_pct": 1.0 - context / baseline,
+            "tokens_saved": saved,
+            "dollars_saved": dollars_saved(saved, model),
+            "model": model.lower(),
+            "price_in_per_1m": price_in,
+            "price_date": PRICE_DATE,
+            "recall_at_10": recall / questions,
+            "questions": questions,
+        }
+    ]
 
 
 def cmd_savings(

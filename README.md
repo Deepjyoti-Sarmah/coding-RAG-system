@@ -299,8 +299,18 @@ The first column is what you get with no model installed at all.
 
 ### 2. Does it actually save tokens?
 
-**Yes — but only on files big enough to be worth packing, and the honest answer
-is a range, not one number.**
+> ### 87% fewer context tokens
+> Across **60 queries** on Django, Fiber and FastAPI — at **recall@10 0.95**,
+> token budget 800. That is **382,064 → 48,925 tokens**, about **5,552 tokens
+> saved per query**.
+
+Reproduce it yourself with `sg savings` (the `(pooled)` row). The figure is
+pooled over individual questions — every query's own baseline and context
+summed, then one ratio — not an average of the three repos' percentages. At
+sonnet input pricing that is about **$0.011 saved per query**.
+
+**But one number hides the real finding** — savings depend almost entirely on
+how big the file is.
 
 A context pack has a fixed structure costing roughly 800 tokens. On a file
 *smaller* than that, packing it costs more than just sending the file, and the
@@ -347,6 +357,11 @@ runs happened:
   by actual token volume.
 - **The losing rows are published.** The negative `<1k` numbers are printed
   above rather than dropped; they are what make the large-file rows believable.
+- **What it measures, precisely.** This is the size of the retrieved context
+  versus reading the files the query needed. It is *not* a measure of an
+  agent's total cost to finish a task end to end — that would need paired
+  agent runs, which `ROADMAP.md` tracks as still open. Quote it as "fewer
+  context tokens", not "87% cheaper agents".
 
 Reproduce or verify:
 
