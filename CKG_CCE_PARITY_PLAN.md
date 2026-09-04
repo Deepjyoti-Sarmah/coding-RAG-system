@@ -328,9 +328,9 @@
 - **Why:** The MCP registry is the actual distribution channel for a tool like this. CCE ships `code-context-engine/server.json` (675 B) for exactly that reason. CKG already declares the `ckg-mcp` entry point at `pyproject.toml:34` and exposes **13 tools** via `mcp.tool()` in `ckg/mcp_server.py` — the work is a manifest, not code.
 - **Target:** `server.json` (new)
 - **Tasks:**
-  - [ ] Mirror CCE's `server.json` shape; name `io.github.Deepjyoti-Sarmah/ckg`, package `code-knowledge-graph` from PyPI, command `ckg-mcp`.
-  - [ ] Keep `version` in lockstep with `pyproject.toml:7`.
-- **Verify:** `python -c "import json; d=json.load(open('server.json')); print(d['name'], d['version'])"`
+  - [x] Mirrored CCE's `server.json` shape; name `io.github.Deepjyoti-Sarmah/ckg`, package `code-knowledge-graph` from PyPI. Added `runtimeArguments: ["--from", "code-knowledge-graph", "ckg-mcp"]` since (unlike CCE, whose package and command share a name) CKG's PyPI package (`code-knowledge-graph`) and its MCP command (`ckg-mcp`) differ — plain `uvx code-knowledge-graph` would try to run a `code-knowledge-graph` script that doesn't exist; this is the standard `uvx --from <package> <script>` idiom for that case.
+  - [ ] `version` in lockstep with `pyproject.toml:7` is manual today (both currently `0.1.0`) — no automated check ties them; bump both together at the next release.
+- **Verify:** `python -c "import json; d=json.load(open('server.json')); print(d['name'], d['version'])"` — **DONE 2026-09-04**: `io.github.Deepjyoti-Sarmah/ckg 0.1.0`.
 
 ### P6-10: Repo-root hygiene
 
