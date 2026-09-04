@@ -10,6 +10,7 @@ from indexing.embedding_queue import run_embedding_worker
 from indexing.indexer import reindex_index
 from retrieval.index_queries import load_vector_store
 from retrieval.numpy_vector_store import NumpyVectorStore
+from retrieval.sqlite_vec_store import sqlite_vec_available
 from storage import db, schema
 from storage.index_store import load_index
 from storage.repositories import vec_index_repository
@@ -94,6 +95,10 @@ class TestNumpyVectorStore(unittest.TestCase):
         self.assertEqual(hits, [])
 
 
+@unittest.skipUnless(
+    sqlite_vec_available(":memory:"),
+    "sqlite-vec is unavailable in this Python/SQLite build",
+)
 class TestSqliteVecVectorStore(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -186,6 +191,10 @@ class TestSqliteVecVectorStore(unittest.TestCase):
         self.assertEqual([hit.chunk_key for hit in hits], ["b"])
 
 
+@unittest.skipUnless(
+    sqlite_vec_available(":memory:"),
+    "sqlite-vec is unavailable in this Python/SQLite build",
+)
 class TestVectorBackendParity(unittest.TestCase):
     """Both backends must agree on ordering for the same data."""
 

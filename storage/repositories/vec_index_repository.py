@@ -26,6 +26,9 @@ def upsert(
         # retrieval will use NumpyVectorStore when the vec0 table is absent.
         if "no such module: vec0" not in str(exc):
             raise
+        _set_dimension(conn, dimension)
+        if model_id is not None:
+            _set_model(conn, model_id)
         return
 
     # vec0 has no UPSERT/ON CONFLICT support: replace is delete + insert.
