@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 /* Design system: "Ultramarine Classical Modernism"
-   Tokens transcribed from stitch_rag_project_website_redesign/DESIGN.md.
    Two rules carry the whole system: an unyielding Klein-ultramarine canvas,
    and absolute zero-radius geometry bounded by exact 1px hairlines. */
 @theme {

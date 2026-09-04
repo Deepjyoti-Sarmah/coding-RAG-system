@@ -115,7 +115,6 @@ packages = [
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-    ".opencode",
     ".claude",
     ".venv",
     ".ruff_cache",
@@ -124,7 +123,6 @@ exclude = [
     "code-context-engine",
     "tests",
     "test_repo",
-    "specs",
     "benchmarks",
     "docs",
 ]
