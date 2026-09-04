@@ -5,6 +5,14 @@ from pathlib import Path
 from analysis.build_graph import build_graph
 from models.entities.resolved_reference import ResolutionStatus
 
+try:
+    from hypothesis import given, settings
+    from hypothesis import strategies as st
+
+    HAS_HYP = True
+except ImportError:
+    HAS_HYP = False
+
 
 def _build(root: Path):
     return build_graph(str(root))
@@ -161,6 +169,46 @@ class TestUnresolvedReferences(unittest.TestCase):
             ]
 
             self.assertEqual(calls, [])
+
+
+@unittest.skipUnless(HAS_HYP, "hypothesis not installed")
+class TestShadowingProperties(unittest.TestCase):
+    # P5-5: shadowing must hold for arbitrary nesting depth, not just the
+    # hand-written 2-level cases above.
+
+    @given(depth=st.integers(min_value=1, max_value=4))
+    @settings(max_examples=25, deadline=None)
+    def test_nested_same_name_call_resolves_to_innermost(self, depth):
+        # N nested `function f`, innermost body calls f(): nearest scope
+        # wins, so the call resolves to the innermost definition itself.
+        lines = []
+        for _ in range(depth):
+            lines.append("function f() {")
+        lines.append("  f();")
+        for _ in range(depth):
+            lines.append("}")
+        source = "\n".join(lines) + "\n"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "a.ts").write_text(source, encoding="utf-8")
+
+            result = _build(root)
+            defs = [s for s in result.symbols if s.name == "f"]
+            self.assertEqual(len(defs), depth)
+
+            # Only the innermost body calls f(); that call must resolve to
+            # the innermost definition itself (nearest scope wins).
+            innermost = defs[-1]
+            calls = [
+                r
+                for r in result.resolved_references
+                if r.reference.name == "f"
+                and r.reference.owner_symbol_id == innermost.symbol_id
+            ]
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0].status, ResolutionStatus.RESOLVED)
+            self.assertEqual(calls[0].target_symbol.symbol_id, innermost.symbol_id)
 
 
 if __name__ == "__main__":
