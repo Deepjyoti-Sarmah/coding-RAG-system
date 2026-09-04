@@ -1,0 +1,2558 @@
+{
+  "repo": "https://github.com/gofiber/fiber",
+  "source_dir": ".",
+  "commit": "e7229b1b3ead150398ad7c100a128c6f276f4b43",
+  "queries_file": "benchmarks/fiber_original.json",
+  "token_budget": 800,
+  "token_budgets": [
+    800,
+    1200,
+    2000
+  ],
+  "total_questions": 20,
+  "mean_precision_at_10": 0.095,
+  "mean_precision_ceiling_at_10": 0.1,
+  "mean_precision_at_10_normalized": 0.95,
+  "mean_precision_over_returned": 0.1,
+  "mean_recall_at_10": 0.95,
+  "mean_reciprocal_rank": 0.735,
+  "p50_latency_seconds": 0.009275487998820608,
+  "p95_latency_seconds": 0.014196921001712326,
+  "index_seconds": 48.22851549999905,
+  "mean_baseline_tokens": 5271.65,
+  "mean_context_tokens": 804.0,
+  "mean_savings_pct": 0.5969611880036306,
+  "aggregate_savings_pct": 0.847486081207971,
+  "buckets": {
+    "<1k": {
+      "count": 2,
+      "mean_baseline_tokens": 663.5,
+      "mean_context_tokens": 803.5,
+      "aggregate_savings_pct": -0.2110022607385078,
+      "mean_recall_at_10": 1.0
+    },
+    "1k-4k": {
+      "count": 7,
+      "mean_baseline_tokens": 1732.2857142857142,
+      "mean_context_tokens": 808.2857142857143,
+      "aggregate_savings_pct": 0.5333993072736269,
+      "mean_recall_at_10": 1.0
+    },
+    ">4k": {
+      "count": 11,
+      "mean_baseline_tokens": 8361.818181818182,
+      "mean_context_tokens": 801.3636363636364,
+      "aggregate_savings_pct": 0.9041639486844967,
+      "mean_recall_at_10": 0.9090909090909091
+    }
+  },
+  "questions": [
+    {
+      "query": "App routing Get Post Put Delete and Listen startup",
+      "expected_files": [
+        "app.go"
+      ],
+      "ranked_files": [
+        "listen.go",
+        "app.go",
+        "res.go",
+        "req.go",
+        "ctx.go",
+        "state.go",
+        "shared_state.go",
+        "register.go",
+        "group.go",
+        "domain.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.014196921001712326,
+      "category": "routing",
+      "baseline_tokens": 13870,
+      "context_tokens": 795,
+      "savings_pct": 0.9426820475847152,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "Ctx Params Query BodyParser request context accessors",
+      "expected_files": [
+        "ctx.go"
+      ],
+      "ranked_files": [
+        "client/request.go",
+        "ctx_interface_gen.go",
+        "req.go",
+        "register.go",
+        "group.go",
+        "domain.go",
+        "bind.go",
+        "app.go",
+        "client/client.go",
+        "bind_test.go"
+      ],
+      "precision_at_10": 0.0,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.01171296099346364,
+      "category": "context",
+      "baseline_tokens": 8471,
+      "context_tokens": 797,
+      "savings_pct": 0.9059142958328414,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "router stack matching named parameters and wildcards",
+      "expected_files": [
+        "router.go"
+      ],
+      "ranked_files": [
+        "router.go",
+        "app.go",
+        "path.go",
+        "ctx.go",
+        "router_skip.go",
+        "docs/extra/route-matcher.md",
+        "domain.go",
+        "docs/extra/internal.md",
+        "docs/partials/routing/use.md",
+        "mount.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.011791061995609198,
+      "category": "routing",
+      "baseline_tokens": 11551,
+      "context_tokens": 806,
+      "savings_pct": 0.9302224915591724,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "route grouping with Group prefix and middleware",
+      "expected_files": [
+        "group.go"
+      ],
+      "ranked_files": [
+        "group.go",
+        "domain.go",
+        "app.go",
+        "router.go",
+        "docs/guide/grouping.md",
+        "register.go",
+        "path.go",
+        "hooks.go",
+        "middleware/rewrite/rewrite.go",
+        "middleware/redirect/redirect.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.009004900995932985,
+      "category": "routing",
+      "baseline_tokens": 1980,
+      "context_tokens": 807,
+      "savings_pct": 0.5924242424242424,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "binding JSON body query and form values into structs",
+      "expected_files": [
+        "bind.go"
+      ],
+      "ranked_files": [
+        "res.go",
+        "bind.go",
+        "client/response.go",
+        "ctx_test.go",
+        "client/response_test.go",
+        "bind_test.go",
+        "binder/form_test.go",
+        "docs/api/bind.md",
+        "binder/README.md",
+        "docs/guide/validation.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.009546075001708232,
+      "category": "binding",
+      "baseline_tokens": 4549,
+      "context_tokens": 800,
+      "savings_pct": 0.8241371730050561,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "HTTP error creation with NewError status codes",
+      "expected_files": [
+        "error.go"
+      ],
+      "ranked_files": [
+        "app.go",
+        "redirect.go",
+        "docs/guide/error-handling.md",
+        "middleware/healthcheck/healthcheck.go",
+        "middleware/paginate/paginate.go",
+        "error.go",
+        "middleware/limiter/limiter.go",
+        "constants.go",
+        "res.go",
+        "docs/middleware/cache.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.16666666666666666,
+      "latency_seconds": 0.013061978002951946,
+      "category": "errors",
+      "baseline_tokens": 1081,
+      "context_tokens": 798,
+      "savings_pct": 0.2617946345975948,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "redirect helpers To Route and Back",
+      "expected_files": [
+        "redirect.go"
+      ],
+      "ranked_files": [
+        "redirect.go",
+        "req.go",
+        "ctx.go",
+        "router.go",
+        "group.go",
+        "domain.go",
+        "app.go",
+        "helpers.go",
+        "docs/api/redirect.md",
+        "middleware/redirect/config.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.006607485003769398,
+      "category": "redirect",
+      "baseline_tokens": 4132,
+      "context_tokens": 800,
+      "savings_pct": 0.8063891577928364,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "hooks OnRoute OnListen OnShutdown lifecycle events",
+      "expected_files": [
+        "hooks.go"
+      ],
+      "ranked_files": [
+        "hooks.go",
+        "listen.go",
+        "docs/api/hooks.md",
+        "router.go",
+        "app.go",
+        "docs/extra/internal.md",
+        "prefork.go",
+        "middleware/sse/event.go",
+        ".github/workflows/after-release.yml",
+        "docs/api/app.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.007368290003796574,
+      "category": "hooks",
+      "baseline_tokens": 3186,
+      "context_tokens": 802,
+      "savings_pct": 0.7482736974262398,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "CORS middleware configuration and preflight handling",
+      "expected_files": [
+        "middleware/cors/cors.go"
+      ],
+      "ranked_files": [
+        "middleware/cors/cors.go",
+        "docs/middleware/cors.md",
+        "docs/guide/error-handling.md",
+        "middleware/cors/config.go",
+        "middleware/cors/utils.go",
+        "docs/middleware/favicon.md",
+        "middleware/proxy/security.go",
+        "middleware/recover/config.go",
+        "docs/middleware/healthcheck.md",
+        "docs/middleware/session.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.007895428003394045,
+      "category": "middleware",
+      "baseline_tokens": 2149,
+      "context_tokens": 825,
+      "savings_pct": 0.6161005118659841,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "logger middleware request logging output",
+      "expected_files": [
+        "middleware/logger/default_logger.go"
+      ],
+      "ranked_files": [
+        "client/hooks.go",
+        "log/log.go",
+        "log/default.go",
+        "docs/middleware/logger.md",
+        "middleware/logger/default_logger.go",
+        "middleware/logger/utils.go",
+        "middleware/logger/context_tag.go",
+        "middleware/logger/tags.go",
+        "middleware/logger/config.go",
+        "docs/api/log.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.2,
+      "latency_seconds": 0.010242825002933387,
+      "category": "middleware",
+      "baseline_tokens": 1528,
+      "context_tokens": 815,
+      "savings_pct": 0.4666230366492147,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "rate limiter fixed window request throttling",
+      "expected_files": [
+        "middleware/limiter/limiter_fixed.go"
+      ],
+      "ranked_files": [
+        "middleware/limiter/limiter_fixed.go",
+        "docs/middleware/limiter.md",
+        "middleware/limiter/limiter_sliding.go",
+        "middleware/limiter/limiter.go",
+        "middleware/limiter/config.go",
+        "docs/extra/learning-resources.md",
+        "docs/guide/reverse-proxy.md",
+        ".github/CONTRIBUTING.md",
+        "middleware/logger/default_logger.go",
+        "app.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.008268062003480736,
+      "category": "middleware",
+      "baseline_tokens": 1073,
+      "context_tokens": 815,
+      "savings_pct": 0.24044734389561973,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "request struct AcquireReq and method headers access",
+      "expected_files": [
+        "req.go"
+      ],
+      "ranked_files": [
+        "helpers.go",
+        "req.go",
+        "client/request.go",
+        "middleware/limiter/manager.go",
+        "middleware/cache/manager.go",
+        "req_interface_gen.go",
+        "docs/client/request.md",
+        "binder/header.go",
+        "client/hooks.go",
+        "middleware/cors/cors.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.011024035004083999,
+      "category": "request",
+      "baseline_tokens": 12840,
+      "context_tokens": 796,
+      "savings_pct": 0.938006230529595,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "response Send SendString SendStatus and JSON helpers",
+      "expected_files": [
+        "res.go"
+      ],
+      "ranked_files": [
+        "middleware/idempotency/response.go",
+        "client/response.go",
+        "res.go",
+        "client/request.go",
+        "bind.go",
+        "ctx_test.go",
+        "ctx.go",
+        "docs/client/response.md",
+        "res_interface_gen.go",
+        "middleware/session/config.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.012350923992926255,
+      "category": "response",
+      "baseline_tokens": 11444,
+      "context_tokens": 799,
+      "savings_pct": 0.9301817546312479,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "registering handlers with Add method and route names",
+      "expected_files": [
+        "register.go"
+      ],
+      "ranked_files": [
+        "domain.go",
+        "register.go",
+        "group.go",
+        "app.go",
+        "client/request.go",
+        "helpers.go",
+        "mount.go",
+        "router.go",
+        "middleware/limiter/limiter_test.go",
+        "middleware/cache/cache_test.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.013067781997960992,
+      "category": "routing",
+      "baseline_tokens": 1129,
+      "context_tokens": 796,
+      "savings_pct": 0.29495128432240925,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "path matching and parameter extraction from routes",
+      "expected_files": [
+        "path.go"
+      ],
+      "ranked_files": [
+        "path.go",
+        "domain.go",
+        "docs/extra/route-matcher.md",
+        "extractors/README.md",
+        "docs/guide/routing.md",
+        "docs/guide/extractors.md",
+        "router.go",
+        "extractors/extractors.go",
+        "docs/partials/routing/use.md",
+        "docs/extra/learning-resources.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.008245008000812959,
+      "category": "routing",
+      "baseline_tokens": 7101,
+      "context_tokens": 796,
+      "savings_pct": 0.887903112237713,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "mounting sub-applications with Mount",
+      "expected_files": [
+        "mount.go"
+      ],
+      "ranked_files": [
+        "mount.go",
+        "domain.go",
+        "docs/api/app.md",
+        "docs/extra/internal.md",
+        "app.go",
+        "docs/partials/routing/use.md",
+        "mount_test.go",
+        "domain_test.go",
+        "middleware/static/static_test.go",
+        "hooks_test.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.00623807699594181,
+      "category": "mount",
+      "baseline_tokens": 7578,
+      "context_tokens": 816,
+      "savings_pct": 0.8923198733174981,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "TLS listener and graceful shutdown with Listener",
+      "expected_files": [
+        "listen.go"
+      ],
+      "ranked_files": [
+        "listen.go",
+        "app.go",
+        "error.go",
+        "docs/extra/internal.md",
+        "prefork.go",
+        "helpers.go",
+        "listen_test.go",
+        "app_test.go",
+        "helpers_test.go",
+        "hooks_test.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.008577501997933723,
+      "category": "server",
+      "baseline_tokens": 6270,
+      "context_tokens": 816,
+      "savings_pct": 0.8698564593301435,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "prefork child processes for multi-core serving",
+      "expected_files": [
+        "prefork.go"
+      ],
+      "ranked_files": [
+        "prefork.go",
+        "client/core.go",
+        "prefork_logger.go",
+        "listen.go",
+        "hooks.go",
+        "docs/api/state.md",
+        ".github/workflows/test.yml",
+        "extractors/README.md",
+        "prefork_test.go",
+        "listen_test.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.005819247002364136,
+      "category": "server",
+      "baseline_tokens": 960,
+      "context_tokens": 808,
+      "savings_pct": 0.15833333333333333,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "cluster CPU and memory constraints detection",
+      "expected_files": [
+        "constraint.go"
+      ],
+      "ranked_files": [
+        "constraint.go",
+        "path.go",
+        "shared_state_test.go",
+        "constraint_test.go",
+        "router_test.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.2,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.005595627997536212,
+      "category": "server",
+      "baseline_tokens": 4174,
+      "context_tokens": 794,
+      "savings_pct": 0.8097747963584092,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "storage interface Get Set Delete for sessions and cache",
+      "expected_files": [
+        "storage_interface.go"
+      ],
+      "ranked_files": [
+        "storage_interface.go",
+        "internal/storage/memory/memory.go",
+        "middleware/cache/manager.go",
+        "middleware/session/store.go",
+        "middleware/session/session.go",
+        "middleware/session/data.go",
+        "middleware/session/middleware.go",
+        "res.go",
+        "req.go",
+        "ctx.go"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.01091241100220941,
+      "category": "storage",
+      "baseline_tokens": 367,
+      "context_tokens": 799,
+      "savings_pct": -1.1771117166212535,
+      "baseline_bucket": "<1k"
+    }
+  ],
+  "budgets": {
+    "800": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.095,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 0.95,
+      "mean_precision_over_returned": 0.1,
+      "mean_recall_at_10": 0.95,
+      "mean_reciprocal_rank": 0.735,
+      "p50_latency_seconds": 0.009275487998820608,
+      "p95_latency_seconds": 0.014196921001712326,
+      "index_seconds": 48.22851549999905,
+      "mean_baseline_tokens": 5271.65,
+      "mean_context_tokens": 804.0,
+      "mean_savings_pct": 0.5969611880036306,
+      "aggregate_savings_pct": 0.847486081207971,
+      "buckets": {
+        "<1k": {
+          "count": 2,
+          "mean_baseline_tokens": 663.5,
+          "mean_context_tokens": 803.5,
+          "aggregate_savings_pct": -0.2110022607385078,
+          "mean_recall_at_10": 1.0
+        },
+        "1k-4k": {
+          "count": 7,
+          "mean_baseline_tokens": 1732.2857142857142,
+          "mean_context_tokens": 808.2857142857143,
+          "aggregate_savings_pct": 0.5333993072736269,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 11,
+          "mean_baseline_tokens": 8361.818181818182,
+          "mean_context_tokens": 801.3636363636364,
+          "aggregate_savings_pct": 0.9041639486844967,
+          "mean_recall_at_10": 0.9090909090909091
+        }
+      },
+      "questions": [
+        {
+          "query": "App routing Get Post Put Delete and Listen startup",
+          "expected_files": [
+            "app.go"
+          ],
+          "ranked_files": [
+            "listen.go",
+            "app.go",
+            "res.go",
+            "req.go",
+            "ctx.go",
+            "state.go",
+            "shared_state.go",
+            "register.go",
+            "group.go",
+            "domain.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.014196921001712326,
+          "category": "routing",
+          "baseline_tokens": 13870,
+          "context_tokens": 795,
+          "savings_pct": 0.9426820475847152,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Ctx Params Query BodyParser request context accessors",
+          "expected_files": [
+            "ctx.go"
+          ],
+          "ranked_files": [
+            "client/request.go",
+            "ctx_interface_gen.go",
+            "req.go",
+            "register.go",
+            "group.go",
+            "domain.go",
+            "bind.go",
+            "app.go",
+            "client/client.go",
+            "bind_test.go"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.01171296099346364,
+          "category": "context",
+          "baseline_tokens": 8471,
+          "context_tokens": 797,
+          "savings_pct": 0.9059142958328414,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "router stack matching named parameters and wildcards",
+          "expected_files": [
+            "router.go"
+          ],
+          "ranked_files": [
+            "router.go",
+            "app.go",
+            "path.go",
+            "ctx.go",
+            "router_skip.go",
+            "docs/extra/route-matcher.md",
+            "domain.go",
+            "docs/extra/internal.md",
+            "docs/partials/routing/use.md",
+            "mount.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.011791061995609198,
+          "category": "routing",
+          "baseline_tokens": 11551,
+          "context_tokens": 806,
+          "savings_pct": 0.9302224915591724,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "route grouping with Group prefix and middleware",
+          "expected_files": [
+            "group.go"
+          ],
+          "ranked_files": [
+            "group.go",
+            "domain.go",
+            "app.go",
+            "router.go",
+            "docs/guide/grouping.md",
+            "register.go",
+            "path.go",
+            "hooks.go",
+            "middleware/rewrite/rewrite.go",
+            "middleware/redirect/redirect.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.009004900995932985,
+          "category": "routing",
+          "baseline_tokens": 1980,
+          "context_tokens": 807,
+          "savings_pct": 0.5924242424242424,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "binding JSON body query and form values into structs",
+          "expected_files": [
+            "bind.go"
+          ],
+          "ranked_files": [
+            "res.go",
+            "bind.go",
+            "client/response.go",
+            "ctx_test.go",
+            "client/response_test.go",
+            "bind_test.go",
+            "binder/form_test.go",
+            "docs/api/bind.md",
+            "binder/README.md",
+            "docs/guide/validation.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.009546075001708232,
+          "category": "binding",
+          "baseline_tokens": 4549,
+          "context_tokens": 800,
+          "savings_pct": 0.8241371730050561,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "HTTP error creation with NewError status codes",
+          "expected_files": [
+            "error.go"
+          ],
+          "ranked_files": [
+            "app.go",
+            "redirect.go",
+            "docs/guide/error-handling.md",
+            "middleware/healthcheck/healthcheck.go",
+            "middleware/paginate/paginate.go",
+            "error.go",
+            "middleware/limiter/limiter.go",
+            "constants.go",
+            "res.go",
+            "docs/middleware/cache.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.16666666666666666,
+          "latency_seconds": 0.013061978002951946,
+          "category": "errors",
+          "baseline_tokens": 1081,
+          "context_tokens": 798,
+          "savings_pct": 0.2617946345975948,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "redirect helpers To Route and Back",
+          "expected_files": [
+            "redirect.go"
+          ],
+          "ranked_files": [
+            "redirect.go",
+            "req.go",
+            "ctx.go",
+            "router.go",
+            "group.go",
+            "domain.go",
+            "app.go",
+            "helpers.go",
+            "docs/api/redirect.md",
+            "middleware/redirect/config.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.006607485003769398,
+          "category": "redirect",
+          "baseline_tokens": 4132,
+          "context_tokens": 800,
+          "savings_pct": 0.8063891577928364,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "hooks OnRoute OnListen OnShutdown lifecycle events",
+          "expected_files": [
+            "hooks.go"
+          ],
+          "ranked_files": [
+            "hooks.go",
+            "listen.go",
+            "docs/api/hooks.md",
+            "router.go",
+            "app.go",
+            "docs/extra/internal.md",
+            "prefork.go",
+            "middleware/sse/event.go",
+            ".github/workflows/after-release.yml",
+            "docs/api/app.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.007368290003796574,
+          "category": "hooks",
+          "baseline_tokens": 3186,
+          "context_tokens": 802,
+          "savings_pct": 0.7482736974262398,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "CORS middleware configuration and preflight handling",
+          "expected_files": [
+            "middleware/cors/cors.go"
+          ],
+          "ranked_files": [
+            "middleware/cors/cors.go",
+            "docs/middleware/cors.md",
+            "docs/guide/error-handling.md",
+            "middleware/cors/config.go",
+            "middleware/cors/utils.go",
+            "docs/middleware/favicon.md",
+            "middleware/proxy/security.go",
+            "middleware/recover/config.go",
+            "docs/middleware/healthcheck.md",
+            "docs/middleware/session.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.007895428003394045,
+          "category": "middleware",
+          "baseline_tokens": 2149,
+          "context_tokens": 825,
+          "savings_pct": 0.6161005118659841,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "logger middleware request logging output",
+          "expected_files": [
+            "middleware/logger/default_logger.go"
+          ],
+          "ranked_files": [
+            "client/hooks.go",
+            "log/log.go",
+            "log/default.go",
+            "docs/middleware/logger.md",
+            "middleware/logger/default_logger.go",
+            "middleware/logger/utils.go",
+            "middleware/logger/context_tag.go",
+            "middleware/logger/tags.go",
+            "middleware/logger/config.go",
+            "docs/api/log.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.2,
+          "latency_seconds": 0.010242825002933387,
+          "category": "middleware",
+          "baseline_tokens": 1528,
+          "context_tokens": 815,
+          "savings_pct": 0.4666230366492147,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "rate limiter fixed window request throttling",
+          "expected_files": [
+            "middleware/limiter/limiter_fixed.go"
+          ],
+          "ranked_files": [
+            "middleware/limiter/limiter_fixed.go",
+            "docs/middleware/limiter.md",
+            "middleware/limiter/limiter_sliding.go",
+            "middleware/limiter/limiter.go",
+            "middleware/limiter/config.go",
+            "docs/extra/learning-resources.md",
+            "docs/guide/reverse-proxy.md",
+            ".github/CONTRIBUTING.md",
+            "middleware/logger/default_logger.go",
+            "app.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.008268062003480736,
+          "category": "middleware",
+          "baseline_tokens": 1073,
+          "context_tokens": 815,
+          "savings_pct": 0.24044734389561973,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "request struct AcquireReq and method headers access",
+          "expected_files": [
+            "req.go"
+          ],
+          "ranked_files": [
+            "helpers.go",
+            "req.go",
+            "client/request.go",
+            "middleware/limiter/manager.go",
+            "middleware/cache/manager.go",
+            "req_interface_gen.go",
+            "docs/client/request.md",
+            "binder/header.go",
+            "client/hooks.go",
+            "middleware/cors/cors.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.011024035004083999,
+          "category": "request",
+          "baseline_tokens": 12840,
+          "context_tokens": 796,
+          "savings_pct": 0.938006230529595,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "response Send SendString SendStatus and JSON helpers",
+          "expected_files": [
+            "res.go"
+          ],
+          "ranked_files": [
+            "middleware/idempotency/response.go",
+            "client/response.go",
+            "res.go",
+            "client/request.go",
+            "bind.go",
+            "ctx_test.go",
+            "ctx.go",
+            "docs/client/response.md",
+            "res_interface_gen.go",
+            "middleware/session/config.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.012350923992926255,
+          "category": "response",
+          "baseline_tokens": 11444,
+          "context_tokens": 799,
+          "savings_pct": 0.9301817546312479,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "registering handlers with Add method and route names",
+          "expected_files": [
+            "register.go"
+          ],
+          "ranked_files": [
+            "domain.go",
+            "register.go",
+            "group.go",
+            "app.go",
+            "client/request.go",
+            "helpers.go",
+            "mount.go",
+            "router.go",
+            "middleware/limiter/limiter_test.go",
+            "middleware/cache/cache_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.013067781997960992,
+          "category": "routing",
+          "baseline_tokens": 1129,
+          "context_tokens": 796,
+          "savings_pct": 0.29495128432240925,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "path matching and parameter extraction from routes",
+          "expected_files": [
+            "path.go"
+          ],
+          "ranked_files": [
+            "path.go",
+            "domain.go",
+            "docs/extra/route-matcher.md",
+            "extractors/README.md",
+            "docs/guide/routing.md",
+            "docs/guide/extractors.md",
+            "router.go",
+            "extractors/extractors.go",
+            "docs/partials/routing/use.md",
+            "docs/extra/learning-resources.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.008245008000812959,
+          "category": "routing",
+          "baseline_tokens": 7101,
+          "context_tokens": 796,
+          "savings_pct": 0.887903112237713,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "mounting sub-applications with Mount",
+          "expected_files": [
+            "mount.go"
+          ],
+          "ranked_files": [
+            "mount.go",
+            "domain.go",
+            "docs/api/app.md",
+            "docs/extra/internal.md",
+            "app.go",
+            "docs/partials/routing/use.md",
+            "mount_test.go",
+            "domain_test.go",
+            "middleware/static/static_test.go",
+            "hooks_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.00623807699594181,
+          "category": "mount",
+          "baseline_tokens": 7578,
+          "context_tokens": 816,
+          "savings_pct": 0.8923198733174981,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "TLS listener and graceful shutdown with Listener",
+          "expected_files": [
+            "listen.go"
+          ],
+          "ranked_files": [
+            "listen.go",
+            "app.go",
+            "error.go",
+            "docs/extra/internal.md",
+            "prefork.go",
+            "helpers.go",
+            "listen_test.go",
+            "app_test.go",
+            "helpers_test.go",
+            "hooks_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.008577501997933723,
+          "category": "server",
+          "baseline_tokens": 6270,
+          "context_tokens": 816,
+          "savings_pct": 0.8698564593301435,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "prefork child processes for multi-core serving",
+          "expected_files": [
+            "prefork.go"
+          ],
+          "ranked_files": [
+            "prefork.go",
+            "client/core.go",
+            "prefork_logger.go",
+            "listen.go",
+            "hooks.go",
+            "docs/api/state.md",
+            ".github/workflows/test.yml",
+            "extractors/README.md",
+            "prefork_test.go",
+            "listen_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.005819247002364136,
+          "category": "server",
+          "baseline_tokens": 960,
+          "context_tokens": 808,
+          "savings_pct": 0.15833333333333333,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "cluster CPU and memory constraints detection",
+          "expected_files": [
+            "constraint.go"
+          ],
+          "ranked_files": [
+            "constraint.go",
+            "path.go",
+            "shared_state_test.go",
+            "constraint_test.go",
+            "router_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.2,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.005595627997536212,
+          "category": "server",
+          "baseline_tokens": 4174,
+          "context_tokens": 794,
+          "savings_pct": 0.8097747963584092,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "storage interface Get Set Delete for sessions and cache",
+          "expected_files": [
+            "storage_interface.go"
+          ],
+          "ranked_files": [
+            "storage_interface.go",
+            "internal/storage/memory/memory.go",
+            "middleware/cache/manager.go",
+            "middleware/session/store.go",
+            "middleware/session/session.go",
+            "middleware/session/data.go",
+            "middleware/session/middleware.go",
+            "res.go",
+            "req.go",
+            "ctx.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01091241100220941,
+          "category": "storage",
+          "baseline_tokens": 367,
+          "context_tokens": 799,
+          "savings_pct": -1.1771117166212535,
+          "baseline_bucket": "<1k"
+        }
+      ]
+    },
+    "1200": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.095,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 0.95,
+      "mean_precision_over_returned": 0.09833333333333334,
+      "mean_recall_at_10": 0.95,
+      "mean_reciprocal_rank": 0.7625,
+      "p50_latency_seconds": 0.012781370998709463,
+      "p95_latency_seconds": 0.0184776719979709,
+      "index_seconds": 42.3946997919993,
+      "mean_baseline_tokens": 5271.65,
+      "mean_context_tokens": 1206.85,
+      "mean_savings_pct": 0.3941704251443584,
+      "aggregate_savings_pct": 0.7710678819724375,
+      "buckets": {
+        "<1k": {
+          "count": 2,
+          "mean_baseline_tokens": 663.5,
+          "mean_context_tokens": 1229.0,
+          "aggregate_savings_pct": -0.8522984174830444,
+          "mean_recall_at_10": 1.0
+        },
+        "1k-4k": {
+          "count": 7,
+          "mean_baseline_tokens": 1732.2857142857142,
+          "mean_context_tokens": 1205.7142857142858,
+          "aggregate_savings_pct": 0.3039749299026884,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 11,
+          "mean_baseline_tokens": 8361.818181818182,
+          "mean_context_tokens": 1203.5454545454545,
+          "aggregate_savings_pct": 0.8560665362035225,
+          "mean_recall_at_10": 0.9090909090909091
+        }
+      },
+      "questions": [
+        {
+          "query": "App routing Get Post Put Delete and Listen startup",
+          "expected_files": [
+            "app.go"
+          ],
+          "ranked_files": [
+            "listen.go",
+            "app.go",
+            "ctx.go",
+            "req.go",
+            "res.go",
+            "client/cookiejar.go",
+            "middleware/session/session.go",
+            "register.go",
+            "middleware/session/data.go",
+            "internal/storage/memory/memory.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0184776719979709,
+          "category": "routing",
+          "baseline_tokens": 13870,
+          "context_tokens": 1195,
+          "savings_pct": 0.9138428262436914,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Ctx Params Query BodyParser request context accessors",
+          "expected_files": [
+            "ctx.go"
+          ],
+          "ranked_files": [
+            "client/request.go",
+            "ctx_interface_gen.go",
+            "req.go",
+            "register.go",
+            "bind.go",
+            "app.go",
+            "group.go",
+            "domain.go",
+            "client/client.go",
+            "bind_test.go"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.016168652000487782,
+          "category": "context",
+          "baseline_tokens": 8471,
+          "context_tokens": 1197,
+          "savings_pct": 0.858694369023728,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "router stack matching named parameters and wildcards",
+          "expected_files": [
+            "router.go"
+          ],
+          "ranked_files": [
+            "router.go",
+            "app.go",
+            "path.go",
+            "ctx.go",
+            "router_skip.go",
+            "docs/guide/routing.md",
+            "docs/extra/route-matcher.md",
+            "domain.go",
+            "docs/extra/internal.md",
+            "docs/partials/routing/use.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01663752099557314,
+          "category": "routing",
+          "baseline_tokens": 11551,
+          "context_tokens": 1206,
+          "savings_pct": 0.8955934551121115,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "route grouping with Group prefix and middleware",
+          "expected_files": [
+            "group.go"
+          ],
+          "ranked_files": [
+            "group.go",
+            "domain.go",
+            "app.go",
+            "router.go",
+            "docs/guide/grouping.md",
+            "register.go",
+            "path.go",
+            "hooks.go",
+            "middleware/rewrite/rewrite.go",
+            "middleware/redirect/redirect.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.012187959997390863,
+          "category": "routing",
+          "baseline_tokens": 1980,
+          "context_tokens": 1207,
+          "savings_pct": 0.3904040404040404,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "binding JSON body query and form values into structs",
+          "expected_files": [
+            "bind.go"
+          ],
+          "ranked_files": [
+            "bind.go",
+            "client/response.go",
+            "res.go",
+            "ctx_test.go",
+            "client/response_test.go",
+            "bind_test.go",
+            "binder/form_test.go",
+            "docs/api/bind.md",
+            "docs/guide/validation.md",
+            "binder/README.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01338692299759714,
+          "category": "binding",
+          "baseline_tokens": 4549,
+          "context_tokens": 1211,
+          "savings_pct": 0.7337876456364036,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "HTTP error creation with NewError status codes",
+          "expected_files": [
+            "error.go"
+          ],
+          "ranked_files": [
+            "app.go",
+            "redirect.go",
+            "docs/guide/error-handling.md",
+            "middleware/healthcheck/healthcheck.go",
+            "middleware/paginate/paginate.go",
+            "error.go",
+            "middleware/limiter/limiter.go",
+            "constants.go",
+            "docs/api/constants.md",
+            "res.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.16666666666666666,
+          "latency_seconds": 0.0170601300051203,
+          "category": "errors",
+          "baseline_tokens": 1081,
+          "context_tokens": 1198,
+          "savings_pct": -0.10823311748381137,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "redirect helpers To Route and Back",
+          "expected_files": [
+            "redirect.go"
+          ],
+          "ranked_files": [
+            "redirect.go",
+            "ctx.go",
+            "app.go",
+            "req.go",
+            "group.go",
+            "router.go",
+            "domain.go",
+            "docs/api/redirect.md",
+            "helpers.go",
+            "docs/middleware/redirect.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.009741007001139224,
+          "category": "redirect",
+          "baseline_tokens": 4132,
+          "context_tokens": 1200,
+          "savings_pct": 0.7095837366892546,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "hooks OnRoute OnListen OnShutdown lifecycle events",
+          "expected_files": [
+            "hooks.go"
+          ],
+          "ranked_files": [
+            "hooks.go",
+            "listen.go",
+            "docs/api/hooks.md",
+            "router.go",
+            "app.go",
+            "docs/extra/internal.md",
+            "docs/guide/grouping.md",
+            "docs/api/fiber.md",
+            "docs/api/app.md",
+            "prefork.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.010611916004563682,
+          "category": "hooks",
+          "baseline_tokens": 3186,
+          "context_tokens": 1206,
+          "savings_pct": 0.6214689265536724,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "CORS middleware configuration and preflight handling",
+          "expected_files": [
+            "middleware/cors/cors.go"
+          ],
+          "ranked_files": [
+            "middleware/cors/cors.go",
+            "docs/middleware/cors.md",
+            "docs/guide/error-handling.md",
+            "middleware/cors/config.go",
+            "middleware/cors/utils.go",
+            "middleware/proxy/security.go",
+            "docs/middleware/healthcheck.md",
+            "middleware/recover/config.go",
+            "docs/middleware/favicon.md",
+            "middleware/session/data.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.010803582998050842,
+          "category": "middleware",
+          "baseline_tokens": 2149,
+          "context_tokens": 1218,
+          "savings_pct": 0.4332247557003257,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "logger middleware request logging output",
+          "expected_files": [
+            "middleware/logger/default_logger.go"
+          ],
+          "ranked_files": [
+            "client/hooks.go",
+            "log/log.go",
+            "log/default.go",
+            "middleware/logger/default_logger.go",
+            "middleware/logger/utils.go",
+            "docs/middleware/logger.md",
+            "middleware/logger/context_tag.go",
+            "middleware/logger/tags.go",
+            "middleware/logger/config.go",
+            "docs/api/log.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.25,
+          "latency_seconds": 0.013374782000028063,
+          "category": "middleware",
+          "baseline_tokens": 1528,
+          "context_tokens": 1200,
+          "savings_pct": 0.2146596858638743,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "rate limiter fixed window request throttling",
+          "expected_files": [
+            "middleware/limiter/limiter_fixed.go"
+          ],
+          "ranked_files": [
+            "middleware/limiter/limiter_fixed.go",
+            "docs/middleware/limiter.md",
+            "middleware/limiter/limiter_sliding.go",
+            "middleware/limiter/limiter.go",
+            "middleware/limiter/config.go",
+            "docs/extra/learning-resources.md",
+            "middleware/logger/default_logger.go",
+            ".github/CONTRIBUTING.md",
+            "docs/guide/reverse-proxy.md",
+            "app.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.010362736997194588,
+          "category": "middleware",
+          "baseline_tokens": 1073,
+          "context_tokens": 1217,
+          "savings_pct": -0.1342031686859273,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "request struct AcquireReq and method headers access",
+          "expected_files": [
+            "req.go"
+          ],
+          "ranked_files": [
+            "helpers.go",
+            "req.go",
+            "client/request.go",
+            "middleware/limiter/manager.go",
+            "middleware/cache/manager.go",
+            "req_interface_gen.go",
+            "docs/client/request.md",
+            "binder/header.go",
+            "client/hooks.go",
+            "client/transport.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.014928866999980528,
+          "category": "request",
+          "baseline_tokens": 12840,
+          "context_tokens": 1199,
+          "savings_pct": 0.9066199376947041,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "response Send SendString SendStatus and JSON helpers",
+          "expected_files": [
+            "res.go"
+          ],
+          "ranked_files": [
+            "middleware/idempotency/response.go",
+            "client/response.go",
+            "res.go",
+            "client/request.go",
+            "bind.go",
+            "ctx_test.go",
+            "docs/client/response.md",
+            "res_interface_gen.go",
+            "docs/guide/error-handling.md",
+            "middleware/session/config.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.017156809000880457,
+          "category": "response",
+          "baseline_tokens": 11444,
+          "context_tokens": 1195,
+          "savings_pct": 0.8955784690667599,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "registering handlers with Add method and route names",
+          "expected_files": [
+            "register.go"
+          ],
+          "ranked_files": [
+            "domain.go",
+            "register.go",
+            "group.go",
+            "app.go",
+            "client/request.go",
+            "helpers.go",
+            "mount.go",
+            "router.go",
+            "middleware/cache/cache_test.go",
+            "middleware/limiter/limiter_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.018060390997561626,
+          "category": "routing",
+          "baseline_tokens": 1129,
+          "context_tokens": 1194,
+          "savings_pct": -0.057573073516386186,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "path matching and parameter extraction from routes",
+          "expected_files": [
+            "path.go"
+          ],
+          "ranked_files": [
+            "path.go",
+            "docs/extra/route-matcher.md",
+            "extractors/README.md",
+            "docs/extra/internal.md",
+            "docs/guide/routing.md",
+            "docs/guide/extractors.md",
+            "router.go",
+            "extractors/extractors.go",
+            "docs/middleware/csrf.md",
+            "docs/partials/routing/use.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.011679413997626398,
+          "category": "routing",
+          "baseline_tokens": 7101,
+          "context_tokens": 1193,
+          "savings_pct": 0.8319954935924517,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "mounting sub-applications with Mount",
+          "expected_files": [
+            "mount.go"
+          ],
+          "ranked_files": [
+            "mount.go",
+            "domain.go",
+            "app.go",
+            "docs/extra/internal.md",
+            "docs/api/app.md",
+            "docs/partials/routing/use.md",
+            "docs/api/hooks.md",
+            "res.go",
+            "mount_test.go",
+            "domain_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.007275144998857286,
+          "category": "mount",
+          "baseline_tokens": 7578,
+          "context_tokens": 1214,
+          "savings_pct": 0.8397994193718659,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "TLS listener and graceful shutdown with Listener",
+          "expected_files": [
+            "listen.go"
+          ],
+          "ranked_files": [
+            "listen.go",
+            "app.go",
+            "docs/api/fiber.md",
+            "error.go",
+            "prefork.go",
+            "docs/whats_new.md",
+            "docs/api/services.md",
+            "docs/api/hooks.md",
+            "listen_test.go",
+            "app_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.011518074003106449,
+          "category": "server",
+          "baseline_tokens": 6270,
+          "context_tokens": 1231,
+          "savings_pct": 0.8036682615629984,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "prefork child processes for multi-core serving",
+          "expected_files": [
+            "prefork.go"
+          ],
+          "ranked_files": [
+            "prefork.go",
+            "client/core.go",
+            "prefork_logger.go",
+            "listen.go",
+            "docs/extra/internal.md",
+            "hooks.go",
+            "docs/api/fiber.md",
+            ".github/workflows/move-closed-milestone-items.yml",
+            "docs/api/hooks.md",
+            "extractors/README.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.008068081995588727,
+          "category": "server",
+          "baseline_tokens": 960,
+          "context_tokens": 1259,
+          "savings_pct": -0.3114583333333334,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "cluster CPU and memory constraints detection",
+          "expected_files": [
+            "constraint.go"
+          ],
+          "ranked_files": [
+            "constraint.go",
+            "path.go",
+            "docs/extra/internal.md",
+            "shared_state_test.go",
+            "constraint_test.go",
+            "router_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.16666666666666666,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.007581788995594252,
+          "category": "server",
+          "baseline_tokens": 4174,
+          "context_tokens": 1198,
+          "savings_pct": 0.7129851461427887,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "storage interface Get Set Delete for sessions and cache",
+          "expected_files": [
+            "storage_interface.go"
+          ],
+          "ranked_files": [
+            "storage_interface.go",
+            "internal/storage/memory/memory.go",
+            "middleware/cache/manager.go",
+            "middleware/session/store.go",
+            "middleware/session/session.go",
+            "middleware/session/data.go",
+            "middleware/session/middleware.go",
+            "client/cookiejar.go",
+            "register.go",
+            "ctx.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.013660676006111316,
+          "category": "storage",
+          "baseline_tokens": 367,
+          "context_tokens": 1199,
+          "savings_pct": -2.2670299727520438,
+          "baseline_bucket": "<1k"
+        }
+      ]
+    },
+    "2000": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.095,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 0.95,
+      "mean_precision_over_returned": 0.09833333333333334,
+      "mean_recall_at_10": 0.95,
+      "mean_reciprocal_rank": 0.7625,
+      "p50_latency_seconds": 0.013116742498823442,
+      "p95_latency_seconds": 0.019062487997871358,
+      "index_seconds": 0.02568742400035262,
+      "mean_baseline_tokens": 5271.65,
+      "mean_context_tokens": 2006.5,
+      "mean_savings_pct": -0.004776198984906393,
+      "aggregate_savings_pct": 0.6193791317708877,
+      "buckets": {
+        "<1k": {
+          "count": 2,
+          "mean_baseline_tokens": 663.5,
+          "mean_context_tokens": 2001.0,
+          "aggregate_savings_pct": -2.015825169555388,
+          "mean_recall_at_10": 1.0
+        },
+        "1k-4k": {
+          "count": 7,
+          "mean_baseline_tokens": 1732.2857142857142,
+          "mean_context_tokens": 2010.4285714285713,
+          "aggregate_savings_pct": -0.16056407718951005,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 11,
+          "mean_baseline_tokens": 8361.818181818182,
+          "mean_context_tokens": 2005.0,
+          "aggregate_savings_pct": 0.760219612959339,
+          "mean_recall_at_10": 0.9090909090909091
+        }
+      },
+      "questions": [
+        {
+          "query": "App routing Get Post Put Delete and Listen startup",
+          "expected_files": [
+            "app.go"
+          ],
+          "ranked_files": [
+            "listen.go",
+            "app.go",
+            "ctx.go",
+            "req.go",
+            "res.go",
+            "client/cookiejar.go",
+            "middleware/session/session.go",
+            "register.go",
+            "middleware/session/data.go",
+            "internal/storage/memory/memory.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.01864399799524108,
+          "category": "routing",
+          "baseline_tokens": 13870,
+          "context_tokens": 1997,
+          "savings_pct": 0.8560201874549387,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Ctx Params Query BodyParser request context accessors",
+          "expected_files": [
+            "ctx.go"
+          ],
+          "ranked_files": [
+            "client/request.go",
+            "ctx_interface_gen.go",
+            "req.go",
+            "register.go",
+            "bind.go",
+            "app.go",
+            "group.go",
+            "domain.go",
+            "client/client.go",
+            "bind_test.go"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.017378702999849338,
+          "category": "context",
+          "baseline_tokens": 8471,
+          "context_tokens": 2009,
+          "savings_pct": 0.7628379176012277,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "router stack matching named parameters and wildcards",
+          "expected_files": [
+            "router.go"
+          ],
+          "ranked_files": [
+            "router.go",
+            "app.go",
+            "path.go",
+            "ctx.go",
+            "router_skip.go",
+            "docs/guide/routing.md",
+            "docs/extra/route-matcher.md",
+            "domain.go",
+            "docs/extra/internal.md",
+            "docs/partials/routing/use.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.015849240000534337,
+          "category": "routing",
+          "baseline_tokens": 11551,
+          "context_tokens": 2010,
+          "savings_pct": 0.8259890918535192,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "route grouping with Group prefix and middleware",
+          "expected_files": [
+            "group.go"
+          ],
+          "ranked_files": [
+            "group.go",
+            "domain.go",
+            "app.go",
+            "router.go",
+            "docs/guide/grouping.md",
+            "register.go",
+            "path.go",
+            "hooks.go",
+            "middleware/rewrite/rewrite.go",
+            "middleware/redirect/redirect.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.012166326996521093,
+          "category": "routing",
+          "baseline_tokens": 1980,
+          "context_tokens": 2001,
+          "savings_pct": -0.010606060606060508,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "binding JSON body query and form values into structs",
+          "expected_files": [
+            "bind.go"
+          ],
+          "ranked_files": [
+            "bind.go",
+            "client/response.go",
+            "res.go",
+            "ctx_test.go",
+            "client/response_test.go",
+            "bind_test.go",
+            "binder/form_test.go",
+            "docs/api/bind.md",
+            "docs/guide/validation.md",
+            "binder/README.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01311660999635933,
+          "category": "binding",
+          "baseline_tokens": 4549,
+          "context_tokens": 2018,
+          "savings_pct": 0.5563860189052539,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "HTTP error creation with NewError status codes",
+          "expected_files": [
+            "error.go"
+          ],
+          "ranked_files": [
+            "app.go",
+            "redirect.go",
+            "docs/guide/error-handling.md",
+            "middleware/healthcheck/healthcheck.go",
+            "middleware/paginate/paginate.go",
+            "error.go",
+            "middleware/limiter/limiter.go",
+            "constants.go",
+            "docs/api/constants.md",
+            "res.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.16666666666666666,
+          "latency_seconds": 0.018331877996388357,
+          "category": "errors",
+          "baseline_tokens": 1081,
+          "context_tokens": 1998,
+          "savings_pct": -0.8482886216466234,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "redirect helpers To Route and Back",
+          "expected_files": [
+            "redirect.go"
+          ],
+          "ranked_files": [
+            "redirect.go",
+            "ctx.go",
+            "app.go",
+            "req.go",
+            "group.go",
+            "router.go",
+            "domain.go",
+            "docs/api/redirect.md",
+            "helpers.go",
+            "docs/middleware/redirect.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.00841195099928882,
+          "category": "redirect",
+          "baseline_tokens": 4132,
+          "context_tokens": 1993,
+          "savings_pct": 0.5176669893514037,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "hooks OnRoute OnListen OnShutdown lifecycle events",
+          "expected_files": [
+            "hooks.go"
+          ],
+          "ranked_files": [
+            "hooks.go",
+            "listen.go",
+            "docs/api/hooks.md",
+            "router.go",
+            "app.go",
+            "docs/extra/internal.md",
+            "docs/guide/grouping.md",
+            "docs/api/fiber.md",
+            "docs/api/app.md",
+            "prefork.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.010320945002604276,
+          "category": "hooks",
+          "baseline_tokens": 3186,
+          "context_tokens": 2005,
+          "savings_pct": 0.3706842435655995,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "CORS middleware configuration and preflight handling",
+          "expected_files": [
+            "middleware/cors/cors.go"
+          ],
+          "ranked_files": [
+            "middleware/cors/cors.go",
+            "docs/middleware/cors.md",
+            "docs/guide/error-handling.md",
+            "middleware/cors/config.go",
+            "middleware/cors/utils.go",
+            "middleware/proxy/security.go",
+            "docs/middleware/healthcheck.md",
+            "middleware/recover/config.go",
+            "docs/middleware/favicon.md",
+            "middleware/session/data.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01058752400422236,
+          "category": "middleware",
+          "baseline_tokens": 2149,
+          "context_tokens": 2025,
+          "savings_pct": 0.057701256398324796,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "logger middleware request logging output",
+          "expected_files": [
+            "middleware/logger/default_logger.go"
+          ],
+          "ranked_files": [
+            "client/hooks.go",
+            "log/log.go",
+            "log/default.go",
+            "middleware/logger/default_logger.go",
+            "middleware/logger/utils.go",
+            "docs/middleware/logger.md",
+            "middleware/logger/context_tag.go",
+            "middleware/logger/tags.go",
+            "middleware/logger/config.go",
+            "docs/api/log.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.25,
+          "latency_seconds": 0.013116875001287553,
+          "category": "middleware",
+          "baseline_tokens": 1528,
+          "context_tokens": 2034,
+          "savings_pct": -0.331151832460733,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "rate limiter fixed window request throttling",
+          "expected_files": [
+            "middleware/limiter/limiter_fixed.go"
+          ],
+          "ranked_files": [
+            "middleware/limiter/limiter_fixed.go",
+            "docs/middleware/limiter.md",
+            "middleware/limiter/limiter_sliding.go",
+            "middleware/limiter/limiter.go",
+            "middleware/limiter/config.go",
+            "docs/extra/learning-resources.md",
+            "middleware/logger/default_logger.go",
+            ".github/CONTRIBUTING.md",
+            "docs/guide/reverse-proxy.md",
+            "app.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.009925330996338744,
+          "category": "middleware",
+          "baseline_tokens": 1073,
+          "context_tokens": 2011,
+          "savings_pct": -0.8741845293569432,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "request struct AcquireReq and method headers access",
+          "expected_files": [
+            "req.go"
+          ],
+          "ranked_files": [
+            "helpers.go",
+            "req.go",
+            "client/request.go",
+            "middleware/limiter/manager.go",
+            "middleware/cache/manager.go",
+            "req_interface_gen.go",
+            "docs/client/request.md",
+            "binder/header.go",
+            "client/hooks.go",
+            "client/transport.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.01562880599522032,
+          "category": "request",
+          "baseline_tokens": 12840,
+          "context_tokens": 1999,
+          "savings_pct": 0.8443146417445483,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "response Send SendString SendStatus and JSON helpers",
+          "expected_files": [
+            "res.go"
+          ],
+          "ranked_files": [
+            "middleware/idempotency/response.go",
+            "client/response.go",
+            "res.go",
+            "client/request.go",
+            "bind.go",
+            "ctx_test.go",
+            "docs/client/response.md",
+            "res_interface_gen.go",
+            "docs/guide/error-handling.md",
+            "middleware/session/config.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.01832606399693759,
+          "category": "response",
+          "baseline_tokens": 11444,
+          "context_tokens": 1997,
+          "savings_pct": 0.8254980775952464,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "registering handlers with Add method and route names",
+          "expected_files": [
+            "register.go"
+          ],
+          "ranked_files": [
+            "domain.go",
+            "register.go",
+            "group.go",
+            "app.go",
+            "client/request.go",
+            "helpers.go",
+            "mount.go",
+            "router.go",
+            "middleware/cache/cache_test.go",
+            "middleware/limiter/limiter_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.019062487997871358,
+          "category": "routing",
+          "baseline_tokens": 1129,
+          "context_tokens": 1999,
+          "savings_pct": -0.7705934455270151,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "path matching and parameter extraction from routes",
+          "expected_files": [
+            "path.go"
+          ],
+          "ranked_files": [
+            "path.go",
+            "docs/extra/route-matcher.md",
+            "extractors/README.md",
+            "docs/extra/internal.md",
+            "docs/guide/routing.md",
+            "docs/guide/extractors.md",
+            "router.go",
+            "extractors/extractors.go",
+            "docs/middleware/csrf.md",
+            "docs/partials/routing/use.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.014521377997880336,
+          "category": "routing",
+          "baseline_tokens": 7101,
+          "context_tokens": 1997,
+          "savings_pct": 0.7187720039431066,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "mounting sub-applications with Mount",
+          "expected_files": [
+            "mount.go"
+          ],
+          "ranked_files": [
+            "mount.go",
+            "domain.go",
+            "app.go",
+            "docs/extra/internal.md",
+            "docs/api/app.md",
+            "docs/partials/routing/use.md",
+            "docs/api/hooks.md",
+            "res.go",
+            "mount_test.go",
+            "domain_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.008623623005405534,
+          "category": "mount",
+          "baseline_tokens": 7578,
+          "context_tokens": 2017,
+          "savings_pct": 0.7338347849036685,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "TLS listener and graceful shutdown with Listener",
+          "expected_files": [
+            "listen.go"
+          ],
+          "ranked_files": [
+            "listen.go",
+            "app.go",
+            "docs/api/fiber.md",
+            "error.go",
+            "prefork.go",
+            "docs/whats_new.md",
+            "docs/api/services.md",
+            "docs/api/hooks.md",
+            "listen_test.go",
+            "app_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.011712093000824098,
+          "category": "server",
+          "baseline_tokens": 6270,
+          "context_tokens": 2025,
+          "savings_pct": 0.6770334928229664,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "prefork child processes for multi-core serving",
+          "expected_files": [
+            "prefork.go"
+          ],
+          "ranked_files": [
+            "prefork.go",
+            "client/core.go",
+            "prefork_logger.go",
+            "listen.go",
+            "docs/extra/internal.md",
+            "hooks.go",
+            "docs/api/fiber.md",
+            ".github/workflows/move-closed-milestone-items.yml",
+            "docs/api/hooks.md",
+            "extractors/README.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.00783467199653387,
+          "category": "server",
+          "baseline_tokens": 960,
+          "context_tokens": 2005,
+          "savings_pct": -1.0885416666666665,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "cluster CPU and memory constraints detection",
+          "expected_files": [
+            "constraint.go"
+          ],
+          "ranked_files": [
+            "constraint.go",
+            "path.go",
+            "docs/extra/internal.md",
+            "shared_state_test.go",
+            "constraint_test.go",
+            "router_test.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.16666666666666666,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01003373400453711,
+          "category": "server",
+          "baseline_tokens": 4174,
+          "context_tokens": 1993,
+          "savings_pct": 0.5225203641590801,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "storage interface Get Set Delete for sessions and cache",
+          "expected_files": [
+            "storage_interface.go"
+          ],
+          "ranked_files": [
+            "storage_interface.go",
+            "internal/storage/memory/memory.go",
+            "middleware/cache/manager.go",
+            "middleware/session/store.go",
+            "middleware/session/session.go",
+            "middleware/session/data.go",
+            "middleware/session/middleware.go",
+            "client/cookiejar.go",
+            "register.go",
+            "ctx.go"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.013953305999166332,
+          "category": "storage",
+          "baseline_tokens": 367,
+          "context_tokens": 1997,
+          "savings_pct": -4.44141689373297,
+          "baseline_bucket": "<1k"
+        }
+      ]
+    }
+  }
+}

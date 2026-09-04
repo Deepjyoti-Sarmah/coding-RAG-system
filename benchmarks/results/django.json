@@ -1,0 +1,2544 @@
+{
+  "repo": "https://github.com/django/django",
+  "source_dir": "django",
+  "commit": "3b767c5f6ab6a4421ea3892ac6afacd8aa1345d6",
+  "queries_file": "benchmarks/django_original.json",
+  "token_budget": 800,
+  "token_budgets": [
+    800,
+    1200,
+    2000
+  ],
+  "total_questions": 20,
+  "mean_precision_at_10": 0.1,
+  "mean_precision_ceiling_at_10": 0.1,
+  "mean_precision_at_10_normalized": 1.0,
+  "mean_precision_over_returned": 0.10666666666666666,
+  "mean_recall_at_10": 1.0,
+  "mean_reciprocal_rank": 0.8738095238095237,
+  "p50_latency_seconds": 0.018242268000904005,
+  "p95_latency_seconds": 0.049578631995245814,
+  "index_seconds": 40.408275086003414,
+  "mean_baseline_tokens": 8908.75,
+  "mean_context_tokens": 810.85,
+  "mean_savings_pct": 0.7710057806911996,
+  "aggregate_savings_pct": 0.9089827416865441,
+  "buckets": {
+    "<1k": {
+      "count": 1,
+      "mean_baseline_tokens": 900.0,
+      "mean_context_tokens": 798.0,
+      "aggregate_savings_pct": 0.11333333333333329,
+      "mean_recall_at_10": 1.0
+    },
+    "1k-4k": {
+      "count": 7,
+      "mean_baseline_tokens": 2356.5714285714284,
+      "mean_context_tokens": 806.5714285714286,
+      "aggregate_savings_pct": 0.6577352085354025,
+      "mean_recall_at_10": 1.0
+    },
+    ">4k": {
+      "count": 12,
+      "mean_baseline_tokens": 13398.25,
+      "mean_context_tokens": 814.4166666666666,
+      "aggregate_savings_pct": 0.9392146984369849,
+      "mean_recall_at_10": 1.0
+    }
+  },
+  "questions": [
+    {
+      "query": "Model save delete and refresh_from_db persistence methods",
+      "expected_files": [
+        "db/models/base.py"
+      ],
+      "ranked_files": [
+        "db/models/base.py",
+        "contrib/sessions/base_session.py",
+        "db/models/fields/files.py",
+        "contrib/sites/requests.py",
+        "contrib/auth/models.py",
+        "core/serializers/base.py",
+        "forms/models.py",
+        "contrib/auth/forms.py",
+        "contrib/auth/base_user.py",
+        "contrib/gis/utils/layermapping.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.049578631995245814,
+      "category": "models",
+      "baseline_tokens": 19041,
+      "context_tokens": 800,
+      "savings_pct": 0.9579853999264745,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "QuerySet filter exclude annotate and aggregation chaining",
+      "expected_files": [
+        "db/models/query.py"
+      ],
+      "ranked_files": [
+        "db/models/query.py",
+        "utils/log.py",
+        "template/library.py",
+        "contrib/admin/filters.py",
+        "db/models/sql/query.py",
+        "db/models/fields/related_descriptors.py",
+        "contrib/admin/views/main.py",
+        "db/models/deletion.py",
+        "db/models/constraints.py",
+        "contrib/postgres/constraints.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.03510131399525562,
+      "category": "orm",
+      "baseline_tokens": 24676,
+      "context_tokens": 816,
+      "savings_pct": 0.9669314313502999,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "model field classes CharField IntegerField ForeignKey",
+      "expected_files": [
+        "db/models/fields/__init__.py"
+      ],
+      "ranked_files": [
+        "db/models/fields/__init__.py",
+        "db/models/fields/related.py",
+        "contrib/postgres/fields/ranges.py",
+        "contrib/postgres/fields/array.py",
+        "contrib/sessions/backends/db.py",
+        "contrib/admin/static/admin/js/inlines.js",
+        "db/models/expressions.py",
+        "db/models/fields/related_descriptors.py",
+        "forms/fields.py",
+        "forms/models.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.02884020900091855,
+      "category": "models",
+      "baseline_tokens": 20606,
+      "context_tokens": 793,
+      "savings_pct": 0.961516063282539,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "field lookups exact in contains gt lt transforms",
+      "expected_files": [
+        "db/models/lookups.py"
+      ],
+      "ranked_files": [
+        "db/models/lookups.py",
+        "contrib/admin/static/admin/js/inlines.js",
+        "db/models/expressions.py",
+        "db/models/fields/related_descriptors.py",
+        "contrib/admin/filters.py",
+        "utils/regex_helper.py",
+        "contrib/gis/geos/prepared.py",
+        "contrib/gis/geos/geometry.py",
+        "contrib/gis/gdal/geometries.py",
+        "db/models/query.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.016517716001544613,
+      "category": "orm",
+      "baseline_tokens": 6162,
+      "context_tokens": 805,
+      "savings_pct": 0.8693605972086985,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "migration autodetector detecting model changes",
+      "expected_files": [
+        "db/migrations/autodetector.py"
+      ],
+      "ranked_files": [
+        "db/migrations/autodetector.py",
+        "contrib/postgres/fields/ranges.py",
+        "contrib/postgres/fields/array.py",
+        "contrib/sessions/backends/db.py",
+        "contrib/admin/migrations/0003_logentry_add_action_flag_choices.py",
+        "contrib/admin/migrations/0001_initial.py",
+        "contrib/admin/migrations/0002_logentry_remove_auto_add.py",
+        "db/migrations/executor.py",
+        "core/management/commands/migrate.py",
+        "db/migrations/questioner.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.01774186200054828,
+      "category": "migrations",
+      "baseline_tokens": 14931,
+      "context_tokens": 834,
+      "savings_pct": 0.9441430580671087,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "migration state ModelState rendering from models",
+      "expected_files": [
+        "db/migrations/state.py"
+      ],
+      "ranked_files": [
+        "db/migrations/state.py",
+        "db/models/base.py",
+        "contrib/admin/static/admin/js/SelectFilter2.js",
+        "db/migrations/operations/models.py",
+        "core/management/commands/migrate.py",
+        "db/migrations/executor.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.16666666666666666,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.029694255004869774,
+      "category": "migrations",
+      "baseline_tokens": 8527,
+      "context_tokens": 804,
+      "savings_pct": 0.9057112700832649,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "reverse() URL reversing by view name",
+      "expected_files": [
+        "urls/base.py"
+      ],
+      "ranked_files": [
+        "views/generic/base.py",
+        "urls/resolvers.py",
+        "urls/base.py",
+        "contrib/gis/geos/mutable_list.py",
+        "db/models/query.py",
+        "tasks/base.py",
+        "contrib/contenttypes/models.py",
+        "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
+        "contrib/admin/static/admin/js/admin/DateTimeShortcuts.js",
+        "contrib/gis/gdal/srs.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.021613181997963693,
+      "category": "urls",
+      "baseline_tokens": 1316,
+      "context_tokens": 800,
+      "savings_pct": 0.39209726443769,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "URLResolver path converters and route matching",
+      "expected_files": [
+        "urls/resolvers.py"
+      ],
+      "ranked_files": [
+        "urls/resolvers.py",
+        "forms/widgets.py",
+        "contrib/staticfiles/storage.py",
+        "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
+        "core/files/storage/memory.py",
+        "core/files/storage/filesystem.py",
+        "core/files/storage/base.py",
+        "core/management/commands/makemessages.py",
+        "db/migrations/writer.py",
+        "db/models/fields/files.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.01361813100083964,
+      "category": "urls",
+      "baseline_tokens": 6195,
+      "context_tokens": 828,
+      "savings_pct": 0.8663438256658595,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "class based View dispatch and as_view",
+      "expected_files": [
+        "views/generic/base.py"
+      ],
+      "ranked_files": [
+        "views/generic/base.py",
+        "contrib/auth/views.py",
+        "contrib/admindocs/views.py",
+        "contrib/auth/mixins.py",
+        "views/generic/edit.py",
+        "contrib/admin/views/autocomplete.py",
+        "views/generic/dates.py",
+        "dispatch/dispatcher.py",
+        "urls/resolvers.py",
+        "contrib/admin/sites.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.01931155600323109,
+      "category": "views",
+      "baseline_tokens": 1956,
+      "context_tokens": 805,
+      "savings_pct": 0.5884458077709611,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "ListView pagination with paginate_by",
+      "expected_files": [
+        "views/generic/list.py"
+      ],
+      "ranked_files": [
+        "views/generic/list.py",
+        "contrib/admin/templatetags/admin_list.py",
+        "contrib/admin/templates/admin/pagination.html",
+        "views/generic/dates.py",
+        "contrib/admin/options.py",
+        "contrib/admin/views/autocomplete.py",
+        "core/paginator.py",
+        "views/generic/__init__.py",
+        "contrib/admin/views/main.py",
+        "contrib/admin/templates/admin/object_history.html"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.02124310399813112,
+      "category": "views",
+      "baseline_tokens": 1624,
+      "context_tokens": 799,
+      "savings_pct": 0.5080049261083743,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "Form full_clean is_valid and cleaned_data validation",
+      "expected_files": [
+        "forms/forms.py"
+      ],
+      "ranked_files": [
+        "forms/formsets.py",
+        "forms/forms.py",
+        "db/models/base.py",
+        "contrib/admin/options.py",
+        "contrib/postgres/forms/array.py",
+        "forms/fields.py",
+        "contrib/auth/forms.py",
+        "contrib/messages/views.py",
+        "forms/models.py",
+        "contrib/flatpages/forms.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.0143691810008022,
+      "category": "forms",
+      "baseline_tokens": 3271,
+      "context_tokens": 800,
+      "savings_pct": 0.7554264750840721,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "ModelForm save and Meta model binding",
+      "expected_files": [
+        "forms/models.py"
+      ],
+      "ranked_files": [
+        "db/models/base.py",
+        "forms/models.py",
+        "contrib/auth/forms.py",
+        "contrib/sites/models.py",
+        "db/models/fields/files.py",
+        "contrib/flatpages/forms.py",
+        "contrib/sites/requests.py",
+        "contrib/sessions/base_session.py",
+        "contrib/auth/models.py",
+        "contrib/auth/base_user.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.0175054290011758,
+      "category": "forms",
+      "baseline_tokens": 12658,
+      "context_tokens": 797,
+      "savings_pct": 0.9370358666455996,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "ModelAdmin list_display search_fields configuration",
+      "expected_files": [
+        "contrib/admin/options.py"
+      ],
+      "ranked_files": [
+        "contrib/admin/options.py",
+        "contrib/admin/decorators.py",
+        "contrib/sites/admin.py",
+        "contrib/admin/checks.py",
+        "contrib/admin/templatetags/admin_list.py",
+        "contrib/redirects/admin.py",
+        "contrib/admin/views/main.py",
+        "contrib/admin/templates/admin/search_form.html",
+        "contrib/auth/admin.py",
+        "contrib/admin/sites.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.031163985004241113,
+      "category": "admin",
+      "baseline_tokens": 22530,
+      "context_tokens": 845,
+      "savings_pct": 0.9624944518419885,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "authenticate login and logout user session functions",
+      "expected_files": [
+        "contrib/auth/__init__.py"
+      ],
+      "ranked_files": [
+        "contrib/auth/__init__.py",
+        "contrib/admin/sites.py",
+        "contrib/auth/backends.py",
+        "test/client.py",
+        "contrib/admin/templates/admin/login.html",
+        "contrib/auth/views.py",
+        "contrib/auth/decorators.py",
+        "contrib/auth/middleware.py",
+        "contrib/auth/base_user.py",
+        "contrib/auth/forms.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.014819377000094391,
+      "category": "auth",
+      "baseline_tokens": 2931,
+      "context_tokens": 802,
+      "savings_pct": 0.7263732514500171,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "password hashers make_password and check_password",
+      "expected_files": [
+        "contrib/auth/hashers.py"
+      ],
+      "ranked_files": [
+        "contrib/auth/hashers.py",
+        "contrib/auth/base_user.py",
+        "contrib/auth/models.py",
+        "contrib/auth/handlers/modwsgi.py",
+        "contrib/auth/__init__.py",
+        "contrib/auth/forms.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.16666666666666666,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.012741329999698792,
+      "category": "auth",
+      "baseline_tokens": 5142,
+      "context_tokens": 839,
+      "savings_pct": 0.8368339167639051,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "local memory cache backend get set delete",
+      "expected_files": [
+        "core/cache/backends/locmem.py"
+      ],
+      "ranked_files": [
+        "core/files/storage/memory.py",
+        "contrib/sessions/backends/cache.py",
+        "middleware/cache.py",
+        "core/cache/backends/redis.py",
+        "core/cache/backends/db.py",
+        "core/cache/backends/dummy.py",
+        "core/cache/backends/locmem.py",
+        "core/cache/backends/memcached.py",
+        "core/cache/backends/base.py",
+        "core/cache/backends/filebased.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.14285714285714285,
+      "latency_seconds": 0.021963724997476675,
+      "category": "cache",
+      "baseline_tokens": 900,
+      "context_tokens": 798,
+      "savings_pct": 0.11333333333333329,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "template Node Parser and rendering compiled templates",
+      "expected_files": [
+        "template/base.py"
+      ],
+      "ranked_files": [
+        "template/base.py",
+        "template/utils.py",
+        "contrib/admin/static/admin/js/inlines.js",
+        "utils/tree.py",
+        "db/migrations/graph.py",
+        "http/multipartparser.py",
+        "test/html.py",
+        "template/defaulttags.py",
+        "template/loader_tags.py",
+        "core/management/templates.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.013408823004283477,
+      "category": "templates",
+      "baseline_tokens": 9166,
+      "context_tokens": 820,
+      "savings_pct": 0.9105389482871482,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "CommonMiddleware APPEND_SLASH and PREPEND_WWW handling",
+      "expected_files": [
+        "middleware/common.py"
+      ],
+      "ranked_files": [
+        "middleware/common.py",
+        "views/decorators/common.py",
+        "middleware/locale.py",
+        "template/base.py",
+        "core/handlers/base.py",
+        "contrib/messages/middleware.py",
+        "contrib/auth/checks.py",
+        "contrib/flatpages/forms.py",
+        "contrib/redirects/middleware.py",
+        "contrib/auth/middleware.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.011009137000655755,
+      "category": "middleware",
+      "baseline_tokens": 1678,
+      "context_tokens": 827,
+      "savings_pct": 0.5071513706793802,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "Signal send and post_save receiver dispatch",
+      "expected_files": [
+        "dispatch/dispatcher.py"
+      ],
+      "ranked_files": [
+        "dispatch/dispatcher.py",
+        "core/mail/message.py",
+        "contrib/auth/views.py",
+        "contrib/auth/mixins.py",
+        "contrib/admindocs/views.py",
+        "views/generic/base.py",
+        "core/serializers/base.py",
+        "db/models/base.py",
+        "contrib/admin/options.py",
+        "db/models/signals.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.01283463199797552,
+      "category": "signals",
+      "baseline_tokens": 3720,
+      "context_tokens": 813,
+      "savings_pct": 0.7814516129032258,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "test Client get and post requests in tests",
+      "expected_files": [
+        "test/client.py"
+      ],
+      "ranked_files": [
+        "test/client.py",
+        "views/i18n.py",
+        "utils/datastructures.py",
+        "template/context.py",
+        "http/response.py",
+        "contrib/admin/views/autocomplete.py",
+        "contrib/gis/gdal/feature.py",
+        "contrib/sessions/backends/base.py",
+        "core/mail/handler.py",
+        "core/cache/backends/redis.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.01874267400125973,
+      "category": "testing",
+      "baseline_tokens": 11145,
+      "context_tokens": 792,
+      "savings_pct": 0.9289367429340512,
+      "baseline_bucket": ">4k"
+    }
+  ],
+  "budgets": {
+    "800": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.1,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 1.0,
+      "mean_precision_over_returned": 0.10666666666666666,
+      "mean_recall_at_10": 1.0,
+      "mean_reciprocal_rank": 0.8738095238095237,
+      "p50_latency_seconds": 0.018242268000904005,
+      "p95_latency_seconds": 0.049578631995245814,
+      "index_seconds": 40.408275086003414,
+      "mean_baseline_tokens": 8908.75,
+      "mean_context_tokens": 810.85,
+      "mean_savings_pct": 0.7710057806911996,
+      "aggregate_savings_pct": 0.9089827416865441,
+      "buckets": {
+        "<1k": {
+          "count": 1,
+          "mean_baseline_tokens": 900.0,
+          "mean_context_tokens": 798.0,
+          "aggregate_savings_pct": 0.11333333333333329,
+          "mean_recall_at_10": 1.0
+        },
+        "1k-4k": {
+          "count": 7,
+          "mean_baseline_tokens": 2356.5714285714284,
+          "mean_context_tokens": 806.5714285714286,
+          "aggregate_savings_pct": 0.6577352085354025,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 12,
+          "mean_baseline_tokens": 13398.25,
+          "mean_context_tokens": 814.4166666666666,
+          "aggregate_savings_pct": 0.9392146984369849,
+          "mean_recall_at_10": 1.0
+        }
+      },
+      "questions": [
+        {
+          "query": "Model save delete and refresh_from_db persistence methods",
+          "expected_files": [
+            "db/models/base.py"
+          ],
+          "ranked_files": [
+            "db/models/base.py",
+            "contrib/sessions/base_session.py",
+            "db/models/fields/files.py",
+            "contrib/sites/requests.py",
+            "contrib/auth/models.py",
+            "core/serializers/base.py",
+            "forms/models.py",
+            "contrib/auth/forms.py",
+            "contrib/auth/base_user.py",
+            "contrib/gis/utils/layermapping.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.049578631995245814,
+          "category": "models",
+          "baseline_tokens": 19041,
+          "context_tokens": 800,
+          "savings_pct": 0.9579853999264745,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "QuerySet filter exclude annotate and aggregation chaining",
+          "expected_files": [
+            "db/models/query.py"
+          ],
+          "ranked_files": [
+            "db/models/query.py",
+            "utils/log.py",
+            "template/library.py",
+            "contrib/admin/filters.py",
+            "db/models/sql/query.py",
+            "db/models/fields/related_descriptors.py",
+            "contrib/admin/views/main.py",
+            "db/models/deletion.py",
+            "db/models/constraints.py",
+            "contrib/postgres/constraints.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.03510131399525562,
+          "category": "orm",
+          "baseline_tokens": 24676,
+          "context_tokens": 816,
+          "savings_pct": 0.9669314313502999,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "model field classes CharField IntegerField ForeignKey",
+          "expected_files": [
+            "db/models/fields/__init__.py"
+          ],
+          "ranked_files": [
+            "db/models/fields/__init__.py",
+            "db/models/fields/related.py",
+            "contrib/postgres/fields/ranges.py",
+            "contrib/postgres/fields/array.py",
+            "contrib/sessions/backends/db.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "db/models/expressions.py",
+            "db/models/fields/related_descriptors.py",
+            "forms/fields.py",
+            "forms/models.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.02884020900091855,
+          "category": "models",
+          "baseline_tokens": 20606,
+          "context_tokens": 793,
+          "savings_pct": 0.961516063282539,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "field lookups exact in contains gt lt transforms",
+          "expected_files": [
+            "db/models/lookups.py"
+          ],
+          "ranked_files": [
+            "db/models/lookups.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "db/models/expressions.py",
+            "db/models/fields/related_descriptors.py",
+            "contrib/admin/filters.py",
+            "utils/regex_helper.py",
+            "contrib/gis/geos/prepared.py",
+            "contrib/gis/geos/geometry.py",
+            "contrib/gis/gdal/geometries.py",
+            "db/models/query.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.016517716001544613,
+          "category": "orm",
+          "baseline_tokens": 6162,
+          "context_tokens": 805,
+          "savings_pct": 0.8693605972086985,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "migration autodetector detecting model changes",
+          "expected_files": [
+            "db/migrations/autodetector.py"
+          ],
+          "ranked_files": [
+            "db/migrations/autodetector.py",
+            "contrib/postgres/fields/ranges.py",
+            "contrib/postgres/fields/array.py",
+            "contrib/sessions/backends/db.py",
+            "contrib/admin/migrations/0003_logentry_add_action_flag_choices.py",
+            "contrib/admin/migrations/0001_initial.py",
+            "contrib/admin/migrations/0002_logentry_remove_auto_add.py",
+            "db/migrations/executor.py",
+            "core/management/commands/migrate.py",
+            "db/migrations/questioner.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01774186200054828,
+          "category": "migrations",
+          "baseline_tokens": 14931,
+          "context_tokens": 834,
+          "savings_pct": 0.9441430580671087,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "migration state ModelState rendering from models",
+          "expected_files": [
+            "db/migrations/state.py"
+          ],
+          "ranked_files": [
+            "db/migrations/state.py",
+            "db/models/base.py",
+            "contrib/admin/static/admin/js/SelectFilter2.js",
+            "db/migrations/operations/models.py",
+            "core/management/commands/migrate.py",
+            "db/migrations/executor.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.16666666666666666,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.029694255004869774,
+          "category": "migrations",
+          "baseline_tokens": 8527,
+          "context_tokens": 804,
+          "savings_pct": 0.9057112700832649,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "reverse() URL reversing by view name",
+          "expected_files": [
+            "urls/base.py"
+          ],
+          "ranked_files": [
+            "views/generic/base.py",
+            "urls/resolvers.py",
+            "urls/base.py",
+            "contrib/gis/geos/mutable_list.py",
+            "db/models/query.py",
+            "tasks/base.py",
+            "contrib/contenttypes/models.py",
+            "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
+            "contrib/admin/static/admin/js/admin/DateTimeShortcuts.js",
+            "contrib/gis/gdal/srs.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.021613181997963693,
+          "category": "urls",
+          "baseline_tokens": 1316,
+          "context_tokens": 800,
+          "savings_pct": 0.39209726443769,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "URLResolver path converters and route matching",
+          "expected_files": [
+            "urls/resolvers.py"
+          ],
+          "ranked_files": [
+            "urls/resolvers.py",
+            "forms/widgets.py",
+            "contrib/staticfiles/storage.py",
+            "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
+            "core/files/storage/memory.py",
+            "core/files/storage/filesystem.py",
+            "core/files/storage/base.py",
+            "core/management/commands/makemessages.py",
+            "db/migrations/writer.py",
+            "db/models/fields/files.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01361813100083964,
+          "category": "urls",
+          "baseline_tokens": 6195,
+          "context_tokens": 828,
+          "savings_pct": 0.8663438256658595,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "class based View dispatch and as_view",
+          "expected_files": [
+            "views/generic/base.py"
+          ],
+          "ranked_files": [
+            "views/generic/base.py",
+            "contrib/auth/views.py",
+            "contrib/admindocs/views.py",
+            "contrib/auth/mixins.py",
+            "views/generic/edit.py",
+            "contrib/admin/views/autocomplete.py",
+            "views/generic/dates.py",
+            "dispatch/dispatcher.py",
+            "urls/resolvers.py",
+            "contrib/admin/sites.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01931155600323109,
+          "category": "views",
+          "baseline_tokens": 1956,
+          "context_tokens": 805,
+          "savings_pct": 0.5884458077709611,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "ListView pagination with paginate_by",
+          "expected_files": [
+            "views/generic/list.py"
+          ],
+          "ranked_files": [
+            "views/generic/list.py",
+            "contrib/admin/templatetags/admin_list.py",
+            "contrib/admin/templates/admin/pagination.html",
+            "views/generic/dates.py",
+            "contrib/admin/options.py",
+            "contrib/admin/views/autocomplete.py",
+            "core/paginator.py",
+            "views/generic/__init__.py",
+            "contrib/admin/views/main.py",
+            "contrib/admin/templates/admin/object_history.html"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.02124310399813112,
+          "category": "views",
+          "baseline_tokens": 1624,
+          "context_tokens": 799,
+          "savings_pct": 0.5080049261083743,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "Form full_clean is_valid and cleaned_data validation",
+          "expected_files": [
+            "forms/forms.py"
+          ],
+          "ranked_files": [
+            "forms/formsets.py",
+            "forms/forms.py",
+            "db/models/base.py",
+            "contrib/admin/options.py",
+            "contrib/postgres/forms/array.py",
+            "forms/fields.py",
+            "contrib/auth/forms.py",
+            "contrib/messages/views.py",
+            "forms/models.py",
+            "contrib/flatpages/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0143691810008022,
+          "category": "forms",
+          "baseline_tokens": 3271,
+          "context_tokens": 800,
+          "savings_pct": 0.7554264750840721,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "ModelForm save and Meta model binding",
+          "expected_files": [
+            "forms/models.py"
+          ],
+          "ranked_files": [
+            "db/models/base.py",
+            "forms/models.py",
+            "contrib/auth/forms.py",
+            "contrib/sites/models.py",
+            "db/models/fields/files.py",
+            "contrib/flatpages/forms.py",
+            "contrib/sites/requests.py",
+            "contrib/sessions/base_session.py",
+            "contrib/auth/models.py",
+            "contrib/auth/base_user.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0175054290011758,
+          "category": "forms",
+          "baseline_tokens": 12658,
+          "context_tokens": 797,
+          "savings_pct": 0.9370358666455996,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "ModelAdmin list_display search_fields configuration",
+          "expected_files": [
+            "contrib/admin/options.py"
+          ],
+          "ranked_files": [
+            "contrib/admin/options.py",
+            "contrib/admin/decorators.py",
+            "contrib/sites/admin.py",
+            "contrib/admin/checks.py",
+            "contrib/admin/templatetags/admin_list.py",
+            "contrib/redirects/admin.py",
+            "contrib/admin/views/main.py",
+            "contrib/admin/templates/admin/search_form.html",
+            "contrib/auth/admin.py",
+            "contrib/admin/sites.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.031163985004241113,
+          "category": "admin",
+          "baseline_tokens": 22530,
+          "context_tokens": 845,
+          "savings_pct": 0.9624944518419885,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "authenticate login and logout user session functions",
+          "expected_files": [
+            "contrib/auth/__init__.py"
+          ],
+          "ranked_files": [
+            "contrib/auth/__init__.py",
+            "contrib/admin/sites.py",
+            "contrib/auth/backends.py",
+            "test/client.py",
+            "contrib/admin/templates/admin/login.html",
+            "contrib/auth/views.py",
+            "contrib/auth/decorators.py",
+            "contrib/auth/middleware.py",
+            "contrib/auth/base_user.py",
+            "contrib/auth/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.014819377000094391,
+          "category": "auth",
+          "baseline_tokens": 2931,
+          "context_tokens": 802,
+          "savings_pct": 0.7263732514500171,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "password hashers make_password and check_password",
+          "expected_files": [
+            "contrib/auth/hashers.py"
+          ],
+          "ranked_files": [
+            "contrib/auth/hashers.py",
+            "contrib/auth/base_user.py",
+            "contrib/auth/models.py",
+            "contrib/auth/handlers/modwsgi.py",
+            "contrib/auth/__init__.py",
+            "contrib/auth/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.16666666666666666,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.012741329999698792,
+          "category": "auth",
+          "baseline_tokens": 5142,
+          "context_tokens": 839,
+          "savings_pct": 0.8368339167639051,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "local memory cache backend get set delete",
+          "expected_files": [
+            "core/cache/backends/locmem.py"
+          ],
+          "ranked_files": [
+            "core/files/storage/memory.py",
+            "contrib/sessions/backends/cache.py",
+            "middleware/cache.py",
+            "core/cache/backends/redis.py",
+            "core/cache/backends/db.py",
+            "core/cache/backends/dummy.py",
+            "core/cache/backends/locmem.py",
+            "core/cache/backends/memcached.py",
+            "core/cache/backends/base.py",
+            "core/cache/backends/filebased.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.14285714285714285,
+          "latency_seconds": 0.021963724997476675,
+          "category": "cache",
+          "baseline_tokens": 900,
+          "context_tokens": 798,
+          "savings_pct": 0.11333333333333329,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "template Node Parser and rendering compiled templates",
+          "expected_files": [
+            "template/base.py"
+          ],
+          "ranked_files": [
+            "template/base.py",
+            "template/utils.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "utils/tree.py",
+            "db/migrations/graph.py",
+            "http/multipartparser.py",
+            "test/html.py",
+            "template/defaulttags.py",
+            "template/loader_tags.py",
+            "core/management/templates.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.013408823004283477,
+          "category": "templates",
+          "baseline_tokens": 9166,
+          "context_tokens": 820,
+          "savings_pct": 0.9105389482871482,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "CommonMiddleware APPEND_SLASH and PREPEND_WWW handling",
+          "expected_files": [
+            "middleware/common.py"
+          ],
+          "ranked_files": [
+            "middleware/common.py",
+            "views/decorators/common.py",
+            "middleware/locale.py",
+            "template/base.py",
+            "core/handlers/base.py",
+            "contrib/messages/middleware.py",
+            "contrib/auth/checks.py",
+            "contrib/flatpages/forms.py",
+            "contrib/redirects/middleware.py",
+            "contrib/auth/middleware.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.011009137000655755,
+          "category": "middleware",
+          "baseline_tokens": 1678,
+          "context_tokens": 827,
+          "savings_pct": 0.5071513706793802,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "Signal send and post_save receiver dispatch",
+          "expected_files": [
+            "dispatch/dispatcher.py"
+          ],
+          "ranked_files": [
+            "dispatch/dispatcher.py",
+            "core/mail/message.py",
+            "contrib/auth/views.py",
+            "contrib/auth/mixins.py",
+            "contrib/admindocs/views.py",
+            "views/generic/base.py",
+            "core/serializers/base.py",
+            "db/models/base.py",
+            "contrib/admin/options.py",
+            "db/models/signals.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01283463199797552,
+          "category": "signals",
+          "baseline_tokens": 3720,
+          "context_tokens": 813,
+          "savings_pct": 0.7814516129032258,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "test Client get and post requests in tests",
+          "expected_files": [
+            "test/client.py"
+          ],
+          "ranked_files": [
+            "test/client.py",
+            "views/i18n.py",
+            "utils/datastructures.py",
+            "template/context.py",
+            "http/response.py",
+            "contrib/admin/views/autocomplete.py",
+            "contrib/gis/gdal/feature.py",
+            "contrib/sessions/backends/base.py",
+            "core/mail/handler.py",
+            "core/cache/backends/redis.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01874267400125973,
+          "category": "testing",
+          "baseline_tokens": 11145,
+          "context_tokens": 792,
+          "savings_pct": 0.9289367429340512,
+          "baseline_bucket": ">4k"
+        }
+      ]
+    },
+    "1200": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.1,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 1.0,
+      "mean_precision_over_returned": 0.10666666666666666,
+      "mean_recall_at_10": 1.0,
+      "mean_reciprocal_rank": 0.8738095238095237,
+      "p50_latency_seconds": 0.018334885495278286,
+      "p95_latency_seconds": 0.048952590994304046,
+      "index_seconds": 0.10453206000238424,
+      "mean_baseline_tokens": 8908.75,
+      "mean_context_tokens": 1217.8,
+      "mean_savings_pct": 0.655037098507137,
+      "aggregate_savings_pct": 0.8633029325101726,
+      "buckets": {
+        "<1k": {
+          "count": 1,
+          "mean_baseline_tokens": 900.0,
+          "mean_context_tokens": 1195.0,
+          "aggregate_savings_pct": -0.3277777777777777,
+          "mean_recall_at_10": 1.0
+        },
+        "1k-4k": {
+          "count": 7,
+          "mean_baseline_tokens": 2356.5714285714284,
+          "mean_context_tokens": 1218.5714285714287,
+          "aggregate_savings_pct": 0.4829049466537342,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 12,
+          "mean_baseline_tokens": 13398.25,
+          "mean_context_tokens": 1219.25,
+          "aggregate_savings_pct": 0.9089993096113298,
+          "mean_recall_at_10": 1.0
+        }
+      },
+      "questions": [
+        {
+          "query": "Model save delete and refresh_from_db persistence methods",
+          "expected_files": [
+            "db/models/base.py"
+          ],
+          "ranked_files": [
+            "db/models/base.py",
+            "contrib/sessions/base_session.py",
+            "db/models/fields/files.py",
+            "contrib/sites/requests.py",
+            "contrib/auth/models.py",
+            "core/serializers/base.py",
+            "forms/models.py",
+            "contrib/auth/forms.py",
+            "contrib/auth/base_user.py",
+            "contrib/gis/utils/layermapping.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.048952590994304046,
+          "category": "models",
+          "baseline_tokens": 19041,
+          "context_tokens": 1200,
+          "savings_pct": 0.9369780998897117,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "QuerySet filter exclude annotate and aggregation chaining",
+          "expected_files": [
+            "db/models/query.py"
+          ],
+          "ranked_files": [
+            "db/models/query.py",
+            "utils/log.py",
+            "template/library.py",
+            "contrib/admin/filters.py",
+            "db/models/sql/query.py",
+            "db/models/fields/related_descriptors.py",
+            "contrib/admin/views/main.py",
+            "db/models/deletion.py",
+            "db/models/constraints.py",
+            "contrib/postgres/constraints.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.035870409999915864,
+          "category": "orm",
+          "baseline_tokens": 24676,
+          "context_tokens": 1243,
+          "savings_pct": 0.9496271680985573,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "model field classes CharField IntegerField ForeignKey",
+          "expected_files": [
+            "db/models/fields/__init__.py"
+          ],
+          "ranked_files": [
+            "db/models/fields/__init__.py",
+            "db/models/fields/related.py",
+            "contrib/postgres/fields/ranges.py",
+            "contrib/postgres/fields/array.py",
+            "contrib/sessions/backends/db.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "db/models/expressions.py",
+            "db/models/fields/related_descriptors.py",
+            "forms/fields.py",
+            "forms/models.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.02889341000263812,
+          "category": "models",
+          "baseline_tokens": 20606,
+          "context_tokens": 1209,
+          "savings_pct": 0.9413277686110841,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "field lookups exact in contains gt lt transforms",
+          "expected_files": [
+            "db/models/lookups.py"
+          ],
+          "ranked_files": [
+            "db/models/lookups.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "db/models/expressions.py",
+            "db/models/fields/related_descriptors.py",
+            "contrib/admin/filters.py",
+            "utils/regex_helper.py",
+            "contrib/gis/geos/prepared.py",
+            "contrib/gis/geos/geometry.py",
+            "contrib/gis/gdal/geometries.py",
+            "db/models/query.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.016787991000455804,
+          "category": "orm",
+          "baseline_tokens": 6162,
+          "context_tokens": 1203,
+          "savings_pct": 0.8047711781888998,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "migration autodetector detecting model changes",
+          "expected_files": [
+            "db/migrations/autodetector.py"
+          ],
+          "ranked_files": [
+            "db/migrations/autodetector.py",
+            "contrib/postgres/fields/ranges.py",
+            "contrib/postgres/fields/array.py",
+            "contrib/sessions/backends/db.py",
+            "contrib/admin/migrations/0003_logentry_add_action_flag_choices.py",
+            "contrib/admin/migrations/0001_initial.py",
+            "contrib/admin/migrations/0002_logentry_remove_auto_add.py",
+            "db/migrations/executor.py",
+            "core/management/commands/migrate.py",
+            "db/migrations/questioner.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01658676799706882,
+          "category": "migrations",
+          "baseline_tokens": 14931,
+          "context_tokens": 1241,
+          "savings_pct": 0.9168843346058536,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "migration state ModelState rendering from models",
+          "expected_files": [
+            "db/migrations/state.py"
+          ],
+          "ranked_files": [
+            "db/migrations/state.py",
+            "db/models/base.py",
+            "contrib/admin/static/admin/js/SelectFilter2.js",
+            "db/migrations/operations/models.py",
+            "core/management/commands/migrate.py",
+            "db/migrations/executor.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.16666666666666666,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.029582505994767416,
+          "category": "migrations",
+          "baseline_tokens": 8527,
+          "context_tokens": 1202,
+          "savings_pct": 0.8590360032836871,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "reverse() URL reversing by view name",
+          "expected_files": [
+            "urls/base.py"
+          ],
+          "ranked_files": [
+            "views/generic/base.py",
+            "urls/resolvers.py",
+            "urls/base.py",
+            "contrib/gis/geos/mutable_list.py",
+            "db/models/query.py",
+            "tasks/base.py",
+            "contrib/contenttypes/models.py",
+            "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
+            "contrib/admin/static/admin/js/admin/DateTimeShortcuts.js",
+            "contrib/gis/gdal/srs.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.022918219001439866,
+          "category": "urls",
+          "baseline_tokens": 1316,
+          "context_tokens": 1199,
+          "savings_pct": 0.08890577507598785,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "URLResolver path converters and route matching",
+          "expected_files": [
+            "urls/resolvers.py"
+          ],
+          "ranked_files": [
+            "urls/resolvers.py",
+            "forms/widgets.py",
+            "contrib/staticfiles/storage.py",
+            "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
+            "core/files/storage/memory.py",
+            "core/files/storage/filesystem.py",
+            "core/files/storage/base.py",
+            "core/management/commands/makemessages.py",
+            "db/migrations/writer.py",
+            "db/models/fields/files.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.013800885004457086,
+          "category": "urls",
+          "baseline_tokens": 6195,
+          "context_tokens": 1223,
+          "savings_pct": 0.8025827280064568,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "class based View dispatch and as_view",
+          "expected_files": [
+            "views/generic/base.py"
+          ],
+          "ranked_files": [
+            "views/generic/base.py",
+            "contrib/auth/views.py",
+            "contrib/admindocs/views.py",
+            "contrib/auth/mixins.py",
+            "views/generic/edit.py",
+            "contrib/admin/views/autocomplete.py",
+            "views/generic/dates.py",
+            "dispatch/dispatcher.py",
+            "urls/resolvers.py",
+            "contrib/admin/sites.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.018776280994643457,
+          "category": "views",
+          "baseline_tokens": 1956,
+          "context_tokens": 1221,
+          "savings_pct": 0.3757668711656442,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "ListView pagination with paginate_by",
+          "expected_files": [
+            "views/generic/list.py"
+          ],
+          "ranked_files": [
+            "views/generic/list.py",
+            "contrib/admin/templatetags/admin_list.py",
+            "contrib/admin/templates/admin/pagination.html",
+            "views/generic/dates.py",
+            "contrib/admin/options.py",
+            "contrib/admin/views/autocomplete.py",
+            "core/paginator.py",
+            "views/generic/__init__.py",
+            "contrib/admin/views/main.py",
+            "contrib/admin/templates/admin/object_history.html"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.020857094001257792,
+          "category": "views",
+          "baseline_tokens": 1624,
+          "context_tokens": 1266,
+          "savings_pct": 0.22044334975369462,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "Form full_clean is_valid and cleaned_data validation",
+          "expected_files": [
+            "forms/forms.py"
+          ],
+          "ranked_files": [
+            "forms/formsets.py",
+            "forms/forms.py",
+            "db/models/base.py",
+            "contrib/admin/options.py",
+            "contrib/postgres/forms/array.py",
+            "forms/fields.py",
+            "contrib/auth/forms.py",
+            "contrib/messages/views.py",
+            "forms/models.py",
+            "contrib/flatpages/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.015205597002932336,
+          "category": "forms",
+          "baseline_tokens": 3271,
+          "context_tokens": 1194,
+          "savings_pct": 0.6349740140629777,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "ModelForm save and Meta model binding",
+          "expected_files": [
+            "forms/models.py"
+          ],
+          "ranked_files": [
+            "db/models/base.py",
+            "forms/models.py",
+            "contrib/auth/forms.py",
+            "contrib/sites/models.py",
+            "db/models/fields/files.py",
+            "contrib/flatpages/forms.py",
+            "contrib/sites/requests.py",
+            "contrib/sessions/base_session.py",
+            "contrib/auth/models.py",
+            "contrib/auth/base_user.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.017893489995913114,
+          "category": "forms",
+          "baseline_tokens": 12658,
+          "context_tokens": 1200,
+          "savings_pct": 0.9051982935692843,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "ModelAdmin list_display search_fields configuration",
+          "expected_files": [
+            "contrib/admin/options.py"
+          ],
+          "ranked_files": [
+            "contrib/admin/options.py",
+            "contrib/admin/decorators.py",
+            "contrib/sites/admin.py",
+            "contrib/admin/checks.py",
+            "contrib/admin/templatetags/admin_list.py",
+            "contrib/redirects/admin.py",
+            "contrib/admin/views/main.py",
+            "contrib/admin/templates/admin/search_form.html",
+            "contrib/auth/admin.py",
+            "contrib/admin/sites.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.03201912299846299,
+          "category": "admin",
+          "baseline_tokens": 22530,
+          "context_tokens": 1252,
+          "savings_pct": 0.9444296493564137,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "authenticate login and logout user session functions",
+          "expected_files": [
+            "contrib/auth/__init__.py"
+          ],
+          "ranked_files": [
+            "contrib/auth/__init__.py",
+            "contrib/admin/sites.py",
+            "contrib/auth/backends.py",
+            "test/client.py",
+            "contrib/admin/templates/admin/login.html",
+            "contrib/auth/views.py",
+            "contrib/auth/decorators.py",
+            "contrib/auth/middleware.py",
+            "contrib/auth/base_user.py",
+            "contrib/auth/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01603636099753203,
+          "category": "auth",
+          "baseline_tokens": 2931,
+          "context_tokens": 1210,
+          "savings_pct": 0.5871716137836915,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "password hashers make_password and check_password",
+          "expected_files": [
+            "contrib/auth/hashers.py"
+          ],
+          "ranked_files": [
+            "contrib/auth/hashers.py",
+            "contrib/auth/base_user.py",
+            "contrib/auth/models.py",
+            "contrib/auth/handlers/modwsgi.py",
+            "contrib/auth/__init__.py",
+            "contrib/auth/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.16666666666666666,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.013396693997492548,
+          "category": "auth",
+          "baseline_tokens": 5142,
+          "context_tokens": 1239,
+          "savings_pct": 0.7590431738623103,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "local memory cache backend get set delete",
+          "expected_files": [
+            "core/cache/backends/locmem.py"
+          ],
+          "ranked_files": [
+            "core/files/storage/memory.py",
+            "contrib/sessions/backends/cache.py",
+            "middleware/cache.py",
+            "core/cache/backends/redis.py",
+            "core/cache/backends/db.py",
+            "core/cache/backends/dummy.py",
+            "core/cache/backends/locmem.py",
+            "core/cache/backends/memcached.py",
+            "core/cache/backends/base.py",
+            "core/cache/backends/filebased.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.14285714285714285,
+          "latency_seconds": 0.0222494280023966,
+          "category": "cache",
+          "baseline_tokens": 900,
+          "context_tokens": 1195,
+          "savings_pct": -0.3277777777777777,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "template Node Parser and rendering compiled templates",
+          "expected_files": [
+            "template/base.py"
+          ],
+          "ranked_files": [
+            "template/base.py",
+            "template/utils.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "utils/tree.py",
+            "db/migrations/graph.py",
+            "http/multipartparser.py",
+            "test/html.py",
+            "template/defaulttags.py",
+            "template/loader_tags.py",
+            "core/management/templates.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.01489094099815702,
+          "category": "templates",
+          "baseline_tokens": 9166,
+          "context_tokens": 1219,
+          "savings_pct": 0.867008509709797,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "CommonMiddleware APPEND_SLASH and PREPEND_WWW handling",
+          "expected_files": [
+            "middleware/common.py"
+          ],
+          "ranked_files": [
+            "middleware/common.py",
+            "views/decorators/common.py",
+            "middleware/locale.py",
+            "template/base.py",
+            "core/handlers/base.py",
+            "contrib/messages/middleware.py",
+            "contrib/auth/checks.py",
+            "contrib/flatpages/forms.py",
+            "contrib/redirects/middleware.py",
+            "contrib/auth/middleware.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.011918929994862992,
+          "category": "middleware",
+          "baseline_tokens": 1678,
+          "context_tokens": 1229,
+          "savings_pct": 0.267580452920143,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "Signal send and post_save receiver dispatch",
+          "expected_files": [
+            "dispatch/dispatcher.py"
+          ],
+          "ranked_files": [
+            "dispatch/dispatcher.py",
+            "core/mail/message.py",
+            "contrib/auth/views.py",
+            "contrib/auth/mixins.py",
+            "contrib/admindocs/views.py",
+            "views/generic/base.py",
+            "core/serializers/base.py",
+            "db/models/base.py",
+            "contrib/admin/options.py",
+            "db/models/signals.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.013833049000822939,
+          "category": "signals",
+          "baseline_tokens": 3720,
+          "context_tokens": 1211,
+          "savings_pct": 0.6744623655913978,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "test Client get and post requests in tests",
+          "expected_files": [
+            "test/client.py"
+          ],
+          "ranked_files": [
+            "test/client.py",
+            "views/i18n.py",
+            "utils/datastructures.py",
+            "template/context.py",
+            "http/response.py",
+            "contrib/admin/views/autocomplete.py",
+            "contrib/gis/gdal/feature.py",
+            "contrib/sessions/backends/base.py",
+            "core/mail/handler.py",
+            "core/cache/backends/redis.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.020632984000258148,
+          "category": "testing",
+          "baseline_tokens": 11145,
+          "context_tokens": 1200,
+          "savings_pct": 0.892328398384926,
+          "baseline_bucket": ">4k"
+        }
+      ]
+    },
+    "2000": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.1,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 1.0,
+      "mean_precision_over_returned": 0.10666666666666666,
+      "mean_recall_at_10": 1.0,
+      "mean_reciprocal_rank": 0.8738095238095237,
+      "p50_latency_seconds": 0.01886321100027999,
+      "p95_latency_seconds": 0.050341552996542305,
+      "index_seconds": 0.10294613500445848,
+      "mean_baseline_tokens": 8908.75,
+      "mean_context_tokens": 2020.45,
+      "mean_savings_pct": 0.4368163369970947,
+      "aggregate_savings_pct": 0.7732061175810299,
+      "buckets": {
+        "<1k": {
+          "count": 1,
+          "mean_baseline_tokens": 900.0,
+          "mean_context_tokens": 1823.0,
+          "aggregate_savings_pct": -1.0255555555555556,
+          "mean_recall_at_10": 1.0
+        },
+        "1k-4k": {
+          "count": 7,
+          "mean_baseline_tokens": 2356.5714285714284,
+          "mean_context_tokens": 2018.857142857143,
+          "aggregate_savings_pct": 0.14330746847720655,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 12,
+          "mean_baseline_tokens": 13398.25,
+          "mean_context_tokens": 2037.8333333333333,
+          "aggregate_savings_pct": 0.8479030221608543,
+          "mean_recall_at_10": 1.0
+        }
+      },
+      "questions": [
+        {
+          "query": "Model save delete and refresh_from_db persistence methods",
+          "expected_files": [
+            "db/models/base.py"
+          ],
+          "ranked_files": [
+            "db/models/base.py",
+            "contrib/sessions/base_session.py",
+            "db/models/fields/files.py",
+            "contrib/sites/requests.py",
+            "contrib/auth/models.py",
+            "core/serializers/base.py",
+            "forms/models.py",
+            "contrib/auth/forms.py",
+            "contrib/auth/base_user.py",
+            "contrib/gis/utils/layermapping.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.050341552996542305,
+          "category": "models",
+          "baseline_tokens": 19041,
+          "context_tokens": 1999,
+          "savings_pct": 0.8950160180662781,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "QuerySet filter exclude annotate and aggregation chaining",
+          "expected_files": [
+            "db/models/query.py"
+          ],
+          "ranked_files": [
+            "db/models/query.py",
+            "utils/log.py",
+            "template/library.py",
+            "contrib/admin/filters.py",
+            "db/models/sql/query.py",
+            "db/models/fields/related_descriptors.py",
+            "contrib/admin/views/main.py",
+            "db/models/deletion.py",
+            "db/models/constraints.py",
+            "contrib/postgres/constraints.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.03641017500194721,
+          "category": "orm",
+          "baseline_tokens": 24676,
+          "context_tokens": 2089,
+          "savings_pct": 0.9153428432485006,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "model field classes CharField IntegerField ForeignKey",
+          "expected_files": [
+            "db/models/fields/__init__.py"
+          ],
+          "ranked_files": [
+            "db/models/fields/__init__.py",
+            "db/models/fields/related.py",
+            "contrib/postgres/fields/ranges.py",
+            "contrib/postgres/fields/array.py",
+            "contrib/sessions/backends/db.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "db/models/expressions.py",
+            "db/models/fields/related_descriptors.py",
+            "forms/fields.py",
+            "forms/models.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.030501312998239882,
+          "category": "models",
+          "baseline_tokens": 20606,
+          "context_tokens": 2005,
+          "savings_pct": 0.9026982432301272,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "field lookups exact in contains gt lt transforms",
+          "expected_files": [
+            "db/models/lookups.py"
+          ],
+          "ranked_files": [
+            "db/models/lookups.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "db/models/expressions.py",
+            "db/models/fields/related_descriptors.py",
+            "contrib/admin/filters.py",
+            "utils/regex_helper.py",
+            "contrib/gis/geos/prepared.py",
+            "contrib/gis/geos/geometry.py",
+            "contrib/gis/gdal/geometries.py",
+            "db/models/query.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.017272944998694584,
+          "category": "orm",
+          "baseline_tokens": 6162,
+          "context_tokens": 2026,
+          "savings_pct": 0.6712106458941902,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "migration autodetector detecting model changes",
+          "expected_files": [
+            "db/migrations/autodetector.py"
+          ],
+          "ranked_files": [
+            "db/migrations/autodetector.py",
+            "contrib/postgres/fields/ranges.py",
+            "contrib/postgres/fields/array.py",
+            "contrib/sessions/backends/db.py",
+            "contrib/admin/migrations/0003_logentry_add_action_flag_choices.py",
+            "contrib/admin/migrations/0001_initial.py",
+            "contrib/admin/migrations/0002_logentry_remove_auto_add.py",
+            "db/migrations/executor.py",
+            "core/management/commands/migrate.py",
+            "db/migrations/questioner.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.018729738003457896,
+          "category": "migrations",
+          "baseline_tokens": 14931,
+          "context_tokens": 2043,
+          "savings_pct": 0.8631705846895721,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "migration state ModelState rendering from models",
+          "expected_files": [
+            "db/migrations/state.py"
+          ],
+          "ranked_files": [
+            "db/migrations/state.py",
+            "db/models/base.py",
+            "contrib/admin/static/admin/js/SelectFilter2.js",
+            "db/migrations/operations/models.py",
+            "core/management/commands/migrate.py",
+            "db/migrations/executor.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.16666666666666666,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.03199358999700053,
+          "category": "migrations",
+          "baseline_tokens": 8527,
+          "context_tokens": 2023,
+          "savings_pct": 0.7627536061920956,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "reverse() URL reversing by view name",
+          "expected_files": [
+            "urls/base.py"
+          ],
+          "ranked_files": [
+            "views/generic/base.py",
+            "urls/resolvers.py",
+            "urls/base.py",
+            "contrib/gis/geos/mutable_list.py",
+            "db/models/query.py",
+            "tasks/base.py",
+            "contrib/contenttypes/models.py",
+            "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
+            "contrib/admin/static/admin/js/admin/DateTimeShortcuts.js",
+            "contrib/gis/gdal/srs.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.022433445999922697,
+          "category": "urls",
+          "baseline_tokens": 1316,
+          "context_tokens": 1996,
+          "savings_pct": -0.5167173252279635,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "URLResolver path converters and route matching",
+          "expected_files": [
+            "urls/resolvers.py"
+          ],
+          "ranked_files": [
+            "urls/resolvers.py",
+            "forms/widgets.py",
+            "contrib/staticfiles/storage.py",
+            "contrib/admin/static/admin/js/admin/RelatedObjectLookups.js",
+            "core/files/storage/memory.py",
+            "core/files/storage/filesystem.py",
+            "core/files/storage/base.py",
+            "core/management/commands/makemessages.py",
+            "db/migrations/writer.py",
+            "db/models/fields/files.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.013781016998109408,
+          "category": "urls",
+          "baseline_tokens": 6195,
+          "context_tokens": 2062,
+          "savings_pct": 0.6671509281678774,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "class based View dispatch and as_view",
+          "expected_files": [
+            "views/generic/base.py"
+          ],
+          "ranked_files": [
+            "views/generic/base.py",
+            "contrib/auth/views.py",
+            "contrib/admindocs/views.py",
+            "contrib/auth/mixins.py",
+            "views/generic/edit.py",
+            "contrib/admin/views/autocomplete.py",
+            "views/generic/dates.py",
+            "dispatch/dispatcher.py",
+            "urls/resolvers.py",
+            "contrib/admin/sites.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.018634152998856734,
+          "category": "views",
+          "baseline_tokens": 1956,
+          "context_tokens": 2029,
+          "savings_pct": -0.037321063394682996,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "ListView pagination with paginate_by",
+          "expected_files": [
+            "views/generic/list.py"
+          ],
+          "ranked_files": [
+            "views/generic/list.py",
+            "contrib/admin/templatetags/admin_list.py",
+            "contrib/admin/templates/admin/pagination.html",
+            "views/generic/dates.py",
+            "contrib/admin/options.py",
+            "contrib/admin/views/autocomplete.py",
+            "core/paginator.py",
+            "views/generic/__init__.py",
+            "contrib/admin/views/main.py",
+            "contrib/admin/templates/admin/object_history.html"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.02197933100251248,
+          "category": "views",
+          "baseline_tokens": 1624,
+          "context_tokens": 2007,
+          "savings_pct": -0.23583743842364524,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "Form full_clean is_valid and cleaned_data validation",
+          "expected_files": [
+            "forms/forms.py"
+          ],
+          "ranked_files": [
+            "forms/formsets.py",
+            "forms/forms.py",
+            "db/models/base.py",
+            "contrib/admin/options.py",
+            "contrib/postgres/forms/array.py",
+            "forms/fields.py",
+            "contrib/auth/forms.py",
+            "contrib/messages/views.py",
+            "forms/models.py",
+            "contrib/flatpages/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.015785338000569027,
+          "category": "forms",
+          "baseline_tokens": 3271,
+          "context_tokens": 1992,
+          "savings_pct": 0.3910119229593396,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "ModelForm save and Meta model binding",
+          "expected_files": [
+            "forms/models.py"
+          ],
+          "ranked_files": [
+            "db/models/base.py",
+            "forms/models.py",
+            "contrib/auth/forms.py",
+            "contrib/sites/models.py",
+            "db/models/fields/files.py",
+            "contrib/flatpages/forms.py",
+            "contrib/sites/requests.py",
+            "contrib/sessions/base_session.py",
+            "contrib/auth/models.py",
+            "contrib/auth/base_user.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.018996683997102082,
+          "category": "forms",
+          "baseline_tokens": 12658,
+          "context_tokens": 1995,
+          "savings_pct": 0.842392163058935,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "ModelAdmin list_display search_fields configuration",
+          "expected_files": [
+            "contrib/admin/options.py"
+          ],
+          "ranked_files": [
+            "contrib/admin/options.py",
+            "contrib/admin/decorators.py",
+            "contrib/sites/admin.py",
+            "contrib/admin/checks.py",
+            "contrib/admin/templatetags/admin_list.py",
+            "contrib/redirects/admin.py",
+            "contrib/admin/views/main.py",
+            "contrib/admin/templates/admin/search_form.html",
+            "contrib/auth/admin.py",
+            "contrib/admin/sites.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.032552819000557065,
+          "category": "admin",
+          "baseline_tokens": 22530,
+          "context_tokens": 2119,
+          "savings_pct": 0.905947625388371,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "authenticate login and logout user session functions",
+          "expected_files": [
+            "contrib/auth/__init__.py"
+          ],
+          "ranked_files": [
+            "contrib/auth/__init__.py",
+            "contrib/admin/sites.py",
+            "contrib/auth/backends.py",
+            "test/client.py",
+            "contrib/admin/templates/admin/login.html",
+            "contrib/auth/views.py",
+            "contrib/auth/decorators.py",
+            "contrib/auth/middleware.py",
+            "contrib/auth/base_user.py",
+            "contrib/auth/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.015788976998010185,
+          "category": "auth",
+          "baseline_tokens": 2931,
+          "context_tokens": 2051,
+          "savings_pct": 0.30023882633913335,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "password hashers make_password and check_password",
+          "expected_files": [
+            "contrib/auth/hashers.py"
+          ],
+          "ranked_files": [
+            "contrib/auth/hashers.py",
+            "contrib/auth/base_user.py",
+            "contrib/auth/models.py",
+            "contrib/auth/handlers/modwsgi.py",
+            "contrib/auth/__init__.py",
+            "contrib/auth/forms.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.16666666666666666,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.014410146002774127,
+          "category": "auth",
+          "baseline_tokens": 5142,
+          "context_tokens": 2103,
+          "savings_pct": 0.5910151691948657,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "local memory cache backend get set delete",
+          "expected_files": [
+            "core/cache/backends/locmem.py"
+          ],
+          "ranked_files": [
+            "core/files/storage/memory.py",
+            "contrib/sessions/backends/cache.py",
+            "middleware/cache.py",
+            "core/cache/backends/redis.py",
+            "core/cache/backends/db.py",
+            "core/cache/backends/dummy.py",
+            "core/cache/backends/locmem.py",
+            "core/cache/backends/memcached.py",
+            "core/cache/backends/base.py",
+            "core/cache/backends/filebased.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.14285714285714285,
+          "latency_seconds": 0.023109269997803494,
+          "category": "cache",
+          "baseline_tokens": 900,
+          "context_tokens": 1823,
+          "savings_pct": -1.0255555555555556,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "template Node Parser and rendering compiled templates",
+          "expected_files": [
+            "template/base.py"
+          ],
+          "ranked_files": [
+            "template/base.py",
+            "template/utils.py",
+            "contrib/admin/static/admin/js/inlines.js",
+            "utils/tree.py",
+            "db/migrations/graph.py",
+            "http/multipartparser.py",
+            "test/html.py",
+            "template/defaulttags.py",
+            "template/loader_tags.py",
+            "core/management/templates.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.014707914997416083,
+          "category": "templates",
+          "baseline_tokens": 9166,
+          "context_tokens": 1993,
+          "savings_pct": 0.7825660048003491,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "CommonMiddleware APPEND_SLASH and PREPEND_WWW handling",
+          "expected_files": [
+            "middleware/common.py"
+          ],
+          "ranked_files": [
+            "middleware/common.py",
+            "views/decorators/common.py",
+            "middleware/locale.py",
+            "template/base.py",
+            "core/handlers/base.py",
+            "contrib/messages/middleware.py",
+            "contrib/auth/checks.py",
+            "contrib/flatpages/forms.py",
+            "contrib/redirects/middleware.py",
+            "contrib/auth/middleware.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.011457129003247246,
+          "category": "middleware",
+          "baseline_tokens": 1678,
+          "context_tokens": 2045,
+          "savings_pct": -0.21871275327771156,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "Signal send and post_save receiver dispatch",
+          "expected_files": [
+            "dispatch/dispatcher.py"
+          ],
+          "ranked_files": [
+            "dispatch/dispatcher.py",
+            "core/mail/message.py",
+            "contrib/auth/views.py",
+            "contrib/auth/mixins.py",
+            "contrib/admindocs/views.py",
+            "views/generic/base.py",
+            "core/serializers/base.py",
+            "db/models/base.py",
+            "contrib/admin/options.py",
+            "db/models/signals.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.013309190006111749,
+          "category": "signals",
+          "baseline_tokens": 3720,
+          "context_tokens": 2012,
+          "savings_pct": 0.45913978494623653,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "test Client get and post requests in tests",
+          "expected_files": [
+            "test/client.py"
+          ],
+          "ranked_files": [
+            "test/client.py",
+            "views/i18n.py",
+            "utils/datastructures.py",
+            "template/context.py",
+            "http/response.py",
+            "contrib/admin/views/autocomplete.py",
+            "contrib/gis/gdal/feature.py",
+            "contrib/sessions/backends/base.py",
+            "core/mail/handler.py",
+            "core/cache/backends/redis.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.019477195994113572,
+          "category": "testing",
+          "baseline_tokens": 11145,
+          "context_tokens": 1997,
+          "savings_pct": 0.820816509645581,
+          "baseline_bucket": ">4k"
+        }
+      ]
+    }
+  }
+}

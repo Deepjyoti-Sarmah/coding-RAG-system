@@ -1,0 +1,2528 @@
+{
+  "repo": "https://github.com/fastapi/fastapi",
+  "source_dir": "fastapi",
+  "commit": "49033471594ea5d99a80abdf1043231b7791ee49",
+  "queries_file": "benchmarks/fastapi_original.json",
+  "token_budget": 800,
+  "token_budgets": [
+    800,
+    1200,
+    2000
+  ],
+  "total_questions": 20,
+  "mean_precision_at_10": 0.09,
+  "mean_precision_ceiling_at_10": 0.1,
+  "mean_precision_at_10_normalized": 0.9,
+  "mean_precision_over_returned": 0.09464285714285715,
+  "mean_recall_at_10": 0.9,
+  "mean_reciprocal_rank": 0.5458333333333333,
+  "p50_latency_seconds": 0.0038342565021594055,
+  "p95_latency_seconds": 0.006819255999289453,
+  "index_seconds": 1.0387240760028362,
+  "mean_baseline_tokens": 4922.8,
+  "mean_context_tokens": 831.4,
+  "mean_savings_pct": -12.685638980665647,
+  "aggregate_savings_pct": 0.8311123750710978,
+  "buckets": {
+    "<1k": {
+      "count": 10,
+      "mean_baseline_tokens": 212.5,
+      "mean_context_tokens": 835.7,
+      "aggregate_savings_pct": -2.9327058823529413,
+      "mean_recall_at_10": 0.8
+    },
+    "1k-4k": {
+      "count": 4,
+      "mean_baseline_tokens": 2085.25,
+      "mean_context_tokens": 828.75,
+      "aggregate_savings_pct": 0.6025656396115573,
+      "mean_recall_at_10": 1.0
+    },
+    ">4k": {
+      "count": 6,
+      "mean_baseline_tokens": 14665.0,
+      "mean_context_tokens": 826.0,
+      "aggregate_savings_pct": 0.9436754176610979,
+      "mean_recall_at_10": 1.0
+    }
+  },
+  "questions": [
+    {
+      "query": "APIRouter decorator for GET routes and include_router with prefix",
+      "expected_files": [
+        "routing.py"
+      ],
+      "ranked_files": [
+        "routing.py",
+        "applications.py",
+        "openapi/utils.py",
+        "_compat/v2.py",
+        ".agents/skills/fastapi/references/path-operations.md",
+        ".agents/skills/fastapi/SKILL.md",
+        ".agents/skills/fastapi/references/responses.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.14285714285714285,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.006819255999289453,
+      "category": "routing",
+      "baseline_tokens": 49172,
+      "context_tokens": 858,
+      "savings_pct": 0.9825510453103392,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "dependency injection Depends and solving sub-dependencies per request",
+      "expected_files": [
+        "dependencies/utils.py"
+      ],
+      "ranked_files": [
+        "params.py",
+        "param_functions.py",
+        ".agents/skills/fastapi/references/dependencies.md",
+        "dependencies/utils.py",
+        "routing.py",
+        ".agents/skills/fastapi/references/path-operations.md",
+        ".agents/skills/fastapi/SKILL.md",
+        "openapi/docs.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.125,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.25,
+      "latency_seconds": 0.003363816998898983,
+      "category": "dependencies",
+      "baseline_tokens": 8268,
+      "context_tokens": 797,
+      "savings_pct": 0.9036042573778422,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "OAuth2 password bearer flow with tokenUrl",
+      "expected_files": [
+        "security/oauth2.py"
+      ],
+      "ranked_files": [
+        "security/oauth2.py",
+        "openapi/models.py",
+        "openapi/docs.py",
+        "dependencies/utils.py",
+        "security/http.py",
+        "security/api_key.py",
+        "applications.py",
+        "security/open_id_connect_url.py",
+        "routing.py",
+        "security/__init__.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.004119815006561112,
+      "category": "auth",
+      "baseline_tokens": 4758,
+      "context_tokens": 821,
+      "savings_pct": 0.8274485077763767,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "API key authentication from header query parameter or cookie",
+      "expected_files": [
+        "security/api_key.py"
+      ],
+      "ranked_files": [
+        "param_functions.py",
+        "params.py",
+        "security/api_key.py",
+        "openapi/models.py",
+        "applications.py",
+        "openapi/utils.py",
+        "dependencies/utils.py",
+        "__init__.py",
+        ".agents/skills/fastapi/references/dependencies.md",
+        "security/open_id_connect_url.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.00394981700083008,
+      "category": "auth",
+      "baseline_tokens": 1962,
+      "context_tokens": 795,
+      "savings_pct": 0.5948012232415902,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "HTTP bearer and HTTP basic security schemes",
+      "expected_files": [
+        "security/http.py"
+      ],
+      "ranked_files": [
+        "param_functions.py",
+        "params.py",
+        "security/http.py",
+        "security/oauth2.py",
+        "security/base.py",
+        "dependencies/models.py",
+        "openapi/utils.py",
+        "security/api_key.py",
+        "security/open_id_connect_url.py",
+        "security/utils.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.002939394995337352,
+      "category": "auth",
+      "baseline_tokens": 2646,
+      "context_tokens": 812,
+      "savings_pct": 0.6931216931216931,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "OpenAPI schema generation for paths and components",
+      "expected_files": [
+        "openapi/utils.py"
+      ],
+      "ranked_files": [
+        "openapi/models.py",
+        "applications.py",
+        "openapi/utils.py",
+        "routing.py",
+        "_compat/v2.py",
+        "security/open_id_connect_url.py",
+        "security/api_key.py",
+        "openapi/docs.py",
+        "security/__init__.py",
+        "security/http.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.0033251849963562563,
+      "category": "openapi",
+      "baseline_tokens": 5641,
+      "context_tokens": 851,
+      "savings_pct": 0.8491402233646517,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "Query Path Header Cookie and Body parameter classes",
+      "expected_files": [
+        "params.py"
+      ],
+      "ranked_files": [
+        "param_functions.py",
+        "params.py",
+        "openapi/models.py",
+        ".agents/skills/fastapi/references/path-operations.md",
+        "security/api_key.py",
+        "openapi/utils.py",
+        "dependencies/utils.py",
+        "__init__.py",
+        "dependencies/models.py",
+        ".agents/skills/fastapi/references/dependencies.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.004058332997374237,
+      "category": "params",
+      "baseline_tokens": 5705,
+      "context_tokens": 802,
+      "savings_pct": 0.859421560035057,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "Query() Body() and Form() helper functions for endpoint signatures",
+      "expected_files": [
+        "param_functions.py"
+      ],
+      "ranked_files": [
+        "params.py",
+        "param_functions.py",
+        "routing.py",
+        "dependencies/utils.py",
+        "security/api_key.py",
+        "exceptions.py",
+        "security/oauth2.py",
+        "__init__.py",
+        "openapi/utils.py",
+        ".agents/skills/fastapi/references/dependencies.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.003717434999998659,
+      "category": "params",
+      "baseline_tokens": 14446,
+      "context_tokens": 827,
+      "savings_pct": 0.9427523189810328,
+      "baseline_bucket": ">4k"
+    },
+    {
+      "query": "JSONResponse FileResponse and StreamingResponse response classes",
+      "expected_files": [
+        "responses.py"
+      ],
+      "ranked_files": [
+        "sse.py",
+        "routing.py",
+        "responses.py",
+        ".agents/skills/fastapi/references/streaming.md",
+        "openapi/utils.py",
+        ".agents/skills/fastapi/SKILL.md",
+        "applications.py",
+        "_compat/v2.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.125,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.004018698004074395,
+      "category": "responses",
+      "baseline_tokens": 996,
+      "context_tokens": 856,
+      "savings_pct": 0.1405622489959839,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "BackgroundTasks running after the response is sent",
+      "expected_files": [
+        "background.py"
+      ],
+      "ranked_files": [
+        "background.py",
+        "sse.py",
+        "routing.py",
+        "dependencies/utils.py",
+        ".agents/skills/fastapi/references/dependencies.md",
+        "param_functions.py",
+        "__init__.py",
+        "dependencies/models.py",
+        "applications.py",
+        ".agents/skills/fastapi/SKILL.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.0033140340019599535,
+      "category": "background",
+      "baseline_tokens": 384,
+      "context_tokens": 852,
+      "savings_pct": -1.21875,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "CORS middleware allowing cross-origin requests",
+      "expected_files": [
+        "middleware/cors.py"
+      ],
+      "ranked_files": [
+        "applications.py",
+        "middleware/cors.py",
+        "middleware/asyncexitstack.py",
+        "middleware/__init__.py",
+        "middleware/trustedhost.py",
+        "middleware/httpsredirect.py",
+        "middleware/gzip.py",
+        "middleware/wsgi.py",
+        "routing.py",
+        "_compat/shared.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.0053969520013197325,
+      "category": "middleware",
+      "baseline_tokens": 18,
+      "context_tokens": 863,
+      "savings_pct": -46.94444444444444,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "GZip middleware compressing large responses",
+      "expected_files": [
+        "middleware/gzip.py"
+      ],
+      "ranked_files": [
+        "applications.py",
+        "middleware/gzip.py",
+        ".agents/skills/fastapi/references/responses.md",
+        "responses.py",
+        "middleware/asyncexitstack.py",
+        "middleware/__init__.py",
+        "middleware/trustedhost.py",
+        "middleware/httpsredirect.py",
+        "middleware/cors.py",
+        "middleware/wsgi.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.00423484000202734,
+      "category": "middleware",
+      "baseline_tokens": 18,
+      "context_tokens": 818,
+      "savings_pct": -44.44444444444444,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "WebSocket routing and accepting websocket connections",
+      "expected_files": [
+        "websockets.py"
+      ],
+      "ranked_files": [
+        "routing.py",
+        "applications.py",
+        "exceptions.py",
+        "security/open_id_connect_url.py",
+        "security/__init__.py",
+        "dependencies/models.py",
+        "concurrency.py",
+        "dependencies/utils.py",
+        "security/http.py",
+        "sse.py"
+      ],
+      "precision_at_10": 0.0,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.0029165730011300184,
+      "category": "websockets",
+      "baseline_tokens": 52,
+      "context_tokens": 799,
+      "savings_pct": -14.365384615384615,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "exception handlers for HTTPException and validation errors",
+      "expected_files": [
+        "exception_handlers.py"
+      ],
+      "ranked_files": [
+        "exceptions.py",
+        "exception_handlers.py",
+        "applications.py",
+        "dependencies/utils.py",
+        "routing.py",
+        "_compat/v2.py",
+        "_compat/__init__.py",
+        "security/open_id_connect_url.py",
+        "security/http.py",
+        "security/api_key.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.004168577004747931,
+      "category": "errors",
+      "baseline_tokens": 266,
+      "context_tokens": 811,
+      "savings_pct": -2.0488721804511276,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "UploadFile handling multipart file uploads",
+      "expected_files": [
+        "datastructures.py"
+      ],
+      "ranked_files": [
+        "datastructures.py",
+        "params.py",
+        "param_functions.py",
+        "_compat/shared.py",
+        "dependencies/utils.py",
+        "_compat/__init__.py",
+        "__init__.py",
+        "routing.py",
+        "exceptions.py",
+        ".agents/skills/fastapi/references/dependencies.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.003988412005128339,
+      "category": "data",
+      "baseline_tokens": 1192,
+      "context_tokens": 816,
+      "savings_pct": 0.31543624161073824,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "jsonable_encoder converting pydantic models to JSON compatible data",
+      "expected_files": [
+        "encoders.py"
+      ],
+      "ranked_files": [
+        "encoders.py",
+        "openapi/models.py",
+        "routing.py",
+        "openapi/utils.py",
+        "sse.py",
+        "openapi/docs.py",
+        "param_functions.py",
+        "dependencies/utils.py",
+        "params.py",
+        ".agents/skills/fastapi/references/streaming.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.003581842000130564,
+      "category": "encoding",
+      "baseline_tokens": 2541,
+      "context_tokens": 892,
+      "savings_pct": 0.6489571035025581,
+      "baseline_bucket": "1k-4k"
+    },
+    {
+      "query": "TestClient for testing FastAPI applications",
+      "expected_files": [
+        "testclient.py"
+      ],
+      "ranked_files": [
+        "applications.py",
+        "testclient.py",
+        "routing.py",
+        "security/api_key.py",
+        "openapi/utils.py",
+        ".agents/skills/fastapi/SKILL.md",
+        "openapi/docs.py",
+        "__init__.py",
+        "dependencies/utils.py",
+        "security/oauth2.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.5,
+      "latency_seconds": 0.006635543999436777,
+      "category": "testing",
+      "baseline_tokens": 15,
+      "context_tokens": 832,
+      "savings_pct": -54.46666666666667,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "run_in_threadpool for blocking code in async endpoints",
+      "expected_files": [
+        "concurrency.py"
+      ],
+      "ranked_files": [
+        "concurrency.py",
+        "routing.py",
+        ".agents/skills/fastapi/references/other-tools.md",
+        ".agents/skills/fastapi/references/dependencies.md",
+        "datastructures.py",
+        "exceptions.py",
+        "openapi/utils.py",
+        "dependencies/utils.py",
+        "applications.py",
+        ".agents/skills/fastapi/references/streaming.md"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 1.0,
+      "latency_seconds": 0.003625051998824347,
+      "category": "concurrency",
+      "baseline_tokens": 341,
+      "context_tokens": 835,
+      "savings_pct": -1.4486803519061584,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "serving static files with StaticFiles mount",
+      "expected_files": [
+        "staticfiles.py"
+      ],
+      "ranked_files": [
+        "routing.py",
+        "applications.py",
+        "openapi/docs.py",
+        ".agents/skills/fastapi/SKILL.md",
+        "sse.py"
+      ],
+      "precision_at_10": 0.0,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 0.0,
+      "precision_over_returned": 0.0,
+      "recall_at_10": 0.0,
+      "reciprocal_rank": 0.0,
+      "latency_seconds": 0.0029851079962099902,
+      "category": "static",
+      "baseline_tokens": 15,
+      "context_tokens": 839,
+      "savings_pct": -54.93333333333333,
+      "baseline_bucket": "<1k"
+    },
+    {
+      "query": "Jinja2Templates rendering HTML templates",
+      "expected_files": [
+        "templating.py"
+      ],
+      "ranked_files": [
+        "applications.py",
+        "openapi/docs.py",
+        "templating.py",
+        "responses.py",
+        "_compat/v2.py",
+        "routing.py",
+        "openapi/models.py",
+        "sse.py",
+        "security/api_key.py",
+        "exceptions.py"
+      ],
+      "precision_at_10": 0.1,
+      "precision_ceiling_at_10": 0.1,
+      "precision_at_10_normalized": 1.0,
+      "precision_over_returned": 0.1,
+      "recall_at_10": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "latency_seconds": 0.0037186960034887306,
+      "category": "templates",
+      "baseline_tokens": 20,
+      "context_tokens": 852,
+      "savings_pct": -41.6,
+      "baseline_bucket": "<1k"
+    }
+  ],
+  "budgets": {
+    "800": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.09,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 0.9,
+      "mean_precision_over_returned": 0.09464285714285715,
+      "mean_recall_at_10": 0.9,
+      "mean_reciprocal_rank": 0.5458333333333333,
+      "p50_latency_seconds": 0.0038342565021594055,
+      "p95_latency_seconds": 0.006819255999289453,
+      "index_seconds": 1.0387240760028362,
+      "mean_baseline_tokens": 4922.8,
+      "mean_context_tokens": 831.4,
+      "mean_savings_pct": -12.685638980665647,
+      "aggregate_savings_pct": 0.8311123750710978,
+      "buckets": {
+        "<1k": {
+          "count": 10,
+          "mean_baseline_tokens": 212.5,
+          "mean_context_tokens": 835.7,
+          "aggregate_savings_pct": -2.9327058823529413,
+          "mean_recall_at_10": 0.8
+        },
+        "1k-4k": {
+          "count": 4,
+          "mean_baseline_tokens": 2085.25,
+          "mean_context_tokens": 828.75,
+          "aggregate_savings_pct": 0.6025656396115573,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 6,
+          "mean_baseline_tokens": 14665.0,
+          "mean_context_tokens": 826.0,
+          "aggregate_savings_pct": 0.9436754176610979,
+          "mean_recall_at_10": 1.0
+        }
+      },
+      "questions": [
+        {
+          "query": "APIRouter decorator for GET routes and include_router with prefix",
+          "expected_files": [
+            "routing.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "openapi/utils.py",
+            "_compat/v2.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            ".agents/skills/fastapi/SKILL.md",
+            ".agents/skills/fastapi/references/responses.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.14285714285714285,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.006819255999289453,
+          "category": "routing",
+          "baseline_tokens": 49172,
+          "context_tokens": 858,
+          "savings_pct": 0.9825510453103392,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "dependency injection Depends and solving sub-dependencies per request",
+          "expected_files": [
+            "dependencies/utils.py"
+          ],
+          "ranked_files": [
+            "params.py",
+            "param_functions.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "dependencies/utils.py",
+            "routing.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            ".agents/skills/fastapi/SKILL.md",
+            "openapi/docs.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.125,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.25,
+          "latency_seconds": 0.003363816998898983,
+          "category": "dependencies",
+          "baseline_tokens": 8268,
+          "context_tokens": 797,
+          "savings_pct": 0.9036042573778422,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "OAuth2 password bearer flow with tokenUrl",
+          "expected_files": [
+            "security/oauth2.py"
+          ],
+          "ranked_files": [
+            "security/oauth2.py",
+            "openapi/models.py",
+            "openapi/docs.py",
+            "dependencies/utils.py",
+            "security/http.py",
+            "security/api_key.py",
+            "applications.py",
+            "security/open_id_connect_url.py",
+            "routing.py",
+            "security/__init__.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.004119815006561112,
+          "category": "auth",
+          "baseline_tokens": 4758,
+          "context_tokens": 821,
+          "savings_pct": 0.8274485077763767,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "API key authentication from header query parameter or cookie",
+          "expected_files": [
+            "security/api_key.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "security/api_key.py",
+            "openapi/models.py",
+            "applications.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "__init__.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "security/open_id_connect_url.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.00394981700083008,
+          "category": "auth",
+          "baseline_tokens": 1962,
+          "context_tokens": 795,
+          "savings_pct": 0.5948012232415902,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "HTTP bearer and HTTP basic security schemes",
+          "expected_files": [
+            "security/http.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "security/http.py",
+            "security/oauth2.py",
+            "security/base.py",
+            "dependencies/models.py",
+            "openapi/utils.py",
+            "security/api_key.py",
+            "security/open_id_connect_url.py",
+            "security/utils.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.002939394995337352,
+          "category": "auth",
+          "baseline_tokens": 2646,
+          "context_tokens": 812,
+          "savings_pct": 0.6931216931216931,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "OpenAPI schema generation for paths and components",
+          "expected_files": [
+            "openapi/utils.py"
+          ],
+          "ranked_files": [
+            "openapi/models.py",
+            "applications.py",
+            "openapi/utils.py",
+            "routing.py",
+            "_compat/v2.py",
+            "security/open_id_connect_url.py",
+            "security/api_key.py",
+            "openapi/docs.py",
+            "security/__init__.py",
+            "security/http.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.0033251849963562563,
+          "category": "openapi",
+          "baseline_tokens": 5641,
+          "context_tokens": 851,
+          "savings_pct": 0.8491402233646517,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Query Path Header Cookie and Body parameter classes",
+          "expected_files": [
+            "params.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "openapi/models.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            "security/api_key.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "__init__.py",
+            "dependencies/models.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.004058332997374237,
+          "category": "params",
+          "baseline_tokens": 5705,
+          "context_tokens": 802,
+          "savings_pct": 0.859421560035057,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Query() Body() and Form() helper functions for endpoint signatures",
+          "expected_files": [
+            "param_functions.py"
+          ],
+          "ranked_files": [
+            "params.py",
+            "param_functions.py",
+            "routing.py",
+            "dependencies/utils.py",
+            "security/api_key.py",
+            "exceptions.py",
+            "security/oauth2.py",
+            "__init__.py",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.003717434999998659,
+          "category": "params",
+          "baseline_tokens": 14446,
+          "context_tokens": 827,
+          "savings_pct": 0.9427523189810328,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "JSONResponse FileResponse and StreamingResponse response classes",
+          "expected_files": [
+            "responses.py"
+          ],
+          "ranked_files": [
+            "sse.py",
+            "routing.py",
+            "responses.py",
+            ".agents/skills/fastapi/references/streaming.md",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "applications.py",
+            "_compat/v2.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.125,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.004018698004074395,
+          "category": "responses",
+          "baseline_tokens": 996,
+          "context_tokens": 856,
+          "savings_pct": 0.1405622489959839,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "BackgroundTasks running after the response is sent",
+          "expected_files": [
+            "background.py"
+          ],
+          "ranked_files": [
+            "background.py",
+            "sse.py",
+            "routing.py",
+            "dependencies/utils.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "param_functions.py",
+            "__init__.py",
+            "dependencies/models.py",
+            "applications.py",
+            ".agents/skills/fastapi/SKILL.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.0033140340019599535,
+          "category": "background",
+          "baseline_tokens": 384,
+          "context_tokens": 852,
+          "savings_pct": -1.21875,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "CORS middleware allowing cross-origin requests",
+          "expected_files": [
+            "middleware/cors.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "middleware/cors.py",
+            "middleware/asyncexitstack.py",
+            "middleware/__init__.py",
+            "middleware/trustedhost.py",
+            "middleware/httpsredirect.py",
+            "middleware/gzip.py",
+            "middleware/wsgi.py",
+            "routing.py",
+            "_compat/shared.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0053969520013197325,
+          "category": "middleware",
+          "baseline_tokens": 18,
+          "context_tokens": 863,
+          "savings_pct": -46.94444444444444,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "GZip middleware compressing large responses",
+          "expected_files": [
+            "middleware/gzip.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "middleware/gzip.py",
+            ".agents/skills/fastapi/references/responses.md",
+            "responses.py",
+            "middleware/asyncexitstack.py",
+            "middleware/__init__.py",
+            "middleware/trustedhost.py",
+            "middleware/httpsredirect.py",
+            "middleware/cors.py",
+            "middleware/wsgi.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.00423484000202734,
+          "category": "middleware",
+          "baseline_tokens": 18,
+          "context_tokens": 818,
+          "savings_pct": -44.44444444444444,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "WebSocket routing and accepting websocket connections",
+          "expected_files": [
+            "websockets.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "exceptions.py",
+            "security/open_id_connect_url.py",
+            "security/__init__.py",
+            "dependencies/models.py",
+            "concurrency.py",
+            "dependencies/utils.py",
+            "security/http.py",
+            "sse.py"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.0029165730011300184,
+          "category": "websockets",
+          "baseline_tokens": 52,
+          "context_tokens": 799,
+          "savings_pct": -14.365384615384615,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "exception handlers for HTTPException and validation errors",
+          "expected_files": [
+            "exception_handlers.py"
+          ],
+          "ranked_files": [
+            "exceptions.py",
+            "exception_handlers.py",
+            "applications.py",
+            "dependencies/utils.py",
+            "routing.py",
+            "_compat/v2.py",
+            "_compat/__init__.py",
+            "security/open_id_connect_url.py",
+            "security/http.py",
+            "security/api_key.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.004168577004747931,
+          "category": "errors",
+          "baseline_tokens": 266,
+          "context_tokens": 811,
+          "savings_pct": -2.0488721804511276,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "UploadFile handling multipart file uploads",
+          "expected_files": [
+            "datastructures.py"
+          ],
+          "ranked_files": [
+            "datastructures.py",
+            "params.py",
+            "param_functions.py",
+            "_compat/shared.py",
+            "dependencies/utils.py",
+            "_compat/__init__.py",
+            "__init__.py",
+            "routing.py",
+            "exceptions.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.003988412005128339,
+          "category": "data",
+          "baseline_tokens": 1192,
+          "context_tokens": 816,
+          "savings_pct": 0.31543624161073824,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "jsonable_encoder converting pydantic models to JSON compatible data",
+          "expected_files": [
+            "encoders.py"
+          ],
+          "ranked_files": [
+            "encoders.py",
+            "openapi/models.py",
+            "routing.py",
+            "openapi/utils.py",
+            "sse.py",
+            "openapi/docs.py",
+            "param_functions.py",
+            "dependencies/utils.py",
+            "params.py",
+            ".agents/skills/fastapi/references/streaming.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.003581842000130564,
+          "category": "encoding",
+          "baseline_tokens": 2541,
+          "context_tokens": 892,
+          "savings_pct": 0.6489571035025581,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "TestClient for testing FastAPI applications",
+          "expected_files": [
+            "testclient.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "testclient.py",
+            "routing.py",
+            "security/api_key.py",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "openapi/docs.py",
+            "__init__.py",
+            "dependencies/utils.py",
+            "security/oauth2.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.006635543999436777,
+          "category": "testing",
+          "baseline_tokens": 15,
+          "context_tokens": 832,
+          "savings_pct": -54.46666666666667,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "run_in_threadpool for blocking code in async endpoints",
+          "expected_files": [
+            "concurrency.py"
+          ],
+          "ranked_files": [
+            "concurrency.py",
+            "routing.py",
+            ".agents/skills/fastapi/references/other-tools.md",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "datastructures.py",
+            "exceptions.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "applications.py",
+            ".agents/skills/fastapi/references/streaming.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.003625051998824347,
+          "category": "concurrency",
+          "baseline_tokens": 341,
+          "context_tokens": 835,
+          "savings_pct": -1.4486803519061584,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "serving static files with StaticFiles mount",
+          "expected_files": [
+            "staticfiles.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "openapi/docs.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "sse.py"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.0029851079962099902,
+          "category": "static",
+          "baseline_tokens": 15,
+          "context_tokens": 839,
+          "savings_pct": -54.93333333333333,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "Jinja2Templates rendering HTML templates",
+          "expected_files": [
+            "templating.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "openapi/docs.py",
+            "templating.py",
+            "responses.py",
+            "_compat/v2.py",
+            "routing.py",
+            "openapi/models.py",
+            "sse.py",
+            "security/api_key.py",
+            "exceptions.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.0037186960034887306,
+          "category": "templates",
+          "baseline_tokens": 20,
+          "context_tokens": 852,
+          "savings_pct": -41.6,
+          "baseline_bucket": "<1k"
+        }
+      ]
+    },
+    "1200": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.09,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 0.9,
+      "mean_precision_over_returned": 0.09464285714285715,
+      "mean_recall_at_10": 0.9,
+      "mean_reciprocal_rank": 0.5458333333333333,
+      "p50_latency_seconds": 0.0042333179953857325,
+      "p95_latency_seconds": 0.00822804700146662,
+      "index_seconds": 0.0027104119944851846,
+      "mean_baseline_tokens": 4922.8,
+      "mean_context_tokens": 1240.75,
+      "mean_savings_pct": -19.194045860511356,
+      "aggregate_savings_pct": 0.7479584789144389,
+      "buckets": {
+        "<1k": {
+          "count": 10,
+          "mean_baseline_tokens": 212.5,
+          "mean_context_tokens": 1232.3,
+          "aggregate_savings_pct": -4.799058823529411,
+          "mean_recall_at_10": 0.8
+        },
+        "1k-4k": {
+          "count": 4,
+          "mean_baseline_tokens": 2085.25,
+          "mean_context_tokens": 1259.5,
+          "aggregate_savings_pct": 0.3959956839707469,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 6,
+          "mean_baseline_tokens": 14665.0,
+          "mean_context_tokens": 1242.3333333333333,
+          "aggregate_savings_pct": 0.9152858279349926,
+          "mean_recall_at_10": 1.0
+        }
+      },
+      "questions": [
+        {
+          "query": "APIRouter decorator for GET routes and include_router with prefix",
+          "expected_files": [
+            "routing.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "openapi/utils.py",
+            "_compat/v2.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            ".agents/skills/fastapi/SKILL.md",
+            ".agents/skills/fastapi/references/responses.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.14285714285714285,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.006266322998271789,
+          "category": "routing",
+          "baseline_tokens": 49172,
+          "context_tokens": 1261,
+          "savings_pct": 0.9743553241682258,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "dependency injection Depends and solving sub-dependencies per request",
+          "expected_files": [
+            "dependencies/utils.py"
+          ],
+          "ranked_files": [
+            "params.py",
+            "param_functions.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "dependencies/utils.py",
+            "routing.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            ".agents/skills/fastapi/SKILL.md",
+            "openapi/docs.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.125,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.25,
+          "latency_seconds": 0.0033026549936039373,
+          "category": "dependencies",
+          "baseline_tokens": 8268,
+          "context_tokens": 1205,
+          "savings_pct": 0.8542573778422835,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "OAuth2 password bearer flow with tokenUrl",
+          "expected_files": [
+            "security/oauth2.py"
+          ],
+          "ranked_files": [
+            "security/oauth2.py",
+            "openapi/models.py",
+            "openapi/docs.py",
+            "dependencies/utils.py",
+            "security/http.py",
+            "security/api_key.py",
+            "applications.py",
+            "security/open_id_connect_url.py",
+            "routing.py",
+            "security/__init__.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.005814871998154558,
+          "category": "auth",
+          "baseline_tokens": 4758,
+          "context_tokens": 1274,
+          "savings_pct": 0.7322404371584699,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "API key authentication from header query parameter or cookie",
+          "expected_files": [
+            "security/api_key.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "security/api_key.py",
+            "openapi/models.py",
+            "applications.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "__init__.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "security/open_id_connect_url.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.004241981994709931,
+          "category": "auth",
+          "baseline_tokens": 1962,
+          "context_tokens": 1234,
+          "savings_pct": 0.3710499490316004,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "HTTP bearer and HTTP basic security schemes",
+          "expected_files": [
+            "security/http.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "security/http.py",
+            "security/oauth2.py",
+            "security/base.py",
+            "dependencies/models.py",
+            "openapi/utils.py",
+            "security/api_key.py",
+            "security/open_id_connect_url.py",
+            "security/utils.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.0033155290002468973,
+          "category": "auth",
+          "baseline_tokens": 2646,
+          "context_tokens": 1208,
+          "savings_pct": 0.5434618291761149,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "OpenAPI schema generation for paths and components",
+          "expected_files": [
+            "openapi/utils.py"
+          ],
+          "ranked_files": [
+            "openapi/models.py",
+            "applications.py",
+            "openapi/utils.py",
+            "routing.py",
+            "_compat/v2.py",
+            "security/open_id_connect_url.py",
+            "security/api_key.py",
+            "openapi/docs.py",
+            "security/__init__.py",
+            "security/http.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.004887094000878278,
+          "category": "openapi",
+          "baseline_tokens": 5641,
+          "context_tokens": 1278,
+          "savings_pct": 0.7734444247473853,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Query Path Header Cookie and Body parameter classes",
+          "expected_files": [
+            "params.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "openapi/models.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            "security/api_key.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "__init__.py",
+            "dependencies/models.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0038182759963092394,
+          "category": "params",
+          "baseline_tokens": 5705,
+          "context_tokens": 1221,
+          "savings_pct": 0.785977212971078,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Query() Body() and Form() helper functions for endpoint signatures",
+          "expected_files": [
+            "param_functions.py"
+          ],
+          "ranked_files": [
+            "params.py",
+            "param_functions.py",
+            "routing.py",
+            "dependencies/utils.py",
+            "security/api_key.py",
+            "exceptions.py",
+            "security/oauth2.py",
+            "__init__.py",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.004224653996061534,
+          "category": "params",
+          "baseline_tokens": 14446,
+          "context_tokens": 1215,
+          "savings_pct": 0.9158936729890628,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "JSONResponse FileResponse and StreamingResponse response classes",
+          "expected_files": [
+            "responses.py"
+          ],
+          "ranked_files": [
+            "sse.py",
+            "routing.py",
+            "responses.py",
+            ".agents/skills/fastapi/references/streaming.md",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "applications.py",
+            "_compat/v2.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.125,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.004506135002884548,
+          "category": "responses",
+          "baseline_tokens": 996,
+          "context_tokens": 1228,
+          "savings_pct": -0.23293172690763053,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "BackgroundTasks running after the response is sent",
+          "expected_files": [
+            "background.py"
+          ],
+          "ranked_files": [
+            "background.py",
+            "sse.py",
+            "routing.py",
+            "dependencies/utils.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "param_functions.py",
+            "__init__.py",
+            "dependencies/models.py",
+            "applications.py",
+            ".agents/skills/fastapi/SKILL.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.0049501870016683824,
+          "category": "background",
+          "baseline_tokens": 384,
+          "context_tokens": 1248,
+          "savings_pct": -2.25,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "CORS middleware allowing cross-origin requests",
+          "expected_files": [
+            "middleware/cors.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "middleware/cors.py",
+            "middleware/asyncexitstack.py",
+            "middleware/__init__.py",
+            "middleware/trustedhost.py",
+            "middleware/httpsredirect.py",
+            "middleware/gzip.py",
+            "middleware/wsgi.py",
+            "routing.py",
+            "_compat/shared.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.004123256003367715,
+          "category": "middleware",
+          "baseline_tokens": 18,
+          "context_tokens": 1320,
+          "savings_pct": -72.33333333333333,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "GZip middleware compressing large responses",
+          "expected_files": [
+            "middleware/gzip.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "middleware/gzip.py",
+            ".agents/skills/fastapi/references/responses.md",
+            "responses.py",
+            "middleware/asyncexitstack.py",
+            "middleware/__init__.py",
+            "middleware/trustedhost.py",
+            "middleware/httpsredirect.py",
+            "middleware/cors.py",
+            "middleware/wsgi.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0046461029996862635,
+          "category": "middleware",
+          "baseline_tokens": 18,
+          "context_tokens": 1218,
+          "savings_pct": -66.66666666666667,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "WebSocket routing and accepting websocket connections",
+          "expected_files": [
+            "websockets.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "exceptions.py",
+            "security/open_id_connect_url.py",
+            "security/__init__.py",
+            "dependencies/models.py",
+            "concurrency.py",
+            "dependencies/utils.py",
+            "security/http.py",
+            "sse.py"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.003408766002394259,
+          "category": "websockets",
+          "baseline_tokens": 52,
+          "context_tokens": 1199,
+          "savings_pct": -22.057692307692307,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "exception handlers for HTTPException and validation errors",
+          "expected_files": [
+            "exception_handlers.py"
+          ],
+          "ranked_files": [
+            "exceptions.py",
+            "exception_handlers.py",
+            "applications.py",
+            "dependencies/utils.py",
+            "routing.py",
+            "_compat/v2.py",
+            "_compat/__init__.py",
+            "security/open_id_connect_url.py",
+            "security/http.py",
+            "security/api_key.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0037581040014629252,
+          "category": "errors",
+          "baseline_tokens": 266,
+          "context_tokens": 1222,
+          "savings_pct": -3.593984962406015,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "UploadFile handling multipart file uploads",
+          "expected_files": [
+            "datastructures.py"
+          ],
+          "ranked_files": [
+            "datastructures.py",
+            "params.py",
+            "param_functions.py",
+            "_compat/shared.py",
+            "dependencies/utils.py",
+            "_compat/__init__.py",
+            "__init__.py",
+            "routing.py",
+            "exceptions.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.00822804700146662,
+          "category": "data",
+          "baseline_tokens": 1192,
+          "context_tokens": 1276,
+          "savings_pct": -0.07046979865771807,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "jsonable_encoder converting pydantic models to JSON compatible data",
+          "expected_files": [
+            "encoders.py"
+          ],
+          "ranked_files": [
+            "encoders.py",
+            "openapi/models.py",
+            "routing.py",
+            "openapi/utils.py",
+            "sse.py",
+            "openapi/docs.py",
+            "param_functions.py",
+            "dependencies/utils.py",
+            "params.py",
+            ".agents/skills/fastapi/references/streaming.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.004820081994694192,
+          "category": "encoding",
+          "baseline_tokens": 2541,
+          "context_tokens": 1320,
+          "savings_pct": 0.48051948051948057,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "TestClient for testing FastAPI applications",
+          "expected_files": [
+            "testclient.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "testclient.py",
+            "routing.py",
+            "security/api_key.py",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "openapi/docs.py",
+            "__init__.py",
+            "dependencies/utils.py",
+            "security/oauth2.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.005816915996547323,
+          "category": "testing",
+          "baseline_tokens": 15,
+          "context_tokens": 1223,
+          "savings_pct": -80.53333333333333,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "run_in_threadpool for blocking code in async endpoints",
+          "expected_files": [
+            "concurrency.py"
+          ],
+          "ranked_files": [
+            "concurrency.py",
+            "routing.py",
+            ".agents/skills/fastapi/references/other-tools.md",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "datastructures.py",
+            "exceptions.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "applications.py",
+            ".agents/skills/fastapi/references/streaming.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.002722170000197366,
+          "category": "concurrency",
+          "baseline_tokens": 341,
+          "context_tokens": 1230,
+          "savings_pct": -2.6070381231671553,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "serving static files with StaticFiles mount",
+          "expected_files": [
+            "staticfiles.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "openapi/docs.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "sse.py"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.003537150005286094,
+          "category": "static",
+          "baseline_tokens": 15,
+          "context_tokens": 1213,
+          "savings_pct": -79.86666666666666,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "Jinja2Templates rendering HTML templates",
+          "expected_files": [
+            "templating.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "openapi/docs.py",
+            "templating.py",
+            "responses.py",
+            "_compat/v2.py",
+            "routing.py",
+            "openapi/models.py",
+            "sse.py",
+            "security/api_key.py",
+            "exceptions.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.0025876299987430684,
+          "category": "templates",
+          "baseline_tokens": 20,
+          "context_tokens": 1222,
+          "savings_pct": -60.1,
+          "baseline_bucket": "<1k"
+        }
+      ]
+    },
+    "2000": {
+      "total_questions": 20,
+      "mean_precision_at_10": 0.09,
+      "mean_precision_ceiling_at_10": 0.1,
+      "mean_precision_at_10_normalized": 0.9,
+      "mean_precision_over_returned": 0.09464285714285715,
+      "mean_recall_at_10": 0.9,
+      "mean_reciprocal_rank": 0.5458333333333333,
+      "p50_latency_seconds": 0.0040133825059456285,
+      "p95_latency_seconds": 0.006227803998626769,
+      "index_seconds": 0.0021684910025214776,
+      "mean_baseline_tokens": 4922.8,
+      "mean_context_tokens": 2056.1,
+      "mean_savings_pct": -32.81663058422723,
+      "aggregate_savings_pct": 0.5823311936296417,
+      "buckets": {
+        "<1k": {
+          "count": 10,
+          "mean_baseline_tokens": 212.5,
+          "mean_context_tokens": 2070.7,
+          "aggregate_savings_pct": -8.744470588235293,
+          "mean_recall_at_10": 0.8
+        },
+        "1k-4k": {
+          "count": 4,
+          "mean_baseline_tokens": 2085.25,
+          "mean_context_tokens": 2031.0,
+          "aggregate_savings_pct": 0.026016065219997553,
+          "mean_recall_at_10": 1.0
+        },
+        ">4k": {
+          "count": 6,
+          "mean_baseline_tokens": 14665.0,
+          "mean_context_tokens": 2048.5,
+          "aggregate_savings_pct": 0.8603136720081828,
+          "mean_recall_at_10": 1.0
+        }
+      },
+      "questions": [
+        {
+          "query": "APIRouter decorator for GET routes and include_router with prefix",
+          "expected_files": [
+            "routing.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "openapi/utils.py",
+            "_compat/v2.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            ".agents/skills/fastapi/SKILL.md",
+            ".agents/skills/fastapi/references/responses.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.14285714285714285,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.006227803998626769,
+          "category": "routing",
+          "baseline_tokens": 49172,
+          "context_tokens": 2033,
+          "savings_pct": 0.9586553323029366,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "dependency injection Depends and solving sub-dependencies per request",
+          "expected_files": [
+            "dependencies/utils.py"
+          ],
+          "ranked_files": [
+            "params.py",
+            "param_functions.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "dependencies/utils.py",
+            "routing.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            ".agents/skills/fastapi/SKILL.md",
+            "openapi/docs.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.125,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.25,
+          "latency_seconds": 0.0033240170014323667,
+          "category": "dependencies",
+          "baseline_tokens": 8268,
+          "context_tokens": 2008,
+          "savings_pct": 0.7571359458151911,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "OAuth2 password bearer flow with tokenUrl",
+          "expected_files": [
+            "security/oauth2.py"
+          ],
+          "ranked_files": [
+            "security/oauth2.py",
+            "openapi/models.py",
+            "openapi/docs.py",
+            "dependencies/utils.py",
+            "security/http.py",
+            "security/api_key.py",
+            "applications.py",
+            "security/open_id_connect_url.py",
+            "routing.py",
+            "security/__init__.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.004827242999454029,
+          "category": "auth",
+          "baseline_tokens": 4758,
+          "context_tokens": 2103,
+          "savings_pct": 0.5580075662042876,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "API key authentication from header query parameter or cookie",
+          "expected_files": [
+            "security/api_key.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "security/api_key.py",
+            "openapi/models.py",
+            "applications.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "__init__.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "security/open_id_connect_url.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.00402301900612656,
+          "category": "auth",
+          "baseline_tokens": 1962,
+          "context_tokens": 2034,
+          "savings_pct": -0.03669724770642202,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "HTTP bearer and HTTP basic security schemes",
+          "expected_files": [
+            "security/http.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "security/http.py",
+            "security/oauth2.py",
+            "security/base.py",
+            "dependencies/models.py",
+            "openapi/utils.py",
+            "security/api_key.py",
+            "security/open_id_connect_url.py",
+            "security/utils.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.003116662999673281,
+          "category": "auth",
+          "baseline_tokens": 2646,
+          "context_tokens": 2012,
+          "savings_pct": 0.23960695389266817,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "OpenAPI schema generation for paths and components",
+          "expected_files": [
+            "openapi/utils.py"
+          ],
+          "ranked_files": [
+            "openapi/models.py",
+            "applications.py",
+            "openapi/utils.py",
+            "routing.py",
+            "_compat/v2.py",
+            "security/open_id_connect_url.py",
+            "security/api_key.py",
+            "openapi/docs.py",
+            "security/__init__.py",
+            "security/http.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.003847523003059905,
+          "category": "openapi",
+          "baseline_tokens": 5641,
+          "context_tokens": 2048,
+          "savings_pct": 0.6369438042900195,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Query Path Header Cookie and Body parameter classes",
+          "expected_files": [
+            "params.py"
+          ],
+          "ranked_files": [
+            "param_functions.py",
+            "params.py",
+            "openapi/models.py",
+            ".agents/skills/fastapi/references/path-operations.md",
+            "security/api_key.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "__init__.py",
+            "dependencies/models.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0037836900010006502,
+          "category": "params",
+          "baseline_tokens": 5705,
+          "context_tokens": 2057,
+          "savings_pct": 0.6394390885188431,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "Query() Body() and Form() helper functions for endpoint signatures",
+          "expected_files": [
+            "param_functions.py"
+          ],
+          "ranked_files": [
+            "params.py",
+            "param_functions.py",
+            "routing.py",
+            "dependencies/utils.py",
+            "security/api_key.py",
+            "exceptions.py",
+            "security/oauth2.py",
+            "__init__.py",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.003918141999747604,
+          "category": "params",
+          "baseline_tokens": 14446,
+          "context_tokens": 2042,
+          "savings_pct": 0.8586459919700955,
+          "baseline_bucket": ">4k"
+        },
+        {
+          "query": "JSONResponse FileResponse and StreamingResponse response classes",
+          "expected_files": [
+            "responses.py"
+          ],
+          "ranked_files": [
+            "sse.py",
+            "routing.py",
+            "responses.py",
+            ".agents/skills/fastapi/references/streaming.md",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "applications.py",
+            "_compat/v2.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.125,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.0040974579969770275,
+          "category": "responses",
+          "baseline_tokens": 996,
+          "context_tokens": 2146,
+          "savings_pct": -1.1546184738955825,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "BackgroundTasks running after the response is sent",
+          "expected_files": [
+            "background.py"
+          ],
+          "ranked_files": [
+            "background.py",
+            "sse.py",
+            "routing.py",
+            "dependencies/utils.py",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "param_functions.py",
+            "__init__.py",
+            "dependencies/models.py",
+            "applications.py",
+            ".agents/skills/fastapi/SKILL.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.005319504998624325,
+          "category": "background",
+          "baseline_tokens": 384,
+          "context_tokens": 2052,
+          "savings_pct": -4.34375,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "CORS middleware allowing cross-origin requests",
+          "expected_files": [
+            "middleware/cors.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "middleware/cors.py",
+            "middleware/asyncexitstack.py",
+            "middleware/__init__.py",
+            "middleware/trustedhost.py",
+            "middleware/httpsredirect.py",
+            "middleware/gzip.py",
+            "middleware/wsgi.py",
+            "routing.py",
+            "_compat/shared.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.004635378994862549,
+          "category": "middleware",
+          "baseline_tokens": 18,
+          "context_tokens": 2170,
+          "savings_pct": -119.55555555555556,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "GZip middleware compressing large responses",
+          "expected_files": [
+            "middleware/gzip.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "middleware/gzip.py",
+            ".agents/skills/fastapi/references/responses.md",
+            "responses.py",
+            "middleware/asyncexitstack.py",
+            "middleware/__init__.py",
+            "middleware/trustedhost.py",
+            "middleware/httpsredirect.py",
+            "middleware/cors.py",
+            "middleware/wsgi.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0046399269995163195,
+          "category": "middleware",
+          "baseline_tokens": 18,
+          "context_tokens": 2107,
+          "savings_pct": -116.05555555555556,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "WebSocket routing and accepting websocket connections",
+          "expected_files": [
+            "websockets.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "exceptions.py",
+            "security/open_id_connect_url.py",
+            "security/__init__.py",
+            "dependencies/models.py",
+            "concurrency.py",
+            "dependencies/utils.py",
+            "security/http.py",
+            "sse.py"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.003392743004951626,
+          "category": "websockets",
+          "baseline_tokens": 52,
+          "context_tokens": 2022,
+          "savings_pct": -37.88461538461539,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "exception handlers for HTTPException and validation errors",
+          "expected_files": [
+            "exception_handlers.py"
+          ],
+          "ranked_files": [
+            "exceptions.py",
+            "exception_handlers.py",
+            "applications.py",
+            "dependencies/utils.py",
+            "routing.py",
+            "_compat/v2.py",
+            "_compat/__init__.py",
+            "security/open_id_connect_url.py",
+            "security/http.py",
+            "security/api_key.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.004180552998150233,
+          "category": "errors",
+          "baseline_tokens": 266,
+          "context_tokens": 2072,
+          "savings_pct": -6.7894736842105265,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "UploadFile handling multipart file uploads",
+          "expected_files": [
+            "datastructures.py"
+          ],
+          "ranked_files": [
+            "datastructures.py",
+            "params.py",
+            "param_functions.py",
+            "_compat/shared.py",
+            "dependencies/utils.py",
+            "_compat/__init__.py",
+            "__init__.py",
+            "routing.py",
+            "exceptions.py",
+            ".agents/skills/fastapi/references/dependencies.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.004003746005764697,
+          "category": "data",
+          "baseline_tokens": 1192,
+          "context_tokens": 2069,
+          "savings_pct": -0.7357382550335569,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "jsonable_encoder converting pydantic models to JSON compatible data",
+          "expected_files": [
+            "encoders.py"
+          ],
+          "ranked_files": [
+            "encoders.py",
+            "openapi/models.py",
+            "routing.py",
+            "openapi/utils.py",
+            "sse.py",
+            "openapi/docs.py",
+            "param_functions.py",
+            "dependencies/utils.py",
+            "params.py",
+            ".agents/skills/fastapi/references/streaming.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.005386138996982481,
+          "category": "encoding",
+          "baseline_tokens": 2541,
+          "context_tokens": 2009,
+          "savings_pct": 0.209366391184573,
+          "baseline_bucket": "1k-4k"
+        },
+        {
+          "query": "TestClient for testing FastAPI applications",
+          "expected_files": [
+            "testclient.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "testclient.py",
+            "routing.py",
+            "security/api_key.py",
+            "openapi/utils.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "openapi/docs.py",
+            "__init__.py",
+            "dependencies/utils.py",
+            "security/oauth2.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.5,
+          "latency_seconds": 0.0057823660026770085,
+          "category": "testing",
+          "baseline_tokens": 15,
+          "context_tokens": 2022,
+          "savings_pct": -133.8,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "run_in_threadpool for blocking code in async endpoints",
+          "expected_files": [
+            "concurrency.py"
+          ],
+          "ranked_files": [
+            "concurrency.py",
+            "routing.py",
+            ".agents/skills/fastapi/references/other-tools.md",
+            ".agents/skills/fastapi/references/dependencies.md",
+            "datastructures.py",
+            "exceptions.py",
+            "openapi/utils.py",
+            "dependencies/utils.py",
+            "applications.py",
+            ".agents/skills/fastapi/references/streaming.md"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 1.0,
+          "latency_seconds": 0.003119980996416416,
+          "category": "concurrency",
+          "baseline_tokens": 341,
+          "context_tokens": 2035,
+          "savings_pct": -4.967741935483871,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "serving static files with StaticFiles mount",
+          "expected_files": [
+            "staticfiles.py"
+          ],
+          "ranked_files": [
+            "routing.py",
+            "applications.py",
+            "openapi/docs.py",
+            ".agents/skills/fastapi/SKILL.md",
+            "sse.py"
+          ],
+          "precision_at_10": 0.0,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 0.0,
+          "precision_over_returned": 0.0,
+          "recall_at_10": 0.0,
+          "reciprocal_rank": 0.0,
+          "latency_seconds": 0.0027251930005149916,
+          "category": "static",
+          "baseline_tokens": 15,
+          "context_tokens": 2029,
+          "savings_pct": -134.26666666666668,
+          "baseline_bucket": "<1k"
+        },
+        {
+          "query": "Jinja2Templates rendering HTML templates",
+          "expected_files": [
+            "templating.py"
+          ],
+          "ranked_files": [
+            "applications.py",
+            "openapi/docs.py",
+            "templating.py",
+            "responses.py",
+            "_compat/v2.py",
+            "routing.py",
+            "openapi/models.py",
+            "sse.py",
+            "security/api_key.py",
+            "exceptions.py"
+          ],
+          "precision_at_10": 0.1,
+          "precision_ceiling_at_10": 0.1,
+          "precision_at_10_normalized": 1.0,
+          "precision_over_returned": 0.1,
+          "recall_at_10": 1.0,
+          "reciprocal_rank": 0.3333333333333333,
+          "latency_seconds": 0.0031533190049231052,
+          "category": "templates",
+          "baseline_tokens": 20,
+          "context_tokens": 2052,
+          "savings_pct": -101.6,
+          "baseline_bucket": "<1k"
+        }
+      ]
+    }
+  }
+}
