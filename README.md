@@ -348,7 +348,7 @@ Most local code-search tools tag functions and classes as text chunks — `FUNCT
 - **Symbol identity, not a text span.** Every function, class, and interface member gets a `stable_key` — the same symbol keeps the same identity across edits, renames included, so incremental reindexing can tell "this changed" from "this is new."
 - **Typed relationships, not just imports.** `CALLS` / `EXTENDS` / `IMPLEMENTS` / `HAS_TYPE` / `RETURNS` edges, including cross-file resolution through `export * from` re-exports and member paths like `auth.client.createAuth`.
 - **Hash + Merkle incremental**, not a snapshot rewrite — a 2,000-file edit reindexes in under 200ms because only what changed gets touched.
-- **RRF fusion with graph expansion and a learned reranker**, not similarity search alone.
+- **RRF fusion with graph expansion and a tuned reranker** (grid-searched weights on the fixture, not fitted on agent runs — see `ROADMAP.md` P5-3 honesty note), not similarity search alone.
 
 The moat is symbol, not chunk — graph before vector, measured against a fixed fixture with a stated baseline, not a whole-repo estimate. See `## Benchmark` above for what that produces.
 

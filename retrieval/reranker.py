@@ -20,7 +20,8 @@ FTS_WEIGHT = 0.1
 VECTOR_WEIGHT = 0.1
 TEST_EXAMPLE_WEIGHT = -0.4
 
-# Learned override: if learned_weights.json exists (trained on evaluation/tasks.json paired runs),
+# Tuned-weights override: if learned_weights.json exists (grid search on the
+# fixture, see its "_method" field — not fitted on paired agent runs),
 # load and use those instead of heuristic. Falls back to heuristic if not present.
 import json as _json
 from pathlib import Path as _Path
