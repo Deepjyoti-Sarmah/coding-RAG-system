@@ -217,6 +217,112 @@ class TestExternalScorer(unittest.TestCase):
             self.assertTrue(hasattr(report, "mean_recall_at_10"))
             self.assertTrue(hasattr(report, "mean_savings_pct"))
 
+    def test_multi_budget_monotonic(self):
+        # Across budgets 800/1200/2000, context_tokens must be
+        # non-decreasing and aggregate_savings_pct non-increasing. A budget
+        # flag that silently isn't applied would show identical contexts.
+        from evaluation.external import ExternalQuestion, run_external_evaluation
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            # Enough matchable symbols that every budget binds: ~150
+            # functions, all containing the query term.
+            body = "\n".join(
+                f'def fn_{i}():\n    """Function number {i} returns its index."""\n    return {i}\n'
+                for i in range(150)
+            )
+            (repo / "big.py").write_text(body, encoding="utf-8")
+
+            q = ExternalQuestion(query="return", expected_files=frozenset({"big.py"}))
+            contexts = []
+            aggregates = []
+            for budget in (800, 1200, 2000):
+                report = run_external_evaluation(
+                    repo, [q], provider=None, top_k=30, file_k=10, token_budget=budget
+                )
+                contexts.append(report.mean_context_tokens)
+                aggregates.append(report.aggregate_savings_pct)
+
+            self.assertLessEqual(contexts[0], contexts[1])
+            self.assertLessEqual(contexts[1], contexts[2])
+            # Budgets must actually bind — otherwise this test is vacuous.
+            self.assertLess(contexts[0], contexts[2])
+            self.assertGreaterEqual(aggregates[0], aggregates[1])
+            self.assertGreaterEqual(aggregates[1], aggregates[2])
+            self.assertGreater(aggregates[0], aggregates[2])
+
+    def test_bucket_assignment_boundaries(self):
+        # Pre-registered buckets: <1k, 1k-4k, >4k by baseline_tokens.
+        from benchmarks.run_external import _bucket_aggregates, baseline_bucket
+
+        self.assertEqual(baseline_bucket(0), "<1k")
+        self.assertEqual(baseline_bucket(999), "<1k")
+        self.assertEqual(baseline_bucket(1000), "1k-4k")
+        self.assertEqual(baseline_bucket(4000), "1k-4k")
+        self.assertEqual(baseline_bucket(4001), ">4k")
+
+        # A bucket with no questions reports null, not 0.0 (0.0 would read
+        # as "no savings" rather than "no data").
+        questions = [
+            {"baseline_tokens": 500, "context_tokens": 800, "recall_at_10": 1.0,
+             "baseline_bucket": "<1k"},
+            {"baseline_tokens": 3000, "context_tokens": 800, "recall_at_10": 1.0,
+             "baseline_bucket": "1k-4k"},
+        ]
+        buckets = _bucket_aggregates(questions)
+        self.assertEqual(buckets["<1k"]["count"], 1)
+        self.assertEqual(buckets["1k-4k"]["count"], 1)
+        self.assertEqual(buckets[">4k"]["count"], 0)
+        self.assertIsNone(buckets[">4k"]["aggregate_savings_pct"])
+        self.assertIsNone(buckets[">4k"]["mean_baseline_tokens"])
+        self.assertIsNone(buckets[">4k"]["mean_context_tokens"])
+        self.assertIsNone(buckets[">4k"]["mean_recall_at_10"])
+        # Populated bucket is token-volume-weighted like the top-level number.
+        self.assertAlmostEqual(
+            buckets["1k-4k"]["aggregate_savings_pct"], 1.0 - 800 / 3000, delta=1e-9
+        )
+
+    def test_recompute_strict_equality(self):
+        # _recompute_file must never quietly restate a stored metric:
+        # tampered precision/recall/RR raises; faithful files pass and gain
+        # buckets + aggregate backfill.
+        from benchmarks.run_external import _recompute_file
+
+        def _report(precision=0.1):
+            return {
+                "mean_baseline_tokens": 3000,
+                "mean_context_tokens": 800,
+                "questions": [
+                    {
+                        "query": "q",
+                        "expected_files": ["a.py"],
+                        "ranked_files": ["a.py", "b.py"],
+                        "precision_at_10": precision,
+                        "recall_at_10": 1.0,
+                        "reciprocal_rank": 1.0,
+                        "baseline_tokens": 3000,
+                        "context_tokens": 800,
+                    }
+                ],
+            }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            faithful = Path(tmp) / "faithful.json"
+            faithful.write_text(json.dumps(_report()), encoding="utf-8")
+            _recompute_file(faithful)  # must not raise
+            data = json.loads(faithful.read_text(encoding="utf-8"))
+            self.assertEqual(data["questions"][0]["baseline_bucket"], "1k-4k")
+            self.assertAlmostEqual(
+                data["aggregate_savings_pct"], 1.0 - 800 / 3000, delta=1e-9
+            )
+            self.assertEqual(data["buckets"]["1k-4k"]["count"], 1)
+
+            tampered = Path(tmp) / "tampered.json"
+            tampered.write_text(json.dumps(_report(precision=0.5)), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                _recompute_file(tampered)
+
     def test_aggregate_savings_is_token_weighted_not_mean_of_ratios(self):
         # A handful of tiny files (context-pack overhead exceeds the file's
         # own size) alongside one large file should not let mean_savings_pct
