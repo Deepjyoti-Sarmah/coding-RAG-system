@@ -1,94 +1,121 @@
 @import "tailwindcss";
 
+/* Design system: "Ultramarine Classical Modernism"
+   Tokens transcribed from stitch_rag_project_website_redesign/DESIGN.md.
+   Two rules carry the whole system: an unyielding Klein-ultramarine canvas,
+   and absolute zero-radius geometry bounded by exact 1px hairlines. */
 @theme {
-  /* One display, one mono — like Hermes (serif headline + mono body). No Inter body. */
-  --font-display: "Bodoni Moda", ui-serif, Georgia, serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-sans: "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: "Playfair Display", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "JetBrains Mono", ui-monospace, monospace;
 
-  --color-blue: #1c1cf0;
-  --color-blue-deep: #12129e;
-  --color-ink: #0a0a0c;
-  --color-panel: #131316;
-  --color-paper: #f6f5f0;
-  --color-line-on-blue: rgba(255, 255, 255, 0.22);
-  --color-line-on-ink: rgba(255, 255, 255, 0.12);
+  /* Canvas: blue is the ambient environment, not an accent. */
+  --color-ultra: #0000f2;
+  --color-ultra-deep: #0000a3;
+  --color-ultra-navy: #00008a;
+  --color-paper: #ffffff;
+
+  /* White opacity tiers — the only "greys" the system allows on blue. */
+  --color-line: rgba(255, 255, 255, 0.25);
+  --color-line-strong: rgba(255, 255, 255, 0.45);
+  --color-dim: rgba(255, 255, 255, 0.72);
+  --color-dimmer: rgba(255, 255, 255, 0.45);
 }
 
 html {
   scroll-behavior: smooth;
+  background: var(--color-ultra);
+}
+
+/* The nav is sticky and 56px tall, so an anchor jump would otherwise park the
+   section heading underneath it. */
+[id] {
+  scroll-margin-top: 4.5rem;
 }
 
 body {
-  background: var(--color-paper);
-  color: var(--color-ink);
+  background: var(--color-ultra);
+  color: #ffffff;
   font-family: var(--font-mono);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-variant-ligatures: common-ligatures;
 }
 
-/* Display headings: Hermes uses high-contrast hairline serif, never bold */
+/* Display serif: high-contrast humanist, never bold-by-default. */
 .font-display {
   font-optical-sizing: auto;
-  font-variant-ligatures: discretionary-ligatures;
   font-feature-settings: "onum" 1;
 }
 
 ::selection {
-  background: var(--color-blue);
-  color: white;
+  background: #ffffff;
+  color: var(--color-ultra);
 }
 
 .text-balance {
   text-wrap: balance;
 }
 
+/* Index tag: "#01 PARSE" — uppercase, wide tracking, technical cataloguing. */
+.tag-index {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 /* Engraved radial burst.
    The mask is a DONUT, not a disc: a conic gradient's wedges converge to
    zero width at the centre, so a disc mask renders the middle as a solid
-   blown-out core (it reads as static, and anything placed over it is
-   unreadable). Punching the centre out leaves clean, individually
-   legible rays and gives content a quiet field to sit in — which is how
-   the reference art actually behaves. */
+   blown-out core (unreadable behind content). Punching the centre out
+   leaves clean, individually legible rays and gives content a quiet field. */
 .line-burst {
   background-image: repeating-conic-gradient(
     from var(--burst-from, 0deg),
-    var(--burst-color, rgba(255, 255, 255, 0.9)) 0deg 0.5deg,
-    transparent 0.5deg var(--burst-period, 5.4deg)
+    var(--burst-color, rgba(255, 255, 255, 0.55)) 0deg 0.4deg,
+    transparent 0.4deg var(--burst-period, 6deg)
   );
   -webkit-mask-image: radial-gradient(
     circle at center,
     transparent 0%,
-    transparent var(--burst-hole, 30%),
-    black calc(var(--burst-hole, 30%) + 12%),
-    transparent var(--burst-edge, 74%)
+    transparent var(--burst-hole, 26%),
+    black calc(var(--burst-hole, 26%) + 14%),
+    transparent var(--burst-edge, 76%)
   );
   mask-image: radial-gradient(
     circle at center,
     transparent 0%,
-    transparent var(--burst-hole, 30%),
-    black calc(var(--burst-hole, 30%) + 12%),
-    transparent var(--burst-edge, 74%)
+    transparent var(--burst-hole, 26%),
+    black calc(var(--burst-hole, 26%) + 14%),
+    transparent var(--burst-edge, 76%)
   );
 }
 
-/* halftone + grain helpers — Hermes uses heavy duotone engraving texture */
-.halftone {
-  background-image: radial-gradient(circle, rgba(255,255,255,0.95) 1px, transparent 1.2px);
-  background-size: 6px 6px;
-}
-.engrave-grain {
+/* Blueprint grid — drafting-table ground for diagram windows. */
+.engraved-grid {
+  background-size: 20px 20px;
   background-image:
-    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08) 0%, transparent 55%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 3px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.09) 1px, transparent 1px);
 }
 
-@keyframes blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
+.engraved-grid-blue {
+  background-size: 20px 20px;
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 242, 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 242, 0.09) 1px, transparent 1px);
 }
-.caret {
-  animation: blink 1s steps(1) infinite;
+
+/* Connected-perimeter card matrix: borders abut on a 1px gutter so the grid
+   reads as one etched plate rather than detached floating cards. */
+.hairline-matrix {
+  gap: 1px;
+  background: var(--color-line);
+}
+
+.hairline-matrix-blue {
+  gap: 1px;
+  background: rgba(0, 0, 242, 0.25);
 }

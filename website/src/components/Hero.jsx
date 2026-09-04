@@ -1,164 +1,188 @@
-import { useState } from "react";
+import { INSTALL_TABS, REPO_URL } from "../data/content";
 import CopyButton from "./CopyButton";
-import { INSTALL_TABS } from "../data/content";
-
-function HeroArt() {
-  // One burst, not four. Its centre is masked out (see .line-burst in
-  // index.css), so the rays frame the graph instead of sitting on top of it.
-  return (
-    <div className="relative flex h-[420px] w-full items-center justify-center overflow-hidden sm:h-[460px] lg:h-[520px]">
-      <div
-        className="line-burst pointer-events-none absolute left-1/2 top-1/2 h-[720px] w-[720px] -translate-x-1/2 -translate-y-1/2"
-        style={{
-          "--burst-color": "rgba(255,255,255,0.8)",
-          "--burst-period": "6deg",
-          "--burst-hole": "33%",
-          "--burst-edge": "68%",
-        }}
-      />
-
-      <svg
-        viewBox="0 0 360 320"
-        className="relative h-full w-full max-w-[440px]"
-        role="img"
-        aria-label="Symbol graph: login calls createAuth, run calls login, indexed by sg into a local graph"
-      >
-        <defs>
-          <marker id="hero-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M0,0 L8,4 L0,8 Z" fill="white" />
-          </marker>
-        </defs>
-
-        {/* edges first so the node plates sit on top of them */}
-        <path d="M158 60 L 190 60" fill="none" stroke="white" strokeWidth="1.6" markerEnd="url(#hero-arrow)" />
-        <text x="174" y="52" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="7" letterSpacing="0.8" fill="white" opacity="0.85">CALLS</text>
-        <path d="M96 80 C 96 116, 140 118, 140 136" fill="none" stroke="white" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.8" />
-        <path d="M264 80 C 264 116, 220 118, 220 136" fill="none" stroke="white" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.8" />
-        <path d="M140 190 C 140 214, 96 218, 96 238" fill="none" stroke="white" strokeWidth="1.2" opacity="0.8" />
-        <path d="M220 190 C 220 214, 264 218, 264 238" fill="none" stroke="white" strokeWidth="1.2" opacity="0.8" />
-
-        {/* symbol nodes — boxes widened so the longest name has real margin */}
-        <g>
-          <rect x="30" y="42" width="128" height="38" fill="white" />
-          <text x="94" y="66" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="600" fill="#1c1cf0">login()</text>
-        </g>
-        <g>
-          <rect x="190" y="42" width="140" height="38" fill="none" stroke="white" strokeWidth="1.6" />
-          <text x="260" y="66" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="600" fill="white">createAuth()</text>
-        </g>
-        <g>
-          <rect x="30" y="238" width="128" height="38" fill="none" stroke="white" strokeWidth="1.6" />
-          <text x="94" y="262" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="600" fill="white">run()</text>
-        </g>
-        <g>
-          <rect x="190" y="238" width="140" height="38" fill="white" />
-          <text x="260" y="262" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="600" fill="#1c1cf0">logout()</text>
-        </g>
-
-        {/* the index itself, on a solid plate in the middle of the burst hole.
-            Numbers are this repo indexed by sg, not illustrative filler. */}
-        <g>
-          <rect x="108" y="136" width="144" height="54" fill="white" />
-          <text x="180" y="158" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="600" fill="#1c1cf0">sg index .</text>
-          <line x1="122" y1="166" x2="238" y2="166" stroke="#1c1cf0" strokeWidth="0.6" opacity="0.25" />
-          <text x="180" y="180" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fill="#1c1cf0" opacity="0.75">2,023 symbols · 381 files</text>
-        </g>
-
-        <rect x="110" y="6" width="140" height="20" fill="none" stroke="white" strokeWidth="1" opacity="0.5" />
-        <text x="180" y="19.5" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="7.5" letterSpacing="1.6" fill="white" opacity="0.9">SYMBOL GRAPH · MCP</text>
-      </svg>
-    </div>
-  );
-}
+import { IndexTag, Shell, Ticks } from "./ui";
+import { useState } from "react";
 
 export default function Hero() {
   const [tab, setTab] = useState(INSTALL_TABS[0].key);
-  const active = INSTALL_TABS.find((t) => t.key === tab);
-  const command = active.lines.join(" && ");
+  const active = INSTALL_TABS.find((t) => t.key === tab) ?? INSTALL_TABS[0];
+  const installText = active.lines.join("\n");
 
   return (
-    <section id="top" className="relative overflow-hidden bg-blue px-6 pb-6 pt-6 sm:pb-8 sm:pt-8">
-      <div className="relative mx-auto max-w-[1280px]">
-        <div className="grid items-center gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-4">
-          {/* left — type: display headline light, mono label/body like Hermes */}
-          <div className="min-w-0">
-            <p className="font-mono text-[10px] font-normal uppercase tracking-[0.22em] text-white">
-              Open source · MIT license
-            </p>
+    <section id="top" className="relative overflow-hidden border-b border-white/25">
+      {/* Engraved burst, offset right so it frames the diagram rather than
+          sitting behind the headline where it would fight the text. */}
+      <div
+        className="line-burst pointer-events-none absolute -right-40 -top-60 hidden h-[900px] w-[900px] opacity-45 lg:block"
+        style={{ "--burst-period": "5deg", "--burst-hole": "22%", "--burst-edge": "70%" }}
+        aria-hidden="true"
+      />
 
-            <h1 className="mt-3 max-w-[12ch] font-display text-[44px] font-[400] leading-[0.85] tracking-[-0.035em] text-white sm:text-[56px] lg:text-[64px]">
-              A SYMBOL
-              <br />
-              GRAPH FOR
-              <br />
-              YOUR
-              <br />
-              CODEBASE
-            </h1>
+      <Shell className="relative grid gap-14 pt-16 pb-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pt-24 lg:pb-28">
+        <div className="flex flex-col justify-center">
+          <IndexTag>Open source · MIT · zero cloud egress</IndexTag>
 
-            <p className="mt-5 max-w-[52ch] font-mono text-[13px] font-normal leading-[1.75] tracking-[0.01em] text-white/90">
-              symbolgraph parses your repo with tree-sitter, resolves every function
-              and class into a real graph, and serves it to your agent over
-              MCP — not text chunks. Entirely on your machine.
-            </p>
+          <h1 className="font-display mt-6 text-[clamp(2.5rem,4.6vw,4.25rem)] leading-[1.05] tracking-[-0.03em] text-white">
+            The symbol graph
+            <span className="block italic text-white/90">for your codebase</span>
+          </h1>
 
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <a
-                href="#install"
-                className="inline-flex items-center gap-2 bg-white px-5 py-2.5 font-mono text-[11px] font-normal uppercase tracking-[0.12em] text-blue transition hover:bg-white/90"
-              >
-                <span className="text-[13px]">⬢</span> Install via terminal
-              </a>
-              <a
-                href="#architecture"
-                className="hidden font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white underline decoration-white/40 underline-offset-4 hover:text-white sm:inline"
-              >
-                See how it works →
-              </a>
-            </div>
+          <p className="mt-7 max-w-xl text-[13px] leading-[1.7] text-white/72">
+            symbolgraph parses a repository with tree-sitter, resolves every
+            function, class and call into a local SQLite graph, and serves exact
+            AST-aware context to your coding agent over MCP. Nothing is uploaded.
+          </p>
 
-            <div id="install" className="mt-6 max-w-[520px] scroll-mt-20">
-              <p className="mb-2 font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-white">Install via terminal</p>
-              <div className="flex gap-1 font-mono text-[11px]">
+          {/* Install block */}
+          <div className="mt-9 max-w-xl border border-white/35 bg-ultra-deep">
+            <div className="flex items-center justify-between border-b border-white/25">
+              <div className="flex">
                 {INSTALL_TABS.map((t) => (
                   <button
                     key={t.key}
                     type="button"
                     onClick={() => setTab(t.key)}
-                    className={`px-3 py-1.5 font-mono text-[10px] font-normal uppercase tracking-[0.14em] transition ${
-                      tab === t.key ? "bg-white text-blue" : "bg-white/12 text-white hover:bg-white/18 hover:text-white"
+                    className={`tag-index border-r border-white/25 px-4 py-2.5 transition ${
+                      t.key === tab ? "bg-white text-ultra" : "text-white/60 hover:text-white"
                     }`}
                   >
                     {t.label}
                   </button>
                 ))}
               </div>
-              <div className="bg-white">
-                {active.lines.map((line, i) => (
-                  <div
-                    key={line}
-                    className={`flex items-center justify-between gap-4 px-3 py-2.5 ${i > 0 ? "border-t border-blue/15" : ""}`}
-                  >
-                    <code className="min-w-0 flex-1 whitespace-pre-wrap break-all font-mono text-[12px] font-normal leading-none tracking-[-0.01em] text-blue">
-                      <span className="select-none text-blue/45">$ </span>
-                      {line}
-                    </code>
-                    {i === active.lines.length - 1 && <CopyButton text={command} className="text-blue/60 hover:bg-blue/10 hover:text-blue" />}
+              <span className="tag-index px-4 text-white/40">install</span>
+            </div>
+
+            <div className="flex items-start justify-between gap-3 px-4 py-3.5">
+              {/* The clone URL is longer than the column, so wrap it rather
+                  than clipping — a truncated command is not a usable one. */}
+              <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[12px] leading-[1.75] text-white/90">
+                {active.lines.map((line) => (
+                  <div key={line}>
+                    <span className="select-none text-white/40">$ </span>
+                    {line}
                   </div>
                 ))}
-              </div>
-              <p className="mt-1.5 font-mono text-[10px] font-normal tracking-[0.04em] text-white/70">
-                PyPI pending v0.1.0 tag — clone &amp; <span className="text-white">uv tool install .</span> today.
-              </p>
+              </pre>
+              <CopyButton text={installText} className="text-white/50 hover:bg-white/10 hover:text-white" />
             </div>
           </div>
 
-          {/* right — Hermes-style engraving, no cropping on desktop */}
-          <div className="min-w-0 lg:pl-2">
-            <HeroArt />
+          <p className="tag-index mt-3 text-white/40">
+            Not on PyPI yet — v0.1.0 publishes from a checkout
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="tag-index border border-white bg-white px-5 py-3 text-ultra transition hover:bg-ultra hover:text-white"
+            >
+              Read the source
+            </a>
+            <a
+              href="#pipeline"
+              className="tag-index border border-white/40 px-5 py-3 text-white transition hover:border-white hover:bg-white/10"
+            >
+              How it works
+            </a>
           </div>
         </div>
-      </div>
+
+        <HeroGraph />
+      </Shell>
     </section>
+  );
+}
+
+/* A real slice of this project's own test fixture (tests/fixtures/python_repo),
+   verified against build_graph() output — not an invented diagram. The edges
+   shown are the ones the extractor actually resolves:
+     handle_request  CALLS    Authenticator
+     handle_request  CALLS    create_session
+     AdminAuthenticator EXTENDS Authenticator */
+function HeroGraph() {
+  return (
+    <div className="relative flex items-center">
+      <div className="relative w-full border border-white/35 bg-ultra-deep/70">
+        <Ticks />
+
+        <div className="flex items-center justify-between border-b border-white/25 px-4 py-2.5">
+          <span className="tag-index text-white">graph resolver</span>
+          <span className="tag-index text-white/45">.sg/index.sqlite</span>
+        </div>
+
+        <div className="engraved-grid p-5">
+          <svg viewBox="0 0 380 260" className="h-auto w-full" role="img" aria-label="Symbol graph: handle_request calls Authenticator and create_session; AdminAuthenticator extends Authenticator">
+            <defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="rgba(255,255,255,0.75)" />
+              </marker>
+            </defs>
+
+            {/* Edges first so nodes paint over their endpoints.
+                fill="none" is mandatory: an open curved path without it is
+                filled black by default and renders as a blob.
+                Each edge must land on the node it actually names — an edge
+                that stops short reads as a relationship that isn't there. */}
+            <path d="M98 67 C 152 67, 168 104, 210 108" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" markerEnd="url(#ar)" />
+            <path d="M57 84 L57 180" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" markerEnd="url(#ar)" />
+            <path d="M264 156 L264 130" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" markerEnd="url(#ar)" />
+
+            <text x="140" y="80" className="fill-white/50" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">CALLS</text>
+            <text x="66" y="138" className="fill-white/50" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">CALLS</text>
+            <text x="272" y="147" className="fill-white/50" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">EXTENDS</text>
+
+            <GraphNode x={16} y={50} w={82} label="handle_request" kind="function" file="api.py" />
+            <GraphNode x={214} y={92} w={96} label="Authenticator" kind="class" file="auth.py" solid />
+            <GraphNode x={208} y={158} w={112} label="AdminAuthenticator" kind="class" file="admin.py" />
+            <GraphNode x={16} y={184} w={92} label="create_session" kind="function" file="auth.py" />
+          </svg>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-white/25 px-4 py-2.5">
+          <span className="tag-index text-white/45">2,023 symbols · 381 files</span>
+          <span className="tag-index text-white/45">35,795 refs resolved</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GraphNode({ x, y, w, label, kind, file, solid = false }) {
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={34}
+        fill={solid ? "#ffffff" : "rgba(0,0,138,0.85)"}
+        stroke={solid ? "#ffffff" : "rgba(255,255,255,0.45)"}
+        strokeWidth="1"
+      />
+      <text
+        x={x + w / 2}
+        y={y + 14}
+        textAnchor="middle"
+        fontSize="8.5"
+        fontFamily="JetBrains Mono"
+        fill={solid ? "#0000f2" : "#ffffff"}
+      >
+        {label}
+      </text>
+      <text
+        x={x + w / 2}
+        y={y + 25}
+        textAnchor="middle"
+        fontSize="6.5"
+        fontFamily="JetBrains Mono"
+        letterSpacing="0.6"
+        fill={solid ? "rgba(0,0,242,0.6)" : "rgba(255,255,255,0.5)"}
+      >
+        {kind} · {file}
+      </text>
+    </g>
   );
 }

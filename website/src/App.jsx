@@ -1,33 +1,29 @@
 import Nav from "./components/Nav";
 import Hero from "./components/Hero";
+import Quickstart from "./components/Quickstart";
+import Pipeline from "./components/Pipeline";
+import Thesis from "./components/Thesis";
 import TerminalShowcase from "./components/TerminalShowcase";
-import PlatformCards from "./components/PlatformCards";
-import FeatureGrid from "./components/FeatureGrid";
-import DarkPanels from "./components/DarkPanels";
-import StatsBar from "./components/StatsBar";
 import Benchmark from "./components/Benchmark";
+import McpTools from "./components/McpTools";
 import Languages from "./components/Languages";
-import CliReference from "./components/CliReference";
 import BigWordmark from "./components/BigWordmark";
-import CTA from "./components/CTA";
 import Footer from "./components/Footer";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-paper font-sans text-ink">
+    <div className="min-h-screen bg-ultra font-sans text-white">
       <Nav />
       <main>
         <Hero />
+        <Quickstart />
+        <Pipeline />
+        <Thesis />
         <TerminalShowcase />
-        <PlatformCards />
-        <FeatureGrid />
-        <DarkPanels />
-        <StatsBar />
         <Benchmark />
+        <McpTools />
         <Languages />
-        <CliReference />
         <BigWordmark />
-        <CTA />
       </main>
       <Footer />
     </div>

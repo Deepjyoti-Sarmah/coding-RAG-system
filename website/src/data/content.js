@@ -1,14 +1,20 @@
-// Every number and command here is sourced from the symbolgraph repo's README.md,
-// ROADMAP.md, and the codebase itself — nothing here is invented copy.
+// Every number and command here is sourced from the symbolgraph repo itself —
+// re-measured, not copied forward. Last verified 2026-09-05:
+//   uv run pytest -q --cov          -> 677 passed, 80.68% branch coverage
+//   grep -c "@mcp.tool()" symbolgraph/mcp_server.py -> 15
+//   len(analysis.languages._PROFILES)               -> 11
+//   len(symbolgraph.editors.EDITORS)                -> 8
+// Nothing here is invented copy.
 
 export const REPO_URL = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system";
 
-// symbolgraph is not yet published to PyPI (v0.1.0 tag pending) — the honest
-// install path today is a checkout.
+// v0.1.0 is tagged, but the package is not on PyPI yet — a `uv tool install
+// symbolgraph` line here would be a lie today, so the install path stays a
+// checkout until the release actually publishes.
 export const INSTALL_TABS = [
   {
-    key: "unix",
-    label: "macOS / Linux",
+    key: "uv",
+    label: "uv",
     lines: [
       "git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system",
       "cd coding-RAG-system && uv tool install .",
@@ -24,63 +30,122 @@ export const INSTALL_TABS = [
   },
 ];
 
-// Platform cards — symbolgraph is a CLI + MCP server, not a desktop app, so every
-// platform installs the same way. Shown as three cards to mirror the
-// reference layout without inventing per-OS binaries that don't exist.
+// The genuine 60-second path: install, point it at a repo, wire the agent.
+export const QUICKSTART = [
+  {
+    n: "01",
+    cmd: "sg index .",
+    desc: "Parse the repo into .sg/index.sqlite — symbols, typed edges, FTS5 and vectors.",
+  },
+  {
+    n: "02",
+    cmd: "sg init --agent all",
+    desc: "Detect every installed agent and write its MCP entry. Idempotent — safe to re-run.",
+  },
+  {
+    n: "03",
+    cmd: 'sg search "auth flow"',
+    desc: "Confirm retrieval works from the CLI before an agent ever asks.",
+  },
+];
+
+// symbolgraph is a CLI + MCP server, not a desktop app, so every platform
+// installs the same way. Three cards mirror the reference layout without
+// inventing per-OS binaries that do not exist.
 export const PLATFORMS = [
-  { name: "macOS", detail: "12+, via uv or pipx" },
-  { name: "Linux", detail: "any distro, via uv or pipx" },
-  { name: "Windows", detail: "10/11, via pipx (WSL for uv)" },
+  { name: "macOS", tag: "12+ · Apple silicon & Intel", detail: "uv or pipx · zero config" },
+  { name: "Linux", tag: "any distro · glibc or musl", detail: "uv or pipx · zero config" },
+  { name: "Windows", tag: "10 / 11 · native or WSL", detail: "pipx native · uv under WSL" },
 ];
 
 // Real output from running these against this repository, not illustrative
 // filler: 381 files parsed, 2,023 symbols, 35,795 resolved references.
 export const TERMINAL_STEPS = [
-  { cmd: "sg init", out: "wrote .mcp.json" },
+  { cmd: "sg init --agent all", out: "wrote .mcp.json · 8 agents detected" },
   { cmd: "sg index .", out: "381 files parsed · 35,795 references resolved" },
-  { cmd: "sg status --oneline", out: "symbols 2023 chunks 2022 pending 2022 gen 1" },
+  { cmd: "sg status --oneline", out: "symbols 2023 · chunks 2022 · pending 0 · gen 1" },
 ];
 
-// The pipeline stages, in order — a genuine sequence, so numbering here
-// (unlike the feature grid below) is earned, not decorative.
+// The pipeline stages, in order — a genuine sequence, so the numbering here
+// is earned rather than decorative.
 export const PIPELINE = [
   {
+    n: "01",
     stage: "Parse",
     headline: "Parsed once",
-    detail: "tree-sitter builds one AST per file, once — reused across every extraction pass.",
+    detail:
+      "tree-sitter builds one AST per file, once — reused by every extraction pass instead of re-parsed per feature.",
     ref: "analysis/pipeline.py",
   },
   {
-    stage: "Extract symbols",
-    headline: "Identity that survives edits",
-    detail: "Every function, class, and interface member gets a stable_key that survives edits and renames.",
+    n: "02",
+    stage: "Identify",
+    headline: "Survives edits",
+    detail:
+      "Every function, class and interface member gets a stable_key that survives edits, moves and renames.",
     ref: "analysis/fingerprints.py",
   },
   {
-    stage: "Build relationships",
-    headline: "Typed edges, not imports",
-    detail: "CALLS, EXTENDS, IMPLEMENTS, HAS_TYPE, RETURNS — resolved cross-file, including re-exports.",
+    n: "03",
+    stage: "Relate",
+    headline: "Typed edges",
+    detail:
+      "CALLS, EXTENDS, IMPLEMENTS, HAS_TYPE, RETURNS — resolved across files, including re-exports.",
     ref: "analysis/relationship_builder.py",
   },
   {
+    n: "04",
     stage: "Store",
     headline: "One local database",
-    detail: "SQLite: symbols, relationships, chunks, an FTS5 index, and a sqlite-vec vector index.",
+    detail:
+      "One SQLite file: symbols, relationships, chunks, an FTS5 index and a sqlite-vec vector index.",
     ref: "storage/schema.py",
   },
   {
+    n: "05",
     stage: "Retrieve",
     headline: "Four signals, fused",
-    detail: "Exact match + full-text + vector + graph expansion, fused by reciprocal rank and reranked.",
+    detail:
+      "Exact match, full-text, vector and graph expansion — fused by reciprocal rank, then reranked.",
     ref: "retrieval/hybrid_retriever.py",
   },
   {
+    n: "06",
     stage: "Serve",
     headline: "Definitions, not files",
-    detail: "Definitions and relationships within a token budget — over the CLI, or 13 tools over MCP.",
+    detail:
+      "Definitions and their relationships inside a token budget — over the CLI, or 15 tools over MCP.",
     ref: "symbolgraph/mcp_server.py",
   },
 ];
+
+// The core thesis. This is the argument the whole project rests on, so it
+// gets a section rather than a bullet.
+export const THESIS = {
+  tag: "The premise",
+  headline: "Why a symbol, not a chunk",
+  body: "Chunk-based retrieval splits code on token counts, so it hands an agent the middle of a function and calls it context. A symbol graph splits on what the language actually defines — so a result is a whole definition, and its callers and callees come with it.",
+  columns: [
+    {
+      label: "Chunked retrieval",
+      points: [
+        "Splits on token windows, blind to syntax",
+        "A match can be half a function body",
+        "Callers and callees are a separate search",
+        "Re-embeds the file on every edit",
+      ],
+    },
+    {
+      label: "symbolgraph",
+      points: [
+        "Splits on definitions tree-sitter proves exist",
+        "A result is always a complete definition",
+        "Typed edges arrive with the result",
+        "Merkle root skips files that did not change",
+      ],
+    },
+  ],
+};
 
 // The codebase's own canonical test fixture — real product data, not
 // invented sample content.
@@ -97,23 +162,59 @@ export const EXAMPLE_GRAPH = {
   ],
 };
 
-// Dark-panel feature rows — symbolgraph's own capabilities, in its own words,
-// laid out the way the reference alternates label / heading / description
-// / visual, but every visual is a real symbolgraph artifact (diagram, table,
-// terminal), never a borrowed screenshot.
+// The 15 tools an agent actually sees over MCP, grouped by what they do.
+// Sourced from the @mcp.tool() definitions in symbolgraph/mcp_server.py.
+export const MCP_TOOLS = [
+  {
+    group: "Index",
+    tools: [
+      { name: "index_repository", args: "path, embed", desc: "Build or refresh the index" },
+      { name: "repository_status", args: "path", desc: "Generation, counts, pending work" },
+    ],
+  },
+  {
+    group: "Navigate",
+    tools: [
+      { name: "definition", args: "name, path", desc: "Where a symbol is defined" },
+      { name: "callers", args: "name, path", desc: "What calls it" },
+      { name: "callees", args: "name, path", desc: "What it calls" },
+      { name: "imports", args: "file, path", desc: "What a file imports" },
+    ],
+  },
+  {
+    group: "Retrieve",
+    tools: [
+      { name: "search", args: "query, path, top_k", desc: "Hybrid search, graph-expanded" },
+      { name: "context", args: "query, path, token_budget", desc: "A context pack under budget" },
+    ],
+  },
+  {
+    group: "Session memory",
+    tools: [
+      { name: "session_start", args: "path", desc: "Open a working session" },
+      { name: "session_end", args: "path, session_id", desc: "Close it" },
+      { name: "session_status", args: "path, session_id", desc: "What is open now" },
+      { name: "session_recall", args: "path, query, limit", desc: "Recall earlier context" },
+      { name: "session_timeline", args: "path, session_id", desc: "What happened, in order" },
+      { name: "record_decision", args: "path, decision, reason", desc: "Persist a decision" },
+      { name: "record_code_area", args: "path, file_path", desc: "Mark an area as relevant" },
+    ],
+  },
+];
+
+// Feature rows — symbolgraph's own capabilities, in its own words.
 export const FEATURE_ROWS = [
   {
     tag: "Retrieval",
     title: "Hybrid, not just similar",
-    desc: "Exact symbol match, full-text search, vector search, and graph expansion from the seed symbol — fused by reciprocal rank, reranked, capped per file.",
-    pills: ["RRF", "graph expand", "reranker"],
+    desc: "Exact symbol match, full-text search, vector search and graph expansion from the seed symbol — fused by reciprocal rank, reranked, capped per file.",
+    pills: ["RRF fusion", "graph expand", "reranker"],
   },
   {
     // The "<200ms for a 2,000-file edit" line that used to sit here did not
     // survive measurement: a no-change reindex of this 381-file repo takes
     // ~5.7s wall clock. What is actually measured is that unchanged files
-    // are not re-parsed — `sg index` reports them as `unchanged` and skips
-    // them — and that the fixture benchmark reindexes in <50ms.
+    // are not re-parsed, and that the fixture benchmark reindexes in <50ms.
     tag: "Incremental",
     title: "Reindex what changed, nothing else",
     desc: "A Merkle root over the tree detects real change, so untouched files are never re-parsed — a second run on this repo reports unchanged: 381 and skips straight past them.",
@@ -122,8 +223,8 @@ export const FEATURE_ROWS = [
   {
     tag: "Editors",
     title: "One index, every agent",
-    desc: "sg init --agent all detects Claude, Cursor, VS Code, OpenCode, Gemini, Copilot, Pi, and Codex, writing an MCP entry for each — idempotently.",
-    pills: ["8 editors", "idempotent"],
+    desc: "sg init --agent all detects Claude, Cursor, VS Code, OpenCode, Gemini, Copilot, Pi and Codex, writing an MCP entry for each — idempotently.",
+    pills: ["8 agents", "idempotent"],
   },
   {
     tag: "Local-first",
@@ -139,111 +240,109 @@ export const BENCHMARK = {
     { metric: "Definition accuracy", noVectors: "0.83", withVectors: "0.92" },
     { metric: "Mean recall@5", noVectors: "0.78", withVectors: "0.97" },
     { metric: "MRR", noVectors: "0.71", withVectors: "0.94" },
-    { metric: "Incremental reindex (unchanged file)", noVectors: "<50ms", withVectors: "cache hit rate 1.0" },
+    { metric: "Incremental reindex (unchanged)", noVectors: "<50ms", withVectors: "cache hit rate 1.0" },
   ],
 };
 
 // Real token-savings measurements: pre-registered external runs
-// (benchmarks/PREREGISTRATION.md, 20 original queries each, budgets
-// 800/1200/2000, recall gate >= 0.90) plus the self-repo anchor row.
-// Full breakdowns: benchmarks/results/{fastapi,django,fiber,self_retrieval}.json.
+// (benchmarks/PREREGISTRATION.md — repos, SHAs and 20 original queries each
+// committed to git BEFORE the first run, so the history itself proves no
+// post-hoc tuning). Full data: benchmarks/results/*.json.
 export const TOKEN_SAVINGS = {
-  recall: "1.00",
-  recallLabel: "11/11 recall@10",
-  aggregatePct: "+16.7%",
-  meanPct: "-168%",
-  biggestWin: {
-    file: "reranker.py, hybrid_retriever.py",
-    detail: "3,300-3,800 tokens to read whole → under 850 as a context pack (76-78% saved)",
-  },
-  caveat:
-    "On files small enough that the context pack's own structure costs more than the file, savings go negative -- averaging per-query ratios hides that the set still saves tokens in aggregate.",
-  dollarsNote: "input tokens only, sonnet $2.00/1M as of 2026-06-24",
+  headline: "Savings scale with file size — so the claim is segmented, not averaged",
+  explainer:
+    "A context pack has a fixed structure that costs roughly 800 tokens. On a file smaller than that, packing it costs more than sending it, and the saving goes negative. Those rows are printed rather than dropped — a single blended percentage would hide them.",
+  gate: "Every repo shown cleared a pre-declared recall@10 gate of 0.90. Budget 800.",
+  dollarsNote: "Input tokens only, sonnet $2.00/1M as of 2026-06-24",
+  buckets: [
+    { bucket: ">4k tokens", django: "+93.9%", fiber: "+90.4%", fastapi: "+94.4%", verdict: "strong" },
+    { bucket: "1k–4k", django: "+65.8%", fiber: "+53.3%", fastapi: "+60.3%", verdict: "good" },
+    { bucket: "<1k", django: "+11.3%", fiber: "−21.1%", fastapi: "−293.3%", verdict: "negative" },
+  ],
   repos: [
     {
       name: "Django",
-      lang: "Python (large)",
-      queries: "20 qs",
+      lang: "Python",
+      queries: "20 queries",
       recall: "1.00",
       p50: "18.2ms",
-      baseline: "8909 → 811",
+      baseline: "8,909 → 811",
       aggregatePct: "+90.9%",
       dollarsPerQuery: "$0.0162",
-      buckets: [
-        { bucket: ">4k", pct: "+93.9%", n: 12 },
-        { bucket: "1k-4k", pct: "+65.8%", n: 7 },
-        { bucket: "<1k", pct: "+11.3%", n: 1 },
-      ],
     },
     {
       name: "Fiber",
       lang: "Go",
-      queries: "20 qs",
+      queries: "20 queries",
       recall: "0.95",
       p50: "9.3ms",
-      baseline: "5272 → 804",
+      baseline: "5,272 → 804",
       aggregatePct: "+84.7%",
       dollarsPerQuery: "$0.0089",
-      buckets: [
-        { bucket: ">4k", pct: "+90.4%", n: 11 },
-        { bucket: "1k-4k", pct: "+53.3%", n: 7 },
-        { bucket: "<1k", pct: "−21.1%", n: 2 },
-      ],
     },
     {
       name: "FastAPI",
       lang: "Python",
-      queries: "20 qs",
+      queries: "20 queries",
       recall: "0.90",
       p50: "3.8ms",
-      baseline: "4923 → 831",
+      baseline: "4,923 → 831",
       aggregatePct: "+83.1%",
-      meanPct: "−1269%",
       dollarsPerQuery: "$0.0082",
-      buckets: [
-        { bucket: ">4k", pct: "+94.4%", n: 6 },
-        { bucket: "1k-4k", pct: "+60.3%", n: 4 },
-        { bucket: "<1k", pct: "−293.3%", n: 10 },
-      ],
     },
   ],
 };
 
-// Real, verifiable — nothing here is a usage estimate.
+// Re-measured 2026-09-05. Verifiable by running the commands in the comment
+// at the top of this file — nothing here is an estimate.
 export const STATS = [
-  ["658", "tests passing"],
-  ["80.54%", "branch coverage"],
-  ["11+", "languages parsed"],
-  ["13", "MCP tools"],
+  ["677", "tests passing"],
+  ["80.68%", "branch coverage"],
+  ["11", "language profiles"],
+  ["15", "MCP tools"],
 ];
 
 export const LANGUAGES = [
-  { lang: "TypeScript / TSX / JavaScript / JSX", ext: ".ts .tsx .js .jsx" },
+  { lang: "TypeScript", ext: ".ts .tsx" },
+  { lang: "JavaScript", ext: ".js .jsx" },
   { lang: "Python", ext: ".py" },
   { lang: "Go", ext: ".go" },
-  { lang: "Java", ext: ".java" },
   { lang: "Rust", ext: ".rs" },
+  { lang: "Java", ext: ".java" },
   { lang: "C#", ext: ".cs" },
-  { lang: "C / C++", ext: ".c .h .cpp .hpp .hh" },
+  { lang: "C / C++", ext: ".c .h .cpp .hpp" },
+];
+
+export const EDITORS = [
+  "Claude Code",
+  "Cursor",
+  "VS Code",
+  "OpenCode",
+  "Gemini",
+  "Copilot",
+  "Pi",
+  "Codex",
 ];
 
 export const FALLBACK_COUNT = "40+";
 export const FALLBACK_EXAMPLE = "html css scss json yaml toml sql md rb php swift kt sh";
 
 export const CLI_COMMANDS = [
-  { cmd: "sg init --agent all", desc: "wire every editor + write git hooks" },
+  { cmd: "sg init --agent all", desc: "wire every agent + write git hooks" },
   { cmd: "sg index .", desc: "build or update .sg/index.sqlite" },
-  { cmd: "sg status --oneline", desc: "symbols 342 chunks 342 pending 0 gen 12" },
+  { cmd: "sg status --oneline", desc: "generation, symbol and chunk counts" },
   { cmd: 'sg search "auth flow" --top-k 5', desc: "hybrid retrieval, graph-expanded" },
+  { cmd: "sg context <query> --budget 800", desc: "a token-budgeted context pack" },
+  { cmd: "sg callers <symbol>", desc: "who calls this, resolved cross-file" },
   { cmd: "sg doctor .", desc: "index, lock, git hook, backend — one check" },
   { cmd: "sg dashboard --no-browser", desc: "local ops UI on 127.0.0.1" },
 ];
 
 export const NAV_LINKS = [
-  { label: "Architecture", href: "#architecture" },
+  { label: "Pipeline", href: "#pipeline" },
   { label: "Benchmark", href: "#benchmark" },
+  { label: "MCP", href: "#mcp" },
   { label: "Languages", href: "#languages" },
-  { label: "Docs", href: `${REPO_URL}#readme` },
 ];
 
 export const FOOTER_LINKS = [

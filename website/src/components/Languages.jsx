@@ -1,51 +1,69 @@
-import { LANGUAGES, FALLBACK_COUNT, FALLBACK_EXAMPLE } from "../data/content";
+import { CLI_COMMANDS, FALLBACK_COUNT, FALLBACK_EXAMPLE, LANGUAGES } from "../data/content";
+import CopyButton from "./CopyButton";
+import { IndexTag, Shell } from "./ui";
 
 export default function Languages() {
   return (
-    <section id="languages" className="scroll-mt-16 bg-white px-6 py-8 sm:py-10">
-      <div className="mx-auto max-w-[1280px]">
-        <p className="font-mono text-[10px] font-normal uppercase tracking-[0.22em] text-blue">Languages</p>
-        <h2 className="mt-2 font-display text-[34px] font-[400] uppercase leading-[0.95] tracking-[-0.02em] text-blue sm:text-[44px]">
-          AST-AWARE WHERE IT COUNTS
-        </h2>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="overflow-x-auto border border-blue bg-white">
-            <table className="w-full min-w-[380px] border-collapse">
-              <thead>
-                <tr className="border-b border-blue bg-blue text-left font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white">
-                  <th className="py-3 pl-4 pr-4 font-normal">Language</th>
-                  <th className="py-3 pr-4 font-normal">Extensions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {LANGUAGES.map((l) => (
-                  <tr key={l.lang} className="border-b border-blue/15 last:border-0">
-                    <td className="py-3 pl-4 pr-4 font-mono text-[12px] font-normal tracking-[0.01em] text-blue">{l.lang}</td>
-                    <td className="py-3 pr-4 font-mono text-[11px] font-normal tracking-[-0.01em] text-blue">{l.ext}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="border border-blue bg-blue p-6">
-            <p className="font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-white">
-              Fallback — {FALLBACK_COUNT} extensions
+    <section id="languages" className="border-b border-white/25 bg-white text-ultra">
+      <Shell className="py-24">
+        <div className="grid gap-16 lg:grid-cols-2">
+          {/* Languages */}
+          <div>
+            <IndexTag tone="on-white">Full graph support</IndexTag>
+            <h2 className="font-display mt-4 text-[clamp(1.9rem,3.4vw,2.75rem)] leading-[1.15] tracking-[-0.01em]">
+              Languages parsed
+            </h2>
+            <p className="mt-5 max-w-md text-[12.5px] leading-[1.7] text-ultra/70">
+              Eleven tree-sitter profiles resolve symbols, typed edges and
+              imports into the graph. Everything else still indexes for
+              full-text and vector search — it just has no AST.
             </p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {FALLBACK_EXAMPLE.split(" ").map((f) => (
-                <span key={f} className="border border-white bg-white px-2.5 py-1 font-mono text-[11px] font-normal tracking-[0.02em] text-blue">
-                  .{f}
-                </span>
+
+            <div className="hairline-matrix-blue mt-8 grid border border-ultra/25 sm:grid-cols-2">
+              {LANGUAGES.map((l) => (
+                <div key={l.lang} className="flex items-baseline justify-between gap-3 bg-white px-5 py-3.5">
+                  <span className="text-[12.5px] text-ultra">{l.lang}</span>
+                  <code className="text-[10.5px] text-ultra/45">{l.ext}</code>
+                </div>
               ))}
             </div>
-            <p className="mt-4 font-mono text-[12.5px] font-normal leading-[1.65] tracking-[0.02em] text-white">
-              Everything here gets a module-level symbol and stays searchable through FTS and vector search. Nothing is silently skipped.
+
+            <div className="mt-px border border-ultra/25 border-t-0 bg-ultra/5 px-5 py-4">
+              <div className="tag-index text-ultra/60">{FALLBACK_COUNT} more · text-indexed only</div>
+              <code className="mt-2 block text-[10.5px] leading-[1.6] text-ultra/45">
+                {FALLBACK_EXAMPLE}
+              </code>
+            </div>
+          </div>
+
+          {/* CLI */}
+          <div>
+            <IndexTag tone="on-white">Command line</IndexTag>
+            <h2 className="font-display mt-4 text-[clamp(1.9rem,3.4vw,2.75rem)] leading-[1.15] tracking-[-0.01em]">
+              Everything, without an agent
+            </h2>
+            <p className="mt-5 max-w-md text-[12.5px] leading-[1.7] text-ultra/70">
+              The MCP server is a wrapper. Every capability is reachable from
+              the terminal first — which is also how you debug it.
             </p>
+
+            <ul className="mt-8 flex flex-col border border-ultra/25">
+              {CLI_COMMANDS.map((c) => (
+                <li
+                  key={c.cmd}
+                  className="group flex items-center justify-between gap-4 border-b border-ultra/12 px-5 py-3.5 last:border-b-0"
+                >
+                  <div className="min-w-0">
+                    <code className="block truncate text-[12px] text-ultra">{c.cmd}</code>
+                    <div className="mt-1 text-[11px] text-ultra/50">{c.desc}</div>
+                  </div>
+                  <CopyButton text={c.cmd} />
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-      </div>
+      </Shell>
     </section>
   );
 }

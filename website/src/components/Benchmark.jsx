@@ -1,143 +1,143 @@
-import { BENCHMARK, TOKEN_SAVINGS } from "../data/content";
+import { BENCHMARK, STATS, TOKEN_SAVINGS } from "../data/content";
+import { IndexTag, Shell } from "./ui";
 
 export default function Benchmark() {
   return (
-    <section className="bg-white px-6 py-8 sm:py-10">
-      <div className="mx-auto max-w-[1280px]">
-        <p className="font-mono text-[10px] font-normal uppercase tracking-[0.22em] text-blue">Benchmark</p>
-        {/* The caption ("Measured on tests/fixtures/... token_budget=800") used
-            to be the headline, force-uppercased — a path with slashes and an
-            underscore set in a Didone, wrapping to three lines. It reads as
-            what it is: a caption. Demoted below a real headline. */}
-        <h2 className="mt-2 max-w-xl font-display text-[34px] font-[400] uppercase leading-[0.95] tracking-[-0.02em] text-blue sm:text-[44px]">
-          What it actually scores
-        </h2>
-        <p className="mt-3 max-w-[58ch] font-mono text-[12px] font-normal leading-[1.7] tracking-[0.01em] text-blue/80">
-          {BENCHMARK.caption}. Every number below is reproducible with{" "}
-          <code className="bg-blue px-1 py-0.5 font-mono text-[12px] font-normal tracking-[-0.01em] text-white">sg eval --embed</code>.
-        </p>
-
-        <div className="mt-6 overflow-x-auto border border-blue bg-white">
-          <table className="w-full min-w-[480px] border-collapse">
-            <thead>
-              <tr className="border-b border-blue bg-blue text-left font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white">
-                <th className="py-3 pl-4 pr-4 font-normal">Metric</th>
-                <th className="py-3 pr-4 font-normal">FTS + graph</th>
-                <th className="py-3 pr-4 font-normal">+ vectors</th>
-              </tr>
-            </thead>
-            <tbody>
-              {BENCHMARK.rows.map((r) => (
-                <tr key={r.metric} className="border-b border-blue/15 last:border-0">
-                  <td className="py-3.5 pl-4 pr-4 font-mono text-[12px] font-normal tracking-[0.01em] text-blue">{r.metric}</td>
-                  <td className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue">{r.noVectors}</td>
-                  <td className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue/60">{r.withVectors}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <section id="benchmark" className="border-b border-white/25 bg-white text-ultra">
+      <Shell className="py-24">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <IndexTag tone="on-white">Official benchmark</IndexTag>
+            <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.25rem)] leading-[1.1] tracking-[-0.02em]">
+              What it actually scores
+            </h2>
+          </div>
+          <span className="tag-index border border-ultra/30 px-3 py-2 text-ultra/70">
+            Reproduce · sg eval --embed
+          </span>
         </div>
 
-        <div className="mt-8 border border-blue bg-white p-6 sm:p-6">
-          <p className="font-mono text-[10px] font-normal uppercase tracking-[0.2em] text-blue">
-            Token savings — measured, including the part that isn't flattering
-          </p>
-          <p className="mt-2 max-w-[62ch] font-mono text-[12.5px] font-normal leading-[1.6] tracking-[0.02em] text-blue">
-            11 original queries, written by hand against this repo's own{" "}
-            <code className="bg-blue px-1 py-0.5 font-normal text-white">retrieval/</code>{" "}
-            package. Recall was{" "}
-            <span className="font-normal tracking-[-0.01em] text-blue">{TOKEN_SAVINGS.recall}</span> ({TOKEN_SAVINGS.recallLabel}).
-          </p>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="border border-blue bg-blue px-4 py-4">
-              <div className="font-display text-2xl font-[400] tracking-[-0.02em] text-white">{TOKEN_SAVINGS.aggregatePct}</div>
-              <div className="mt-1 font-mono text-[11px] font-normal leading-[1.5] tracking-[0.02em] text-white">
-                tokens saved in aggregate — the number to cite, weighted by
-                actual token volume
-              </div>
+        {/* Stats */}
+        <div className="hairline-matrix-blue mt-12 grid border border-ultra/25 grid-cols-2 lg:grid-cols-4">
+          {STATS.map(([value, label]) => (
+            <div key={label} className="bg-white px-6 py-8">
+              <div className="font-display text-[2.75rem] leading-none tracking-[-0.02em]">{value}</div>
+              <div className="tag-index mt-3 text-ultra/55">{label}</div>
             </div>
-            <div className="border border-blue px-4 py-4">
-              <div className="font-display text-2xl font-[400] tracking-[-0.02em] text-blue/30 line-through decoration-1">
-                {TOKEN_SAVINGS.meanPct}
-              </div>
-              <div className="mt-1 font-mono text-[11px] font-normal leading-[1.5] tracking-[0.02em] text-blue">
-                naive mean of per-query ratios — misleading here, kept
-                visible on purpose
-              </div>
-            </div>
-          </div>
+          ))}
+        </div>
 
-          <p className="mt-5 max-w-[62ch] font-mono text-[12.5px] font-normal leading-[1.6] tracking-[0.02em] text-blue">
-            On the two largest files ({TOKEN_SAVINGS.biggestWin.file}),{" "}
-            {TOKEN_SAVINGS.biggestWin.detail}. {TOKEN_SAVINGS.caveat}
-          </p>
+        {/* Retrieval quality on the fixture */}
+        <div className="mt-16">
+          <IndexTag n="A" tone="on-white">Retrieval quality</IndexTag>
+          <p className="tag-index mt-3 text-ultra/50">{BENCHMARK.caption}</p>
 
-          <div className="mt-6 overflow-x-auto border border-blue bg-white">
-            <table className="w-full min-w-[560px] border-collapse">
+          <div className="mt-5 overflow-x-auto border border-ultra/25">
+            <table className="w-full min-w-[520px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-blue bg-blue text-left font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white">
-                  <th className="py-3 pl-4 pr-4 font-normal">Repo · 20 qs · budget 800</th>
-                  <th className="py-3 pr-4 font-normal">Aggregate</th>
-                  <th className="py-3 pr-4 font-normal">R@10</th>
-                  <th className="py-3 pr-4 font-normal">$/query</th>
+                <tr className="border-b border-ultra/25 bg-ultra/5">
+                  <th className="tag-index px-5 py-3 text-ultra/70">Metric</th>
+                  <th className="tag-index px-5 py-3 text-ultra/70">FTS + graph</th>
+                  <th className="tag-index px-5 py-3 text-ultra">+ vectors</th>
                 </tr>
               </thead>
               <tbody>
-                {TOKEN_SAVINGS.repos.map((r) => (
-                  <tr key={r.name} className="border-b border-blue/15 last:border-0">
-                    <td className="py-3.5 pl-4 pr-4 font-mono text-[12px] font-normal tracking-[0.01em] text-blue">
-                      {r.name} <span className="text-blue/60">· {r.lang} · {r.baseline}</span>
-                    </td>
-                    <td className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue">{r.aggregatePct}</td>
-                    <td className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue">{r.recall}</td>
-                    <td className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue/60">{r.dollarsPerQuery}</td>
+                {BENCHMARK.rows.map((r) => (
+                  <tr key={r.metric} className="border-b border-ultra/12 last:border-b-0">
+                    <td className="px-5 py-3.5 text-[12.5px] text-ultra/75">{r.metric}</td>
+                    <td className="px-5 py-3.5 text-[12.5px] text-ultra/55">{r.noVectors}</td>
+                    <td className="px-5 py-3.5 text-[12.5px] font-medium text-ultra">{r.withVectors}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </div>
 
-          <div className="mt-4 overflow-x-auto border border-blue bg-white">
-            <table className="w-full min-w-[560px] border-collapse">
+        {/* Token savings — segmented, including the rows that go negative */}
+        <div className="mt-20">
+          <IndexTag n="B" tone="on-white">Token savings</IndexTag>
+          <h3 className="font-display mt-4 max-w-3xl text-[clamp(1.4rem,2.4vw,2rem)] leading-[1.25]">
+            {TOKEN_SAVINGS.headline}
+          </h3>
+          <p className="mt-5 max-w-2xl text-[12.5px] leading-[1.7] text-ultra/70">
+            {TOKEN_SAVINGS.explainer}
+          </p>
+
+          <div className="mt-8 overflow-x-auto border border-ultra/25">
+            <table className="w-full min-w-[560px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-blue bg-blue text-left font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white">
-                  <th className="py-3 pl-4 pr-4 font-normal">Bucket @ 800</th>
-                  <th className="py-3 pr-4 font-normal">Django</th>
-                  <th className="py-3 pr-4 font-normal">Fiber</th>
-                  <th className="py-3 pr-4 font-normal">FastAPI</th>
+                <tr className="border-b border-ultra/25 bg-ultra/5">
+                  <th className="tag-index px-5 py-3 text-ultra/70">Baseline file size</th>
+                  <th className="tag-index px-5 py-3 text-ultra/70">Django</th>
+                  <th className="tag-index px-5 py-3 text-ultra/70">Fiber</th>
+                  <th className="tag-index px-5 py-3 text-ultra/70">FastAPI</th>
                 </tr>
               </thead>
               <tbody>
-                {[">4k", "1k-4k", "<1k"].map((b) => (
-                  <tr key={b} className="border-b border-blue/15 last:border-0">
-                    <td className="py-3.5 pl-4 pr-4 font-mono text-[12px] font-normal tracking-[0.01em] text-blue">{b}</td>
-                    {TOKEN_SAVINGS.repos.map((r) => {
-                      const cell = r.buckets.find((x) => x.bucket === b);
-                      return (
-                        <td key={r.name} className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue">
-                          {cell.pct} <span className="text-blue/60">n={cell.n}</span>
+                {TOKEN_SAVINGS.buckets.map((b) => {
+                  const strong = b.verdict === "strong";
+                  const negative = b.verdict === "negative";
+                  return (
+                    <tr
+                      key={b.bucket}
+                      className={`border-b border-ultra/12 last:border-b-0 ${strong ? "bg-ultra text-white" : ""}`}
+                    >
+                      <td className={`px-5 py-3.5 text-[12.5px] ${strong ? "text-white" : "text-ultra/75"}`}>
+                        {b.bucket}
+                      </td>
+                      {[b.django, b.fiber, b.fastapi].map((v, i) => (
+                        <td
+                          key={i}
+                          className={`px-5 py-3.5 text-[12.5px] ${
+                            strong ? "font-medium text-white" : negative ? "text-ultra/45" : "text-ultra/75"
+                          }`}
+                        >
+                          {v}
                         </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                      ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          <p className="mt-4 max-w-[62ch] font-mono text-[11px] font-normal leading-[1.6] tracking-[0.02em] text-blue">
-            FastAPI's whole-run mean-of-ratios is{" "}
-            <span className="line-through">−1269%</span> at the same run whose
-            aggregate is +83.1% — ten tiny files where the pack costs more
-            than the file. Dollars are a projection ({TOKEN_SAVINGS.dollarsNote});
-            see <span className="tracking-[-0.01em]">benchmarks/results/SUMMARY.md</span>.
-          </p>
-          <p className="mt-3 font-mono text-[10px] font-normal tracking-[0.06em] text-blue/60">
-            Full per-query breakdown: <span className="tracking-[-0.01em] text-blue">benchmarks/results/self_retrieval.json</span>
+          <p className="tag-index mt-4 text-ultra/50">{TOKEN_SAVINGS.gate}</p>
+
+          {/* Per-repo aggregates */}
+          <div className="hairline-matrix-blue mt-10 grid border border-ultra/25 sm:grid-cols-3">
+            {TOKEN_SAVINGS.repos.map((r) => (
+              <div key={r.name} className="bg-white p-6">
+                <div className="flex items-baseline justify-between">
+                  <span className="font-display text-xl">{r.name}</span>
+                  <span className="tag-index text-ultra/45">{r.lang}</span>
+                </div>
+                <div className="font-display mt-4 text-[2.25rem] leading-none">{r.aggregatePct}</div>
+                <dl className="mt-5 flex flex-col gap-2 text-[11.5px] text-ultra/60">
+                  <Row k="tokens" v={r.baseline} />
+                  <Row k="recall@10" v={r.recall} />
+                  <Row k="p50" v={r.p50} />
+                  <Row k="$/query" v={r.dollarsPerQuery} />
+                </dl>
+              </div>
+            ))}
+          </div>
+
+          <p className="tag-index mt-5 text-ultra/45">
+            Pre-registered · queries and repo SHAs committed before the first run · {TOKEN_SAVINGS.dollarsNote}
           </p>
         </div>
-      </div>
+      </Shell>
     </section>
+  );
+}
+
+function Row({ k, v }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-t border-ultra/12 pt-2 first:border-t-0 first:pt-0">
+      <dt className="tag-index text-ultra/45">{k}</dt>
+      <dd className="text-ultra/80">{v}</dd>
+    </div>
   );
 }
