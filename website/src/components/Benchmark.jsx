@@ -72,6 +72,67 @@ export default function Benchmark() {
             On the two largest files ({TOKEN_SAVINGS.biggestWin.file}),{" "}
             {TOKEN_SAVINGS.biggestWin.detail}. {TOKEN_SAVINGS.caveat}
           </p>
+
+          <div className="mt-6 overflow-x-auto border border-blue bg-white">
+            <table className="w-full min-w-[560px] border-collapse">
+              <thead>
+                <tr className="border-b border-blue bg-blue text-left font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white">
+                  <th className="py-3 pl-4 pr-4 font-normal">Repo · 20 qs · budget 800</th>
+                  <th className="py-3 pr-4 font-normal">Aggregate</th>
+                  <th className="py-3 pr-4 font-normal">R@10</th>
+                  <th className="py-3 pr-4 font-normal">$/query</th>
+                </tr>
+              </thead>
+              <tbody>
+                {TOKEN_SAVINGS.repos.map((r) => (
+                  <tr key={r.name} className="border-b border-blue/15 last:border-0">
+                    <td className="py-3.5 pl-4 pr-4 font-mono text-[12px] font-normal tracking-[0.01em] text-blue">
+                      {r.name} <span className="text-blue/60">· {r.lang} · {r.baseline}</span>
+                    </td>
+                    <td className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue">{r.aggregatePct}</td>
+                    <td className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue">{r.recall}</td>
+                    <td className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue/60">{r.dollarsPerQuery}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 overflow-x-auto border border-blue bg-white">
+            <table className="w-full min-w-[560px] border-collapse">
+              <thead>
+                <tr className="border-b border-blue bg-blue text-left font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white">
+                  <th className="py-3 pl-4 pr-4 font-normal">Bucket @ 800</th>
+                  <th className="py-3 pr-4 font-normal">Django</th>
+                  <th className="py-3 pr-4 font-normal">Fiber</th>
+                  <th className="py-3 pr-4 font-normal">FastAPI</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[">4k", "1k-4k", "<1k"].map((b) => (
+                  <tr key={b} className="border-b border-blue/15 last:border-0">
+                    <td className="py-3.5 pl-4 pr-4 font-mono text-[12px] font-normal tracking-[0.01em] text-blue">{b}</td>
+                    {TOKEN_SAVINGS.repos.map((r) => {
+                      const cell = r.buckets.find((x) => x.bucket === b);
+                      return (
+                        <td key={r.name} className="py-3.5 pr-4 font-mono text-[12px] font-normal tracking-[-0.01em] text-blue">
+                          {cell.pct} <span className="text-blue/60">n={cell.n}</span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="mt-4 max-w-[62ch] font-mono text-[11px] font-normal leading-[1.6] tracking-[0.02em] text-blue">
+            FastAPI's whole-run mean-of-ratios is{" "}
+            <span className="line-through">−1269%</span> at the same run whose
+            aggregate is +83.1% — ten tiny files where the pack costs more
+            than the file. Dollars are a projection ({TOKEN_SAVINGS.dollarsNote});
+            see <span className="tracking-[-0.01em]">benchmarks/results/SUMMARY.md</span>.
+          </p>
           <p className="mt-3 font-mono text-[10px] font-normal tracking-[0.06em] text-blue/60">
             Full per-query breakdown: <span className="tracking-[-0.01em] text-blue">benchmarks/results/self_retrieval.json</span>
           </p>

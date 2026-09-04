@@ -143,9 +143,10 @@ export const BENCHMARK = {
   ],
 };
 
-// Real token-savings measurement: 11 original queries (written by hand,
-// not derived from any other project) against this repo's own retrieval/
-// package. Full breakdown: benchmarks/results/self_retrieval.json.
+// Real token-savings measurements: pre-registered external runs
+// (benchmarks/PREREGISTRATION.md, 20 original queries each, budgets
+// 800/1200/2000, recall gate >= 0.90) plus the self-repo anchor row.
+// Full breakdowns: benchmarks/results/{fastapi,django,fiber,self_retrieval}.json.
 export const TOKEN_SAVINGS = {
   recall: "1.00",
   recallLabel: "11/11 recall@10",
@@ -157,6 +158,55 @@ export const TOKEN_SAVINGS = {
   },
   caveat:
     "On files small enough that the context pack's own structure costs more than the file, savings go negative -- averaging per-query ratios hides that the set still saves tokens in aggregate.",
+  dollarsNote: "input tokens only, sonnet $2.00/1M as of 2026-06-24",
+  repos: [
+    {
+      name: "Django",
+      lang: "Python (large)",
+      queries: "20 qs",
+      recall: "1.00",
+      p50: "18.2ms",
+      baseline: "8909 → 811",
+      aggregatePct: "+90.9%",
+      dollarsPerQuery: "$0.0162",
+      buckets: [
+        { bucket: ">4k", pct: "+93.9%", n: 12 },
+        { bucket: "1k-4k", pct: "+65.8%", n: 7 },
+        { bucket: "<1k", pct: "+11.3%", n: 1 },
+      ],
+    },
+    {
+      name: "Fiber",
+      lang: "Go",
+      queries: "20 qs",
+      recall: "0.95",
+      p50: "9.3ms",
+      baseline: "5272 → 804",
+      aggregatePct: "+84.7%",
+      dollarsPerQuery: "$0.0089",
+      buckets: [
+        { bucket: ">4k", pct: "+90.4%", n: 11 },
+        { bucket: "1k-4k", pct: "+53.3%", n: 7 },
+        { bucket: "<1k", pct: "−21.1%", n: 2 },
+      ],
+    },
+    {
+      name: "FastAPI",
+      lang: "Python",
+      queries: "20 qs",
+      recall: "0.90",
+      p50: "3.8ms",
+      baseline: "4923 → 831",
+      aggregatePct: "+83.1%",
+      meanPct: "−1269%",
+      dollarsPerQuery: "$0.0082",
+      buckets: [
+        { bucket: ">4k", pct: "+94.4%", n: 6 },
+        { bucket: "1k-4k", pct: "+60.3%", n: 4 },
+        { bucket: "<1k", pct: "−293.3%", n: 10 },
+      ],
+    },
+  ],
 };
 
 // Real, verifiable — nothing here is a usage estimate.

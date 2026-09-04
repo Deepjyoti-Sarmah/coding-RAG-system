@@ -79,9 +79,18 @@ Measured on `tests/fixtures/evaluation_repo` with fixed `token_budget=800` `o200
 | **incremental (`parsed_files==0`)** | `<50ms` | `cache_hit_rate 1.0` |
 | **coverage** | **80.54% branch** | `658 passed 0 skipped` |
 
-Token savings are reported as `ExternalReport.mean_savings_pct` at `budget 800` with `baseline = expected_files only` (`evaluation/external.py:184`) — whole-repo `99%` is intentionally `0.0` (`evaluation/runner.py:202`). Cited with `mean_recall@10 + p50` or not at all. See `benchmarks/run_external.py`.
+Token savings are reported as `ExternalReport.aggregate_savings_pct` at budgets `800/1200/2000` with `baseline = expected_files only` (`evaluation/external.py:196`) — whole-repo `99%` is intentionally `0.0` (`evaluation/runner.py:202`). Cited with `mean_recall@10 + p50 + budget + bucket` or not at all. See `benchmarks/run_external.py` and `sg savings`.
 
-A real-repo benchmark (multiple large open-source codebases, original queries written from scratch for this project) is planned — see `ROADMAP.md` `P5-4`. Until then, every number above comes from the fixture in this repo, reproducible with `sg eval --embed` on `tests/fixtures/evaluation_repo`.
+Real-repo runs (original queries written from scratch, pre-registered in `benchmarks/PREREGISTRATION.md`, full table in `benchmarks/results/SUMMARY.md`):
+
+| Repo | Budget 800 aggregate | Recall@10 | p50 | Result file |
+|---|---|---|---|---|
+| Django (20 qs) | **90.9%** (8909 → 811) | 1.00 | 18.2ms | `benchmarks/results/django.json` |
+| Fiber (20 qs) | **84.7%** (5272 → 804) | 0.95 | 9.3ms | `benchmarks/results/fiber.json` |
+| FastAPI (20 qs) | **83.1%** (4923 → 831) | 0.90 | 3.8ms | `benchmarks/results/fastapi.json` |
+| self `retrieval/` (11 qs) | **16.7%** (1007 → 839) | 1.00 | 1.6ms | `benchmarks/results/self_retrieval.json` |
+
+The segmented finding, not a single percentage: `>4k`-token files save 90–94% at budget 800 on all three repos; `<1k` files cost tokens (context-pack structure ~800 regardless). Fixture numbers above remain reproducible with `sg eval --embed` on `tests/fixtures/evaluation_repo`.
 
 ---
 
@@ -117,6 +126,7 @@ A real-repo benchmark (multiple large open-source codebases, original queries wr
 | `sg imports <file>` | `sg imports api.ts` | Imports + resolved `::symbol` |
 | `sg context <query> [--budget N] [--top-k N]` | `sg context "how does login work?" --budget 800` | Token-budgeted `primary/supporting` pack |
 | `sg eval [--embed] [--top-k N]` | `sg eval` | Fixed fixture metrics |
+| `sg savings [--model sonnet] [--json]` | `sg savings` | Benchmark token/$ rows from `benchmarks/results/*.json` |
 | `sg watch <path> [--no-embed] [--debounce 0.5]` | `sg watch .` | `watchdog` debounced reindex + `embed limit 200` |
 | `sg init [path] [--agent auto|all] [--plugin]` | `sg init --agent all` | Wire MCP for all detected editors + git hooks |
 | `sg uninstall [path]` | `sg uninstall` | Remove MCP entries + hooks |
@@ -243,6 +253,29 @@ token budget spent. **The claim that holds up: symbolgraph saves tokens on
 files large enough that "the whole file" costs more than "the
 definition plus its relationships" — and costs more on trivially small
 ones.** Full per-query breakdown in `benchmarks/results/self_retrieval.json`.
+
+That self-repo pattern now replicates on three pre-registered external
+repos (`benchmarks/results/SUMMARY.md`, 20 original queries each,
+budgets `800/1200/2000`, recall gate `>= 0.90` — all three clear it):
+
+| Repo @ 800 | `<1k` | `1k-4k` | `>4k` |
+|---|---|---|---|
+| Django (R 1.00) | +11.3% (n=1) | +65.8% (n=7) | **+93.9%** (n=12) |
+| Fiber (R 0.95) | −21.1% (n=2) | +53.3% (n=7) | **+90.4%** (n=11) |
+| FastAPI (R 0.90) | −293.3% (n=10) | +60.3% (n=4) | **+94.4%** (n=6) |
+
+The `>4k` bucket clears the pre-declared `~60%` falsifiability bar on all
+three. The negative `<1k` rows are published alongside — they are what make
+the large-file rows credible. FastAPI's whole-run mean-of-ratios is
+`−1268%` at the same run whose aggregate is `+83.1%`: the starkest case yet
+for citing the aggregate.
+
+**Dollars** are a projection, not a measurement: input tokens only,
+`dollars = (mean_baseline − mean_context) × price_in / 1e6` from the
+aggregate, default `sonnet $2.00/1M` as of `2026-06-24`
+(`retrieval/pricing.py`). E.g. Django @ 800: `8098 tokens/query × $2/1M =
+$0.0162/query`. Always rendered with model + price + price date
+(`sg savings [--json]`, `GET /api/savings`), never as a bare `$X`.
 
 ---
 
