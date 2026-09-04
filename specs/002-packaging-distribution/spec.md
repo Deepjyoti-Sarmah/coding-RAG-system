@@ -6,38 +6,38 @@
 
 **Status**: Draft
 
-**Input**: Constitution amendment (Python floor 3.14 → 3.11) plus making CKG installable and continuously verified via packaging, `ckg init`, and CI — no indexing/analysis/retrieval behaviour changes.
+**Input**: Constitution amendment (Python floor 3.14 → 3.11) plus making symbolgraph installable and continuously verified via packaging, `sg init`, and CI — no indexing/analysis/retrieval behaviour changes.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Install and run from anywhere (Priority: P1)
 
-A developer installs CKG with `uv tool install .` or `pip install` and runs `ckg --help` from outside the repository. The CLI and MCP server are available as `ckg` and `ckg-mcp` entry points without requiring `PYTHONPATH` hacks or `uv run python cli.py`.
+A developer installs symbolgraph with `uv tool install .` or `pip install` and runs `sg --help` from outside the repository. The CLI and MCP server are available as `sg` and `sg-mcp` entry points without requiring `PYTHONPATH` hacks or `uv run python cli.py`.
 
 **Why this priority**: Distribution is the contract; if the wheel is broken nothing else is usable. This is the standalone MVP slice.
 
-**Independent Test**: Build wheel and sdist with `uv build`, install into an isolated environment, and assert `ckg --help` and `ckg-mcp` entry points resolve outside the repo.
+**Independent Test**: Build wheel and sdist with `uv build`, install into an isolated environment, and assert `sg --help` and `sg-mcp` entry points resolve outside the repo.
 
 **Acceptance Scenarios**:
 
-1. **Given** a built wheel, **When** `uv tool install .` runs, **Then** `ckg --help` exits 0 from `/tmp` without `PYTHONPATH`.
+1. **Given** a built wheel, **When** `uv tool install .` runs, **Then** `sg --help` exits 0 from `/tmp` without `PYTHONPATH`.
 2. **Given** `pyproject.toml` with `requires-python >=3.11`, **When** installed on 3.11/3.12/3.13, **Then** import succeeds with no syntax errors (no PEP 695 generics, no `type` statements).
 
 ---
 
 ### User Story 2 - One-command editor setup (Priority: P2)
 
-A developer runs `ckg init` in their project. CKG detects which editors are present and writes MCP configuration for each: `.mcp.json` (default / `.claude/`), `.vscode/mcp.json` (when `.vscode/` exists), `.cursor/mcp.json` (when `.cursor/` exists), and updates `opencode.json` when present. Existing files are merged, never overwritten wholesale; re-running `ckg init` is idempotent.
+A developer runs `sg init` in their project. symbolgraph detects which editors are present and writes MCP configuration for each: `.mcp.json` (default / `.claude/`), `.vscode/mcp.json` (when `.vscode/` exists), `.cursor/mcp.json` (when `.cursor/` exists), and updates `opencode.json` when present. Existing files are merged, never overwritten wholesale; re-running `sg init` is idempotent.
 
 **Why this priority**: Manual MCP wiring is error-prone; `init` removes friction for every downstream user and is testable independently of indexing.
 
-**Independent Test**: Create a temporary directory, run `ckg init`, assert `.mcp.json` contains `ckg` entry invoking `ckg-mcp`. Second run reports "already configured" and preserves file contents. Existing unrelated servers are preserved.
+**Independent Test**: Create a temporary directory, run `sg init`, assert `.mcp.json` contains `sg` entry invoking `sg-mcp`. Second run reports "already configured" and preserves file contents. Existing unrelated servers are preserved.
 
 **Acceptance Scenarios**:
 
-1. **Given** a fresh directory, **When** `ckg init` runs, **Then** `.mcp.json` is created with `mcpServers.ckg.command == "ckg-mcp"`.
-2. **Given** an existing `.mcp.json` with an unrelated server, **When** `ckg init` runs, **Then** both servers coexist and the unrelated entry is preserved.
-3. **Given** `ckg` already configured, **When** `ckg init` runs again, **Then** it reports "already configured" and does not modify the file.
+1. **Given** a fresh directory, **When** `sg init` runs, **Then** `.mcp.json` is created with `mcpServers.sg.command == "sg-mcp"`.
+2. **Given** an existing `.mcp.json` with an unrelated server, **When** `sg init` runs, **Then** both servers coexist and the unrelated entry is preserved.
+3. **Given** `sg` already configured, **When** `sg init` runs again, **Then** it reports "already configured" and does not modify the file.
 
 ---
 
@@ -62,18 +62,18 @@ Every push and pull request runs a lint gate and a cross-platform test matrix. L
 - Flat layout with 9 of 11 packages lacking `__init__.py` — build must list packages explicitly; moving to `src/` layout would rewrite import paths in 458 tests.
 - `code-context-engine/` is an untracked nested git repo not in `.gitignore` — a single `git add -A` creates a broken submodule gitlink; CI and build must exclude it and `.gitignore` must be updated.
 - `uv.lock` resolved against 3.14 — lowering `requires-python` invalidates the lockfile and requires `uv lock` plus a full suite re-run.
-- `ckg init` must never overwrite existing MCP configs wholesale; merging is required.
+- `sg init` must never overwrite existing MCP configs wholesale; merging is required.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-1**: `pyproject.toml` declares a `[build-system]` using `hatchling` and makes the project buildable (`uv build` produces wheel and sdist).
-- **FR-2**: `requires-python` is `>=3.11` and `name` is `code-knowledge-graph`; `description` is a real one-line summary.
-- **FR-3**: `[project.scripts]` maps `ckg = "cli:main"` and `ckg-mcp = "mcp_server:main"`; entry points invoke the correct mains.
+- **FR-2**: `requires-python` is `>=3.11` and `name` is `symbolgraph`; `description` is a real one-line summary.
+- **FR-3**: `[project.scripts]` maps `sg = "cli:main"` and `sg-mcp = "mcp_server:main"`; entry points invoke the correct mains.
 - **FR-4**: `[tool.hatch.build.targets.wheel]` lists all eleven top-level packages explicitly (`analysis`, `chunking`, `embeddings`, `evaluation`, `graph`, `indexing`, `ingestion`, `models`, `parsing`, `retrieval`, `storage`) plus the two top-level modules `cli.py` and `mcp_server.py`; `tests`, `test_repo`, `specs`, `code-context-engine`, `benchmarks`, `docs` are excluded from the wheel.
 - **FR-5**: `mcp_server.py` `instructions=` states support for TypeScript, JavaScript, TSX, JSX, Python, and Go (not just TypeScript/JavaScript).
-- **FR-6**: `cli.py` exposes `ckg init [path]` following the existing subparser pattern (`path` second, `nargs="?", default="."`); it detects editors and writes/merges MCP configs invoking `ckg-mcp`, never overwriting wholesale, and is idempotent with "already configured" reporting.
+- **FR-6**: `cli.py` exposes `sg init [path]` following the existing subparser pattern (`path` second, `nargs="?", default="."`); it detects editors and writes/merges MCP configs invoking `sg-mcp`, never overwriting wholesale, and is idempotent with "already configured" reporting.
 - **FR-7**: `[tool.ruff]` excludes `code-context-engine`, `tests/fixtures`, and `.venv`; `uv run ruff check .` exits clean after auto-fix; fixture `F841` is excluded not fixed.
 - **FR-8**: `.gitignore` ignores `code-context-engine/` to prevent broken gitlink.
 - **FR-9**: `.github/workflows/ci.yml` defines `lint` (single 3.12, `ruff check .`) and `test` (matrix OS × Python 3.11/3.12/3.13, `fail-fast: false`, `uv run pytest`) using `astral-sh/setup-uv`; macOS proves the sqlite-vec → NumpyVectorStore fallback via `storage/db.py::load_vec_extension`.
@@ -95,15 +95,15 @@ Every push and pull request runs a lint gate and a cross-platform test matrix. L
 ### Measurable Outcomes
 
 - **SC-1**: `uv build` succeeds and the wheel contains all 11 packages plus `cli.py`, `mcp_server.py` (verified via `unzip -l`), and excludes the 6 forbidden directories.
-- **SC-2**: `uv tool install .` followed by `ckg --help` from `/tmp` succeeds without `PYTHONPATH`.
+- **SC-2**: `uv tool install .` followed by `sg --help` from `/tmp` succeeds without `PYTHONPATH`.
 - **SC-3**: `uv run pytest -q` reports 458 + init tests passing (464) and `uv run ruff check .` is clean; `uv run python cli.py eval` output is byte-identical to the pre-change baseline (modulo timing jitter).
-- **SC-4**: `ckg init` on a fresh dir, on a dir with an existing unrelated server, and idempotent double-run all pass their assertions (file contents merged, not overwritten).
+- **SC-4**: `sg init` on a fresh dir, on a dir with an existing unrelated server, and idempotent double-run all pass their assertions (file contents merged, not overwritten).
 - **SC-5**: CI `lint` and 9-cell `test` matrix are green on push/PR, including macOS cells exercising the NumpyVectorStore fallback.
 
 ## Key Entities *(include if feature involves data)*
 
-- **Package**: name `code-knowledge-graph`, version 0.1.0, Python 3.11+, hatchling-built wheel with explicit package list.
-- **MCP Config**: JSON files (`.mcp.json`, `.vscode/mcp.json`, `.cursor/mcp.json`, `opencode.json`) containing `mcpServers`/`mcp` entry `ckg -> {command: "ckg-mcp"}`.
+- **Package**: name `symbolgraph`, version 0.1.0, Python 3.11+, hatchling-built wheel with explicit package list.
+- **MCP Config**: JSON files (`.mcp.json`, `.vscode/mcp.json`, `.cursor/mcp.json`, `opencode.json`) containing `mcpServers`/`mcp` entry `sg -> {command: "sg-mcp"}`.
 
 ## Review & Acceptance Checklist
 

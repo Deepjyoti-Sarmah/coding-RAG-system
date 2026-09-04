@@ -6,18 +6,18 @@
 
 ## Summary
 
-Make CKG installable and continuously verified without changing indexing/analysis/retrieval behaviour: add a `hatchling` build system, fix package discovery for 9 of 11 namespace packages lacking `__init__.py`, expose `ckg`/`ckg-mcp` entry points, add `ckg init` editor detection/merging, exclude `code-context-engine` and fixtures from lint/build, and add a cross-platform CI matrix that proves the macOS sqlite-vec → NumpyVectorStore fallback.
+Make symbolgraph installable and continuously verified without changing indexing/analysis/retrieval behaviour: add a `hatchling` build system, fix package discovery for 9 of 11 namespace packages lacking `__init__.py`, expose `sg`/`sg-mcp` entry points, add `sg init` editor detection/merging, exclude `code-context-engine` and fixtures from lint/build, and add a cross-platform CI matrix that proves the macOS sqlite-vec → NumpyVectorStore fallback.
 
 ## Technical Context
 
 **Language/Version**: Python 3.11+ (amended; tree is 3.10-compatible)
 **Primary Dependencies**: `hatchling` (new build backend), existing `mcp`, `sqlite-vec`, `tree-sitter` stack unchanged
 **Storage**: unchanged (SQLite via storage/)
-**Testing**: existing 458-test suite plus 6 new `ckg init` tests; `uv lock` after `requires-python` change
+**Testing**: existing 458-test suite plus 6 new `sg init` tests; `uv lock` after `requires-python` change
 **Target Platform**: Linux CLI / MCP server (unchanged), wheel + sdist via `uv build`
 **Performance Goals**: unchanged — packaging does not alter indexing/retrieval
 **Constraints**: flat layout preserved (no `src/` move); 9 namespace packages listed explicitly; no new runtime deps; ruff rule set not widened
-**Scale/Scope**: packaging, lint config, `ckg init`, CI, docs; zero edits to core pipeline except import-sort auto-fixes
+**Scale/Scope**: packaging, lint config, `sg init`, CI, docs; zero edits to core pipeline except import-sort auto-fixes
 
 ## Constitution Check
 
@@ -25,9 +25,9 @@ Make CKG installable and continuously verified without changing indexing/analysi
 |---|---|
 | I Local-first | PASS — `hatchling` is offline build dep; no cloud/service additions |
 | II Incremental = full | PASS — no indexing/chunking/storage changes; parity tests untouched |
-| III Tests before moving forward | PASS — `ckg init` lands with unit tests; suite stays green before every commit |
+| III Tests before moving forward | PASS — `sg init` lands with unit tests; suite stays green before every commit |
 | IV Neutral core | PASS — packaging/CLI/CI are edge concerns; no shared-pipeline edits |
-| V Layering | PASS — `cli` → `indexing` → `storage` direction preserved; `ckg init` is pure CLI |
+| V Layering | PASS — `cli` → `indexing` → `storage` direction preserved; `sg init` is pure CLI |
 | VI Measure | PASS — `uv run python cli.py eval` byte-identical to baseline |
 | VII Simplicity | PASS — explicit package list over `src/` move; minimal CI; no speculative abstractions |
 
@@ -35,13 +35,13 @@ Make CKG installable and continuously verified without changing indexing/analysi
 
 1. **Build backend**: `hatchling` via `[build-system]` (`hatchling.build`). Top-level packages listed explicitly in `[tool.hatch.build.targets.wheel] packages = [11]` because 9 are implicit namespace packages. Two top-level modules `cli.py`, `mcp_server.py` (plus `config.py` for runtime) included via `[tool.hatch.build] force-include`; `src/` layout rejected because it rewrites 458 test import paths.
 
-2. **Package name and Python floor**: `name = "code-knowledge-graph"`, `requires-python = ">=3.11"`, `description` replaced. Constitution "Additional Constraints" amended to `Python 3.11+` with version bump `1.0.0 → 1.1.0` and governance commit message explaining 3.10-compatibility (`slots=True`, `X | None`) and that 3.14 blocks distribution. `uv lock` re-resolved after the floor change.
+2. **Package name and Python floor**: `name = "symbolgraph"`, `requires-python = ">=3.11"`, `description` replaced. Constitution "Additional Constraints" amended to `Python 3.11+` with version bump `1.0.0 → 1.1.0` and governance commit message explaining 3.10-compatibility (`slots=True`, `X | None`) and that 3.14 blocks distribution. `uv lock` re-resolved after the floor change.
 
-3. **Entry points**: `[project.scripts] ckg = "cli:main"`, `ckg-mcp = "mcp_server:main"` — both `main` signatures (`cli.py:352` `argv list | None -> int`, `mcp_server.py:208` `-> None`) match hatch entry-point expectations.
+3. **Entry points**: `[project.scripts] sg = "cli:main"`, `sg-mcp = "mcp_server:main"` — both `main` signatures (`cli.py:352` `argv list | None -> int`, `mcp_server.py:208` `-> None`) match hatch entry-point expectations.
 
 4. **Ruff**: `[tool.ruff] exclude = ["code-context-engine", "tests/fixtures", ".venv"]`; `TC004` ignored via `[tool.ruff.lint] ignore = ["TC004"]` to avoid churn from a newly-defaulted rule that wasn't in the original baseline (fixture `F841` is intentional test data and must be excluded, not fixed). `I001` auto-fixed in `analysis/` plus `PIE800`/`I001` in `tests/`. `uv run ruff check .` must be clean; CI lint gate will otherwise go red on first run.
 
-5. **`ckg init`**: Follows `build_parser():273` subparser pattern with `path` second (`nargs="?", default="."`). Detection → file: always `.mcp.json` (default / `.claude/`), `.vscode/ → .vscode/mcp.json`, `.cursor/ → .cursor/mcp.json`, `opencode.json →` update. Entry invokes `ckg-mcp` (`{"command": "ckg-mcp"}`). Merge semantics: read existing JSON, preserve all keys, add `mcpServers.ckg` (or `mcp.ckg` for `opencode.json`), check any of `mcpServers`/`servers`/`mcp` for existing `ckg` and report "already configured" without overwriting.
+5. **`sg init`**: Follows `build_parser():273` subparser pattern with `path` second (`nargs="?", default="."`). Detection → file: always `.mcp.json` (default / `.claude/`), `.vscode/ → .vscode/mcp.json`, `.cursor/ → .cursor/mcp.json`, `opencode.json →` update. Entry invokes `sg-mcp` (`{"command": "sg-mcp"}`). Merge semantics: read existing JSON, preserve all keys, add `mcpServers.sg` (or `mcp.sg` for `opencode.json`), check any of `mcpServers`/`servers`/`mcp` for existing `sg` and report "already configured" without overwriting.
 
 6. **CI**: `.github/workflows/ci.yml` with `lint` (single `ubuntu-latest`, 3.12, `ruff check .`) and `test` (matrix `os: [ubuntu, macos, windows] × python-version: ["3.11","3.12","3.13"]`, `fail-fast: false`, `uv run pytest`) via `astral-sh/setup-uv`. macOS deliberately has no sqlite-vec shim; the `retrieval/numpy_vector_store.py` fallback via `storage/db.py::load_vec_extension` returning `False` is the feature under test for those cells.
 
@@ -62,7 +62,7 @@ specs/002-packaging-distribution/{spec,plan,tasks}.md
 
 Changed registrations: none in `analysis/` business logic; only `pyproject.toml`, `cli.py`, `mcp_server.py`, `.gitignore`, CI, docs, and `uv.lock`.
 
-Tests: 458 existing + 6 new `ckg init` = 464 passing; `uv run ruff check .` clean; `uv build` wheel/sdist contain 11 packages + 3 top-level modules and exclude 6 forbidden dirs.
+Tests: 458 existing + 6 new `sg init` = 464 passing; `uv run ruff check .` clean; `uv build` wheel/sdist contain 11 packages + 3 top-level modules and exclude 6 forbidden dirs.
 
 ## Phase 0 Research (verified empirically before touching anything)
 

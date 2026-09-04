@@ -1,12 +1,11 @@
 @import "tailwindcss";
 
 @theme {
+  /* One display, one mono — like Hermes (serif headline + mono body). No Inter body. */
   --font-display: "Bodoni Moda", ui-serif, Georgia, serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Bold ultramarine as the dominant field, near-black for the alternating
-     dark panels, off-white for the light panels. One system, two modes. */
   --color-blue: #1c1cf0;
   --color-blue-deep: #12129e;
   --color-ink: #0a0a0c;
@@ -23,8 +22,18 @@ html {
 body {
   background: var(--color-paper);
   color: var(--color-ink);
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-variant-ligatures: common-ligatures;
+}
+
+/* Display headings: Hermes uses high-contrast hairline serif, never bold */
+.font-display {
+  font-optical-sizing: auto;
+  font-variant-ligatures: discretionary-ligatures;
+  font-feature-settings: "onum" 1;
 }
 
 ::selection {
@@ -36,15 +45,26 @@ body {
   text-wrap: balance;
 }
 
-/* Radial line-burst, generated in CSS — used sparingly, once per mode */
+/* Hermes-accurate bursts — crisp, high-contrast, not subtle */
 .line-burst {
   background-image: repeating-conic-gradient(
-    from 0deg,
-    var(--burst-color, rgba(255, 255, 255, 0.16)) 0deg 0.5deg,
-    transparent 0.5deg 5.5deg
+    from var(--burst-from, 0deg),
+    var(--burst-color, rgba(255, 255, 255, 0.95)) 0deg 0.55deg,
+    transparent 0.55deg 4.2deg
   );
-  -webkit-mask-image: radial-gradient(circle at center, black 0%, black 30%, transparent 70%);
-  mask-image: radial-gradient(circle at center, black 0%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at center, black 0%, black 38%, transparent 72%);
+  mask-image: radial-gradient(circle at center, black 0%, black 38%, transparent 72%);
+}
+
+/* halftone + grain helpers — Hermes uses heavy duotone engraving texture */
+.halftone {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.95) 1px, transparent 1.2px);
+  background-size: 6px 6px;
+}
+.engrave-grain {
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08) 0%, transparent 55%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 3px);
 }
 
 @keyframes blink {

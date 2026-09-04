@@ -5,7 +5,7 @@ out of SQLite is expensive, and every query used to pay it. The index
 metadata table carries a monotonically increasing `generation` that bumps
 on every successful persist, so it doubles as a free invalidation key:
 probing it is one single-row SELECT, and any write - from this process
-(watcher reindex) or an external one (`ckg index` in another terminal) -
+(watcher reindex) or an external one (`sg index` in another terminal) -
 changes the generation and forces the next load to refresh.
 """
 

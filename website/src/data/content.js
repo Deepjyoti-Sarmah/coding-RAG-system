@@ -1,9 +1,9 @@
-// Every number and command here is sourced from the CKG repo's README.md,
+// Every number and command here is sourced from the symbolgraph repo's README.md,
 // ROADMAP.md, and the codebase itself — nothing here is invented copy.
 
 export const REPO_URL = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system";
 
-// CKG is not yet published to PyPI (v0.1.0 tag pending) — the honest
+// symbolgraph is not yet published to PyPI (v0.1.0 tag pending) — the honest
 // install path today is a checkout.
 export const INSTALL_TABS = [
   {
@@ -24,7 +24,7 @@ export const INSTALL_TABS = [
   },
 ];
 
-// Platform cards — CKG is a CLI + MCP server, not a desktop app, so every
+// Platform cards — symbolgraph is a CLI + MCP server, not a desktop app, so every
 // platform installs the same way. Shown as three cards to mirror the
 // reference layout without inventing per-OS binaries that don't exist.
 export const PLATFORMS = [
@@ -34,9 +34,9 @@ export const PLATFORMS = [
 ];
 
 export const TERMINAL_STEPS = [
-  { cmd: "ckg init --agent all", out: "wired 4 editors + git hooks" },
-  { cmd: "ckg index .", out: "1,842 files parsed, 9,201 symbols" },
-  { cmd: "ckg status --oneline", out: "symbols 9201 chunks 9201 pending 0 gen 1" },
+  { cmd: "sg init --agent all", out: "wired 4 editors + git hooks" },
+  { cmd: "sg index .", out: "1,842 files parsed, 9,201 symbols" },
+  { cmd: "sg status --oneline", out: "symbols 9201 chunks 9201 pending 0 gen 1" },
 ];
 
 // The pipeline stages, in order — a genuine sequence, so numbering here
@@ -76,7 +76,7 @@ export const PIPELINE = [
     stage: "Serve",
     headline: "Definitions, not files",
     detail: "Definitions and relationships within a token budget — over the CLI, or 13 tools over MCP.",
-    ref: "ckg/mcp_server.py",
+    ref: "symbolgraph/mcp_server.py",
   },
 ];
 
@@ -95,9 +95,9 @@ export const EXAMPLE_GRAPH = {
   ],
 };
 
-// Dark-panel feature rows — CKG's own capabilities, in its own words,
+// Dark-panel feature rows — symbolgraph's own capabilities, in its own words,
 // laid out the way the reference alternates label / heading / description
-// / visual, but every visual is a real CKG artifact (diagram, table,
+// / visual, but every visual is a real symbolgraph artifact (diagram, table,
 // terminal), never a borrowed screenshot.
 export const FEATURE_ROWS = [
   {
@@ -115,13 +115,13 @@ export const FEATURE_ROWS = [
   {
     tag: "Editors",
     title: "One index, every agent",
-    desc: "ckg init --agent all detects Claude, Cursor, VS Code, OpenCode, Gemini, Copilot, Pi, and Codex, writing an MCP entry for each — idempotently.",
+    desc: "sg init --agent all detects Claude, Cursor, VS Code, OpenCode, Gemini, Copilot, Pi, and Codex, writing an MCP entry for each — idempotently.",
     pills: ["8 editors", "idempotent"],
   },
   {
     tag: "Local-first",
     title: "Your code never leaves your machine",
-    desc: "The index lives in .ckg/index.sqlite inside your repo. No network egress by default — nothing reaches the internet unless you point it at Ollama yourself.",
+    desc: "The index lives in .sg/index.sqlite inside your repo. No network egress by default — nothing reaches the internet unless you point it at Ollama yourself.",
     pills: ["no cloud", "SQLite WAL"],
   },
 ];
@@ -174,12 +174,12 @@ export const FALLBACK_COUNT = "40+";
 export const FALLBACK_EXAMPLE = "html css scss json yaml toml sql md rb php swift kt sh";
 
 export const CLI_COMMANDS = [
-  { cmd: "ckg init --agent all", desc: "wire every editor + write git hooks" },
-  { cmd: "ckg index .", desc: "build or update .ckg/index.sqlite" },
-  { cmd: "ckg status --oneline", desc: "symbols 342 chunks 342 pending 0 gen 12" },
-  { cmd: 'ckg search "auth flow" --top-k 5', desc: "hybrid retrieval, graph-expanded" },
-  { cmd: "ckg doctor .", desc: "index, lock, git hook, backend — one check" },
-  { cmd: "ckg dashboard --no-browser", desc: "local ops UI on 127.0.0.1" },
+  { cmd: "sg init --agent all", desc: "wire every editor + write git hooks" },
+  { cmd: "sg index .", desc: "build or update .sg/index.sqlite" },
+  { cmd: "sg status --oneline", desc: "symbols 342 chunks 342 pending 0 gen 12" },
+  { cmd: 'sg search "auth flow" --top-k 5', desc: "hybrid retrieval, graph-expanded" },
+  { cmd: "sg doctor .", desc: "index, lock, git hook, backend — one check" },
+  { cmd: "sg dashboard --no-browser", desc: "local ops UI on 127.0.0.1" },
 ];
 
 export const NAV_LINKS = [

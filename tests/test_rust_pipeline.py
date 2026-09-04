@@ -130,8 +130,8 @@ class TestRustRetrieval(unittest.TestCase):
             dest.write_text(content, encoding="utf-8")
 
         self.root = root
-        self.db_path = str(root / ".ckg" / "index.sqlite")
-        (root / ".ckg").mkdir(parents=True, exist_ok=True)
+        self.db_path = str(root / ".sg" / "index.sqlite")
+        (root / ".sg").mkdir(parents=True, exist_ok=True)
         reindex_index(self.db_path, str(root))
 
     def tearDown(self):

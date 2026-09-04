@@ -17,13 +17,13 @@ EDITORS = {
 }
 
 
-CKG_BLOCK_VERSION = 1
-CKG_BLOCK_START = f"<!-- ckg-block-version: {CKG_BLOCK_VERSION} -->"
-CKG_BLOCK_END = "<!-- end ckg-block -->"
-CKG_BLOCK_CONTENT = """<!-- ckg-block-version: 1 -->
-## CKG Code Knowledge Graph
-Use `ckg search` / `ckg context` / `definition` / `callers` / `callees` before reading files. Index via `ckg index .`
-<!-- end ckg-block -->"""
+SG_BLOCK_VERSION = 1
+SG_BLOCK_START = f"<!-- sg-block-version: {SG_BLOCK_VERSION} -->"
+SG_BLOCK_END = "<!-- end sg-block -->"
+SG_BLOCK_CONTENT = """<!-- sg-block-version: 1 -->
+## symbolgraph symbolgraph
+Use `sg search` / `sg context` / `definition` / `callers` / `callees` before reading files. Index via `sg index .`
+<!-- end sg-block -->"""
 
 
 def toml_escape(s: str) -> str:
@@ -40,14 +40,14 @@ def project_storage_slug(abs_path: str) -> str:
 
 def ensure_block_content(existing: str) -> tuple[str, bool]:
     """Return (new_content, already_configured). Handles version upgrade."""
-    if CKG_BLOCK_START in existing and CKG_BLOCK_END in existing:
+    if SG_BLOCK_START in existing and SG_BLOCK_END in existing:
         return existing, True
     # Legacy marker upgrade
-    if "<!-- CKG MCP: ckg-mcp -->" in existing:
-        return existing.replace("<!-- CKG MCP: ckg-mcp -->", CKG_BLOCK_CONTENT), False
+    if "<!-- symbolgraph MCP: sg-mcp -->" in existing:
+        return existing.replace("<!-- symbolgraph MCP: sg-mcp -->", SG_BLOCK_CONTENT), False
     if existing and not existing.endswith("\n"):
         existing += "\n"
-    return existing + CKG_BLOCK_CONTENT + "\n", False
+    return existing + SG_BLOCK_CONTENT + "\n", False
 
 
 def atomic_write_text(path: Path, content: str) -> None:

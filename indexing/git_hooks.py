@@ -1,4 +1,4 @@
-"""Git hooks keep-fresh — post-commit/post-checkout/post-merge triggers background ckg index."""
+"""Git hooks keep-fresh — post-commit/post-checkout/post-merge triggers background sg index."""
 
 import stat
 from pathlib import Path
@@ -6,14 +6,14 @@ from pathlib import Path
 
 def _hook_content(root: Path) -> str:
     return f"""#!/bin/sh
-# CKG keep-fresh hook — do not edit manually
+# symbolgraph keep-fresh hook — do not edit manually
 if echo "$1" | grep -q "/tmp\\|/private/tmp\\|/.claude/worktrees/" 2>/dev/null; then exit 0; fi
-if [ -f /tmp/ckg-index-hook.lock ]; then
-  pid=$(cat /tmp/ckg-index-hook.lock 2>/dev/null)
+if [ -f /tmp/sg-index-hook.lock ]; then
+  pid=$(cat /tmp/sg-index-hook.lock 2>/dev/null)
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then exit 0; fi
 fi
-echo $$ > /tmp/ckg-index-hook.lock
-nice -n 10 ckg index "{root}" &>/dev/null &
+echo $$ > /tmp/sg-index-hook.lock
+nice -n 10 sg index "{root}" &>/dev/null &
 """
 
 
@@ -40,7 +40,7 @@ def install_hooks(root: str | Path) -> list[str]:
     installed = []
     for name in ("post-commit", "post-checkout", "post-merge"):
         path = hooks_dir / "hooks" / name
-        if path.exists() and "CKG keep-fresh" not in path.read_text(encoding="utf-8", errors="ignore"):
+        if path.exists() and "symbolgraph keep-fresh" not in path.read_text(encoding="utf-8", errors="ignore"):
             continue  # don't clobber user hook
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(_hook_content(root), encoding="utf-8")
@@ -57,7 +57,7 @@ def uninstall_hooks(root: str | Path) -> list[str]:
     removed = []
     for name in ("post-commit", "post-checkout", "post-merge"):
         path = hooks_dir / "hooks" / name
-        if path.exists() and "CKG keep-fresh" in path.read_text(encoding="utf-8", errors="ignore"):
+        if path.exists() and "symbolgraph keep-fresh" in path.read_text(encoding="utf-8", errors="ignore"):
             path.unlink()
             removed.append(str(path))
     return removed

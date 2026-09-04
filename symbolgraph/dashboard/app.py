@@ -1,4 +1,4 @@
-"""FastAPI wrapper for CKG dashboard — uses FastAPI if installed, else falls back."""
+"""FastAPI wrapper for symbolgraph dashboard — uses FastAPI if installed, else falls back."""
 
 try:
     from fastapi import FastAPI, Request
@@ -9,22 +9,22 @@ except ImportError:
     HAS_FASTAPI = False
     FastAPI = None  # type: ignore
 
-from ckg.dashboard.page import PAGE
+from symbolgraph.dashboard.page import PAGE
 
 
 def create_app(project: str):
     if not HAS_FASTAPI:
         # Fallback: return None, caller should use DashboardServer
         return None
-    app = FastAPI(title="CKG Dashboard")
+    app = FastAPI(title="symbolgraph Dashboard")
 
     # Reuse logic from DashboardHandler by instantiating a dummy server
     # For simplicity, we proxy to the same handlers via direct calls
     import sqlite3
     from pathlib import Path
 
-    from ckg.cli import cmd_search, cmd_status, default_db_path
     from session_memory import session_db_path
+    from symbolgraph.cli import cmd_search, cmd_status, default_db_path
 
     @app.get("/", response_class=HTMLResponse)
     async def root():
@@ -33,7 +33,7 @@ def create_app(project: str):
     @app.get("/api/health")
     async def health():
         from pathlib import Path
-        db = Path(project) / ".ckg" / "index.sqlite"
+        db = Path(project) / ".sg" / "index.sqlite"
         sdb = Path(session_db_path(project))
         return {"status": "ok", "project_path": project, "index_present": db.exists(), "session_database_present": sdb.exists(), "schema_version": "session-v1"}
 
@@ -43,7 +43,7 @@ def create_app(project: str):
         import hmac
         import os
 
-        token = os.environ.get("CKG_DASHBOARD_TOKEN")
+        token = os.environ.get("SG_DASHBOARD_TOKEN")
         if token and not hmac.compare_digest(f"Bearer {token}", request.headers.get("authorization", "")):
             return JSONResponse({"error": "unauthorized"}, status_code=401)
         site = request.headers.get("sec-fetch-site", "")
@@ -129,14 +129,14 @@ def create_app(project: str):
         import subprocess
         import sys
 
-        token = os.environ.get("CKG_DASHBOARD_TOKEN")
+        token = os.environ.get("SG_DASHBOARD_TOKEN")
         if token and not hmac.compare_digest(f"Bearer {token}", request.headers.get("authorization", "")):
             return JSONResponse({"error": "unauthorized"}, status_code=401)
         site = request.headers.get("sec-fetch-site", "")
         if site and site not in ("same-origin", "same-site", "none"):
             return JSONResponse({"error": "csrf"}, status_code=403)
         try:
-            subprocess.Popen([sys.executable, "-m", "ckg.cli", "index", project], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.Popen([sys.executable, "-m", "symbolgraph.cli", "index", project], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return {"status": "reindex started"}
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=500)
@@ -171,7 +171,7 @@ def create_app(project: str):
         import os
         from pathlib import Path as p
 
-        token = os.environ.get("CKG_DASHBOARD_TOKEN")
+        token = os.environ.get("SG_DASHBOARD_TOKEN")
         if token and not hmac.compare_digest(f"Bearer {token}", request.headers.get("authorization", "")):
             return JSONResponse({"error": "unauthorized"}, status_code=401)
         site = request.headers.get("sec-fetch-site", "")

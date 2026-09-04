@@ -8,7 +8,7 @@ from evaluation.ab_metrics import score, summarize
 from evaluation.ab_runner import (
     FakeAgentRunner,
     SubprocessAgentRunner,
-    _provision_ckg,
+    _provision_sg,
     _validate_condition,
     load_tasks,
     parse_result,
@@ -26,19 +26,19 @@ class AbEvaluationTests(unittest.TestCase):
         tasks = load_tasks("evaluation/tasks.json")[:2]
         with tempfile.TemporaryDirectory() as d:
             out = Path(d)
-            results = run(tasks, FakeAgentRunner(), ("with_ckg", "without_ckg"), out)
+            results = run(tasks, FakeAgentRunner(), ("with_sg", "without_sg"), out)
             self.assertEqual(len(results), 4)
             self.assertTrue(any(x["success"] for x in results))
             self.assertTrue(all("files_found" in x and x["changed_files"] == [] for x in results))
             self.assertTrue((out / "summary.json").exists())
-            resumed = run(tasks, FakeAgentRunner(), ("with_ckg", "without_ckg"), out)
+            resumed = run(tasks, FakeAgentRunner(), ("with_sg", "without_sg"), out)
             self.assertEqual(len(resumed), 4)
 
     def test_dry_run_does_not_invoke_runner(self):
         class Fail(FakeAgentRunner):
             def run(self, *args): raise AssertionError("invoked")
         with tempfile.TemporaryDirectory() as d:
-            run(load_tasks("evaluation/tasks.json")[:1], Fail(), ("with_ckg",), Path(d), True)
+            run(load_tasks("evaluation/tasks.json")[:1], Fail(), ("with_sg",), Path(d), True)
 
     def test_scoring_requires_files_and_symbols(self):
         task = load_tasks("evaluation/tasks.json")[0]
@@ -46,7 +46,7 @@ class AbEvaluationTests(unittest.TestCase):
         self.assertFalse(result["success"])
 
     def test_metrics_do_not_fabricate_missing_tokens(self):
-        summary = summarize([{"task_id":"x","language":"python","condition":"with_ckg","success":True,"elapsed_seconds":1,"total_tokens":None,"tool_calls":None}])
+        summary = summarize([{"task_id":"x","language":"python","condition":"with_sg","success":True,"elapsed_seconds":1,"total_tokens":None,"tool_calls":None}])
         self.assertIsNone(summary["all"]["tokens"]["mean"])
 
     def test_result_protocol_validation_and_nullable_metrics(self):
@@ -64,7 +64,7 @@ class AbEvaluationTests(unittest.TestCase):
     def test_missing_result_and_timeout_are_explicit(self):
         task = load_tasks("evaluation/tasks.json")[0]
         with tempfile.TemporaryDirectory() as d:
-            result = SubprocessAgentRunner("true").run(task, "without_ckg", Path(d))
+            result = SubprocessAgentRunner("true").run(task, "without_sg", Path(d))
             self.assertIn("result file", result["failure_reason"])
 
     def test_ckg_provisioning_is_standard_and_external(self):
@@ -72,9 +72,9 @@ class AbEvaluationTests(unittest.TestCase):
             work = Path(d) / "repo"
             import shutil
             shutil.copytree("tests/fixtures/session_repo", work)
-            index, config = _provision_ckg(work)
+            index, config = _provision_sg(work)
             self.assertTrue(index.exists())
-            self.assertEqual(json.loads(config.read_text()), {"mcpServers": {"ckg": {"command": "ckg-mcp"}}})
+            self.assertEqual(json.loads(config.read_text()), {"mcpServers": {"symbolgraph": {"command": "sg-mcp"}}})
 
     def test_pilot_selects_exactly_python_and_javascript(self):
         tasks = load_tasks("evaluation/tasks.json")
@@ -86,15 +86,15 @@ class AbEvaluationTests(unittest.TestCase):
             called = False
             def run(self, *args): self.called = True; return super().run(*args)
         agent = Agent()
-        with tempfile.TemporaryDirectory() as d, patch("evaluation.ab_runner._provision_ckg", side_effect=RuntimeError("bad index")):
-            result = run(load_tasks("evaluation/tasks.json")[:1], agent, ("with_ckg",), Path(d))[0]
-        self.assertFalse(agent.called); self.assertTrue(result["infrastructure_failure"]); self.assertFalse(result["success"]); self.assertFalse(result["ckg_retrieval"]["enabled"])
+        with tempfile.TemporaryDirectory() as d, patch("evaluation.ab_runner._provision_sg", side_effect=RuntimeError("bad index")):
+            result = run(load_tasks("evaluation/tasks.json")[:1], agent, ("with_sg",), Path(d))[0]
+        self.assertFalse(agent.called); self.assertTrue(result["infrastructure_failure"]); self.assertFalse(result["success"]); self.assertFalse(result["sg_retrieval"]["enabled"])
 
     def test_without_ckg_validation_and_malformed_config_fail(self):
         with tempfile.TemporaryDirectory() as d:
-            work=Path(d); _validate_condition(work,"without_ckg")
+            work=Path(d); _validate_condition(work,"without_sg")
             (work/".mcp.json").write_text("{")
-            with self.assertRaises(ValueError): _validate_condition(work,"with_ckg")
+            with self.assertRaises(ValueError): _validate_condition(work,"with_sg")
 
 
 if __name__ == "__main__": unittest.main()

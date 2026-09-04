@@ -3,15 +3,15 @@ from collections.abc import Iterator
 from pathlib import Path
 from uuid import uuid4
 
-from ckg.config import (
+from ingestion.ignore_rules import load_ignore_rules
+from ingestion.language import detect_language
+from models.entities.documents import Document
+from symbolgraph.config import (
     EXCLUDE_DIRS,
     FALLBACK_EXTENSIONS,
     INCLUDE_EXTENSIONS,
     MAX_FILE_SIZE_BYTES,
 )
-from ingestion.ignore_rules import load_ignore_rules
-from ingestion.language import detect_language
-from models.entities.documents import Document
 
 
 def is_inside_excluded_dir(file_path: Path) -> bool:

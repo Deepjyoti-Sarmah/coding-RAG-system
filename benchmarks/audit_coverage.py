@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Diagnostic-only index coverage audit for CKG.
+"""Diagnostic-only index coverage audit for symbolgraph.
 
 Reuses the real ingestion/analysis pipeline (ingestion.loader,
 analysis.build_graph, chunking.symbol_chunker) rather than
@@ -40,9 +40,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from analysis.build_graph import build_graph
-from ckg.config import INCLUDE_EXTENSIONS
 from ingestion.ignore_rules import load_ignore_rules
 from ingestion.loader import is_inside_excluded_dir, should_skip_file
+from symbolgraph.config import INCLUDE_EXTENSIONS
 
 SKIP_REASONS = ("excluded_dir", "extension", "size", "ignore_rules")
 

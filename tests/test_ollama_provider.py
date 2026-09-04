@@ -55,10 +55,10 @@ class TestOllamaProvider(unittest.TestCase):
 
         orig = os.environ.copy()
         try:
-            os.environ.pop("CKG_OLLAMA_URL", None)
-            os.environ.pop("CKG_OLLAMA_HOST", None)
+            os.environ.pop("SG_OLLAMA_URL", None)
+            os.environ.pop("SG_OLLAMA_HOST", None)
             os.environ.pop("OLLAMA_HOST", None)
-            os.environ.pop("CKG_OLLAMA_MODEL", None)
+            os.environ.pop("SG_OLLAMA_MODEL", None)
             os.environ.pop("OLLAMA_MODEL", None)
 
             self.assertEqual(_resolve_ollama_url(), "http://localhost:11434")
@@ -67,13 +67,13 @@ class TestOllamaProvider(unittest.TestCase):
             os.environ["OLLAMA_HOST"] = "http://myhost:11434"
             self.assertEqual(_resolve_ollama_url(), "http://myhost:11434")
 
-            os.environ["CKG_OLLAMA_URL"] = "http://ckg-host:11434"
-            self.assertEqual(_resolve_ollama_url(), "http://ckg-host:11434")
+            os.environ["SG_OLLAMA_URL"] = "http://sg-host:11434"
+            self.assertEqual(_resolve_ollama_url(), "http://sg-host:11434")
 
             os.environ["OLLAMA_MODEL"] = "my-model"
             self.assertEqual(_resolve_ollama_model(), "my-model")
-            os.environ["CKG_OLLAMA_MODEL"] = "ckg-model"
-            self.assertEqual(_resolve_ollama_model(), "ckg-model")
+            os.environ["SG_OLLAMA_MODEL"] = "sg-model"
+            self.assertEqual(_resolve_ollama_model(), "sg-model")
         finally:
             os.environ.clear()
             os.environ.update(orig)

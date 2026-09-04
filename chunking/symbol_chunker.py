@@ -56,7 +56,7 @@ def build_semantic_chunks(result: BuildResult) -> list[SemanticChunk]:
 
             # Reuse module_symbol logic but without import/export guard for fallback langs
             # Check if fallback extension
-            from ckg.config import FALLBACK_EXTENSIONS
+            from symbolgraph.config import FALLBACK_EXTENSIONS
 
             ext = "." + doc.relative_path.split(".")[-1].lower() if "." in doc.relative_path else ""
             is_fallback = ext in FALLBACK_EXTENSIONS

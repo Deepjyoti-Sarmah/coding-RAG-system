@@ -1,4 +1,4 @@
-# Code Knowledge Graph (CKG)
+# symbolgraph
 
 <p align="center">
   <strong>Understand your repository before the LLM sees it.<br>Local-first semantic index for AI coding agents — no cloud, no estimates.</strong>
@@ -36,20 +36,20 @@
 ## Quick start — 30 seconds
 
 ```bash
-uv tool install .              # from checkout — installs `ckg` + `ckg-mcp`
+uv tool install .              # from checkout — installs `sg` + `sg-mcp`
 # or: pipx install . / pip install -e .
 
-ckg --version                  # 0.1.0
-ckg init --agent all           # auto-wires .mcp.json + .vscode/.cursor/opencode + ~/.codex/config.toml + AGENTS.md
-ckg index .                    # build or update .ckg/index.sqlite
-ckg status --oneline           # symbols 342 chunks 342 pending 0 gen 12
-ckg search "auth flow" --top-k 5
-ckg doctor .                   # ✓ index present ✓ lock free ✓ git hook ✓ backend
+sg --version                  # 0.1.0
+sg init --agent all           # auto-wires .mcp.json + .vscode/.cursor/opencode + ~/.codex/config.toml + AGENTS.md
+sg index .                    # build or update .sg/index.sqlite
+sg status --oneline           # symbols 342 chunks 342 pending 0 gen 12
+sg search "auth flow" --top-k 5
+sg doctor .                   # ✓ index present ✓ lock free ✓ git hook ✓ backend
 ```
 
 Restart your editor. Every question now hits the local index — not `grep` + re-reading files.
 
-> **Already have Ollama?** `ckg` auto-detects `http://localhost:11434` (`nomic-embed-text 768d`). Without it, `FTS + graph` already gives `definition 0.83 / recall 0.78` on the fixture; `ckg embed` adds vectors when you want them.
+> **Already have Ollama?** `sg` auto-detects `http://localhost:11434` (`nomic-embed-text 768d`). Without it, `FTS + graph` already gives `definition 0.83 / recall 0.78` on the fixture; `sg embed` adds vectors when you want them.
 
 ---
 
@@ -60,9 +60,9 @@ Restart your editor. Every question now hits the local index — not `grep` + re
 | **🔍** | **Hybrid retrieval** | Exact symbol + `CALLS/IMPORTS` graph expansion + FTS5 `porter` + vector cosine (sqlite-vec / numpy fallback), fused by RRF `k=60` + reranker + per-file cap |
 | **🔄** | **True incremental** | File hash + `interface_fingerprint` invalidation + `stable_key` identity + `Merkle root_hash` + append-only `INSERT OR REPLACE` chunks — reindex of a 2k-file edit `<200ms` |
 | **🔒** | **Local-first, no cloud** | SQLite `WAL` `synchronous=NORMAL` `busy_timeout 5000` + disposable derived state; source is truth |
-| **🧠** | **MCP 13 tools** | `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_*` `record_decision/code_area` — `ckg-mcp` over stdio, `IdleTracker 30m` + memory backoff |
-| **🖥️** | **Multi-editor** | `ckg init --agent auto|all` detects `.vscode` `.cursor` `opencode.json` + writes ` ~/.codex/config.toml [mcp_servers.ckg-<hash>]` TOML-escaped + versioned `<!-- ckg-block-version:1 -->` |
-| **📊** | **Dashboard + ops** | `ckg dashboard --no-browser` FastAPI 8 endpoints `GET /api/status/files/sessions/savings` `POST /api/reindex` `DELETE /api/files/{path}` `CSRF Sec-Fetch-Site + bearer hmac` + `ckg doctor` |
+| **🧠** | **MCP 13 tools** | `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_*` `record_decision/code_area` — `sg-mcp` over stdio, `IdleTracker 30m` + memory backoff |
+| **🖥️** | **Multi-editor** | `sg init --agent auto|all` detects `.vscode` `.cursor` `opencode.json` + writes ` ~/.codex/config.toml [mcp_servers.sg-<hash>]` TOML-escaped + versioned `<!-- sg-block-version:1 -->` |
+| **📊** | **Dashboard + ops** | `sg dashboard --no-browser` FastAPI 8 endpoints `GET /api/status/files/sessions/savings` `POST /api/reindex` `DELETE /api/files/{path}` `CSRF Sec-Fetch-Site + bearer hmac` + `sg doctor` |
 
 ---
 
@@ -81,7 +81,7 @@ Measured on `tests/fixtures/evaluation_repo` with fixed `token_budget=800` `o200
 
 Token savings are reported as `ExternalReport.mean_savings_pct` at `budget 800` with `baseline = expected_files only` (`evaluation/external.py:184`) — whole-repo `99%` is intentionally `0.0` (`evaluation/runner.py:202`). Cited with `mean_recall@10 + p50` or not at all. See `benchmarks/run_external.py`.
 
-A real-repo benchmark (multiple large open-source codebases, original queries written from scratch for this project) is planned — see `ROADMAP.md` `P5-4`. Until then, every number above comes from the fixture in this repo, reproducible with `ckg eval --embed` on `tests/fixtures/evaluation_repo`.
+A real-repo benchmark (multiple large open-source codebases, original queries written from scratch for this project) is planned — see `ROADMAP.md` `P5-4`. Until then, every number above comes from the fixture in this repo, reproducible with `sg eval --embed` on `tests/fixtures/evaluation_repo`.
 
 ---
 
@@ -108,27 +108,27 @@ A real-repo benchmark (multiple large open-source codebases, original queries wr
 
 | Command | Example | What it does |
 |---|---|---|
-| `ckg index <path> [--embed] [--no-background]` | `ckg index .` | Build/update `.ckg/index.sqlite` (only changed files reparsed) |
-| `ckg status [path] [--oneline]` | `ckg status --oneline` | `symbols 342 chunks 342 pending 0 gen 12` |
-| `ckg search <query> [path] [--top-k N] [--no-vector]` | `ckg search "login"` | Hybrid RRF search |
-| `ckg definition <name>` | `ckg definition createAuth` | Exact symbol definition |
-| `ckg callers <name>` | `ckg callers login` | `CALLS` incoming 1-hop |
-| `ckg callees <name>` | `ckg callees login` | `CALLS` outgoing 1-hop |
-| `ckg imports <file>` | `ckg imports api.ts` | Imports + resolved `::symbol` |
-| `ckg context <query> [--budget N] [--top-k N]` | `ckg context "how does login work?" --budget 800` | Token-budgeted `primary/supporting` pack |
-| `ckg eval [--embed] [--top-k N]` | `ckg eval` | Fixed fixture metrics |
-| `ckg watch <path> [--no-embed] [--debounce 0.5]` | `ckg watch .` | `watchdog` debounced reindex + `embed limit 200` |
-| `ckg init [path] [--agent auto|all] [--plugin]` | `ckg init --agent all` | Wire MCP for all detected editors + git hooks |
-| `ckg uninstall [path]` | `ckg uninstall` | Remove MCP entries + hooks |
-| `ckg embed [path] [--limit N]` | `ckg embed` | Drain `PENDING → DONE` queue (`content_hash` reuse) |
-| `ckg doctor [path] [--verbose]` | `ckg doctor .` | `index present / lock free / queue pending / git hook / backend` |
-| `ckg dashboard [path] [--port 8765] [--allow-remote]` | `ckg dashboard --no-browser` | `127.0.0.1` read-only, `CSRF + CKG_DASHBOARD_TOKEN hmac`, `POST /api/reindex` `DELETE /api/files/{path}` |
-| `ckg sessions <start|list|status|timeline|recall|export|prune>` | `ckg sessions recall auth .` | Local `session.sqlite` decisions/code_areas/retrieval history |
-| `ckg eval-ab --manifest evaluation/tasks.json [--agent-command "$CMD"]` | `ckg eval-ab --pilot --preflight` | Paired `with_ckg/without_ckg` worktrees, `null stays null` |
+| `sg index <path> [--embed] [--no-background]` | `sg index .` | Build/update `.sg/index.sqlite` (only changed files reparsed) |
+| `sg status [path] [--oneline]` | `sg status --oneline` | `symbols 342 chunks 342 pending 0 gen 12` |
+| `sg search <query> [path] [--top-k N] [--no-vector]` | `sg search "login"` | Hybrid RRF search |
+| `sg definition <name>` | `sg definition createAuth` | Exact symbol definition |
+| `sg callers <name>` | `sg callers login` | `CALLS` incoming 1-hop |
+| `sg callees <name>` | `sg callees login` | `CALLS` outgoing 1-hop |
+| `sg imports <file>` | `sg imports api.ts` | Imports + resolved `::symbol` |
+| `sg context <query> [--budget N] [--top-k N]` | `sg context "how does login work?" --budget 800` | Token-budgeted `primary/supporting` pack |
+| `sg eval [--embed] [--top-k N]` | `sg eval` | Fixed fixture metrics |
+| `sg watch <path> [--no-embed] [--debounce 0.5]` | `sg watch .` | `watchdog` debounced reindex + `embed limit 200` |
+| `sg init [path] [--agent auto|all] [--plugin]` | `sg init --agent all` | Wire MCP for all detected editors + git hooks |
+| `sg uninstall [path]` | `sg uninstall` | Remove MCP entries + hooks |
+| `sg embed [path] [--limit N]` | `sg embed` | Drain `PENDING → DONE` queue (`content_hash` reuse) |
+| `sg doctor [path] [--verbose]` | `sg doctor .` | `index present / lock free / queue pending / git hook / backend` |
+| `sg dashboard [path] [--port 8765] [--allow-remote]` | `sg dashboard --no-browser` | `127.0.0.1` read-only, `CSRF + SG_DASHBOARD_TOKEN hmac`, `POST /api/reindex` `DELETE /api/files/{path}` |
+| `sg sessions <start|list|status|timeline|recall|export|prune>` | `sg sessions recall auth .` | Local `session.sqlite` decisions/code_areas/retrieval history |
+| `sg eval-ab --manifest evaluation/tasks.json [--agent-command "$CMD"]` | `sg eval-ab --pilot --preflight` | Paired `with_sg/without_sg` worktrees, `null stays null` |
 
-`ckg --help` shows per-command examples. Override DB with `ckg --db /tmp/x.sqlite <cmd>`.
+`sg --help` shows per-command examples. Override DB with `sg --db /tmp/x.sqlite <cmd>`.
 
-**11 MCP tools + 2 session tools** via `ckg-mcp` stdio: `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_start/end/status/recall/timeline` `record_decision/code_area`.
+**11 MCP tools + 2 session tools** via `sg-mcp` stdio: `index_repository` `repository_status` `definition` `callers` `callees` `search` `imports` `context` `session_start/end/status/recall/timeline` `record_decision/code_area`.
 
 ---
 
@@ -136,7 +136,7 @@ A real-repo benchmark (multiple large open-source codebases, original queries wr
 
 ```text
 Repository
-    ↓  .gitignore/.ckgignore — ingestion/loader.py
+    ↓  .gitignore/.sgignore — ingestion/loader.py
 Scan + hash (mtime fast-path)
     ↓  indexing/diff.py + merkle.py root_hash
 ParsedDocument (tree parsed once, thread-local)
@@ -163,20 +163,20 @@ Reindex after edit: `Merkle` subtree check → `interface_fingerprint` importers
 ## Dashboard + ops
 
 ```bash
-ckg dashboard . --no-browser --port 8765
+sg dashboard . --no-browser --port 8765
 # → http://127.0.0.1:8765  GET /api/status /api/files /api/sessions /api/savings
 # POST /api/reindex  DELETE /api/files/a.html  (400 on .., 401 on bad bearer, 403 on cross-site)
 
-CKG_DASHBOARD_TOKEN=secret ckg dashboard --allow-remote  # remote needs flag + token
-ckg doctor --verbose
-# ✓ index present: .ckg/index.sqlite
-# ✓ lock free: free (.ckg/.index.lock fcntl)
+SG_DASHBOARD_TOKEN=secret sg dashboard --allow-remote  # remote needs flag + token
+sg doctor --verbose
+# ✓ index present: .sg/index.sqlite
+# ✓ lock free: free (.sg/.index.lock fcntl)
 # ✓ embedding queue: pending=0
-# ✓ git hook: .git/hooks/post-commit CKG keep-fresh
+# ✓ git hook: .git/hooks/post-commit symbolgraph keep-fresh
 # ✓ embedding backend: local:all-MiniLM-L6-v2:384 (FALLBACK: FTS+graph 0.83/0.78 ok)
 ```
 
-Git hook `indexing/git_hooks.py` on `ckg init`: `post-commit/post-checkout/post-merge nice -n10 ckg index &` with `/tmp/ckg-index-hook.lock` stale PID + `watcher.py` debounced `0.5s` secondary.
+Git hook `indexing/git_hooks.py` on `sg init`: `post-commit/post-checkout/post-merge nice -n10 sg index &` with `/tmp/sg-index-hook.lock` stale PID + `watcher.py` debounced `0.5s` secondary.
 
 ---
 
@@ -190,9 +190,9 @@ Git hook `indexing/git_hooks.py` on `ckg init`: `post-commit/post-checkout/post-
 | **PII** | `EMAIL IPV4 SSN PHONE E164 + CARD Luhn` (`411111… valid → [REDACTED:CARD]`, `1234… invalid → keep`) | `indexing/secrets.py:84 redact_pii` |
 | **Traversal** | `resolved.relative_to(project)` in `indexer/pipeline.py`, `dashboard DELETE .. \ / 400` | `storage/index_store.py` |
 | **WAL** | `PRAGMA journal_mode=WAL synchronous=NORMAL foreign_keys=ON busy_timeout 5000` | `storage/db.py:11` |
-| **Lock** | `fcntl.flock .ckg/.index.lock LOCK_EX|LOCK_NB` + `ProjectIndexLock` context | `indexing/resource_governor.py:61` |
+| **Lock** | `fcntl.flock .sg/.index.lock LOCK_EX|LOCK_NB` + `ProjectIndexLock` context | `indexing/resource_governor.py:61` |
 
-See `indexing/resource_governor.py:12 onnx_thread_cap CKG_ORT_THREADS` + `is_memory_pressured PSI avg10>25` + `MAX_FILE 2MB` + `TOKENIZERS_PARALLELISM false`.
+See `indexing/resource_governor.py:12 onnx_thread_cap SG_ORT_THREADS` + `is_memory_pressured PSI avg10>25` + `MAX_FILE 2MB` + `TOKENIZERS_PARALLELISM false`.
 
 ---
 
@@ -239,7 +239,7 @@ direct read, because the pack's structural overhead is roughly constant
 regardless of file size. `mean_savings_pct` weights those small-file
 losses the same as the large-file wins and comes out negative;
 `aggregate_savings_pct` reflects what actually happened across the
-token budget spent. **The claim that holds up: CKG saves tokens on
+token budget spent. **The claim that holds up: symbolgraph saves tokens on
 files large enough that "the whole file" costs more than "the
 definition plus its relationships" — and costs more on trivially small
 ones.** Full per-query breakdown in `benchmarks/results/self_retrieval.json`.
@@ -248,7 +248,7 @@ ones.** Full per-query breakdown in `benchmarks/results/self_retrieval.json`.
 
 ## Current status — what 0.1.0 is, what is not
 
-**Shipped (657p 80.53% branch, `docs/IMPLEMENTATION.md` phases `COMPLETE`):** tree-sitter parse once, document load, symbol/index, reference + member-expression `auth.client.createAuth`, cross-file import/export resolve incl. `re_export export * from` + `export {x} from`, `CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS`, interface `property_signature/method_signature` as child symbols, SQLite `13 tables + vec0 + FTS5 porter`, incremental `hash + Merkle root_hash + interface-aware reresolve`, semantic chunks `content_hash`, `FTS + vector + exact + graph expand 6+2 + RRF + reranker + per-file cap 3 + budget 800`, `FTS+graph 0.83/0.78` out-of-box, `ckg 13 cmds + ckg-mcp 13 tools`, `doctor + dashboard 8 endpoints CSRF+bearer hmac`, `eval + eval-ab 20 tasks`.
+**Shipped (657p 80.53% branch, `docs/IMPLEMENTATION.md` phases `COMPLETE`):** tree-sitter parse once, document load, symbol/index, reference + member-expression `auth.client.createAuth`, cross-file import/export resolve incl. `re_export export * from` + `export {x} from`, `CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS`, interface `property_signature/method_signature` as child symbols, SQLite `13 tables + vec0 + FTS5 porter`, incremental `hash + Merkle root_hash + interface-aware reresolve`, semantic chunks `content_hash`, `FTS + vector + exact + graph expand 6+2 + RRF + reranker + per-file cap 3 + budget 800`, `FTS+graph 0.83/0.78` out-of-box, `sg 13 cmds + sg-mcp 13 tools`, `doctor + dashboard 8 endpoints CSRF+bearer hmac`, `eval + eval-ab 20 tasks`.
 
 **Not yet (deliberate, not oversights):** `learned_weights.json` heuristic `relationship 1.15` needs real `AGENT_CMD` train; `export *` wildcard `target_symbol None`; `P5-2` append-only already `INSERT OR REPLACE` but `chunks_fts prune_not_in` not yet `HNSW`.
 
@@ -268,7 +268,7 @@ ones.** Full per-query breakdown in `benchmarks/results/self_retrieval.json`.
 - [x] Incremental detected (Merkle) + chunk reuse via `content_hash`
 - [x] FTS + vector locally + graph expansion + hybrid top-k
 - [x] Context from entities not whole files (budget 800)
-- [x] Agent can `ckg search/definition/callers/callees/context` via MCP
+- [x] Agent can `sg search/definition/callers/callees/context` via MCP
 - [x] Eval measures `recall/MRR/latency/tokens` + `doctor` prod check
 
 ---
@@ -288,9 +288,9 @@ Only the next layer may be optimized; never embed before resolution is trustwort
 ## Session memory + dashboard (local only)
 
 ```bash
-ckg sessions start . && ckg sessions recall "auth decision" --limit 10
-ckg dashboard . --no-browser  # http://127.0.0.1:8765 read-only, localhost by default
-rm -rf .ckg/session.sqlite    # wipe memory
+sg sessions start . && sg sessions recall "auth decision" --limit 10
+sg dashboard . --no-browser  # http://127.0.0.1:8765 read-only, localhost by default
+rm -rf .sg/session.sqlite    # wipe memory
 ```
 
 Bounded `MAX_TEXT 2000` `redact_secrets + redact_pii` on `_bounded`. Raw source/tool output never stored. `prune --days 30`.
@@ -301,7 +301,7 @@ Bounded `MAX_TEXT 2000` `redact_secrets + redact_pii` on `_bounded`. Raw source/
 
 ```bash
 uv build
-python scripts/release_smoke.py  # wheel outside checkout: ckg --help + init + index + search + ckg-mcp startup
+python scripts/release_smoke.py  # wheel outside checkout: sg --help + init + index + search + sg-mcp startup
 ```
 
 Offline needs `uv cache` wheels.
@@ -310,7 +310,7 @@ Offline needs `uv cache` wheels.
 
 ## Why symbol, not chunk
 
-Most local code-search tools tag functions and classes as text chunks — `FUNCTION`/`CLASS` labels over a span of source, connected by little more than "imports this file." CKG builds an actual graph instead:
+Most local code-search tools tag functions and classes as text chunks — `FUNCTION`/`CLASS` labels over a span of source, connected by little more than "imports this file." symbolgraph builds an actual graph instead:
 
 - **Symbol identity, not a text span.** Every function, class, and interface member gets a `stable_key` — the same symbol keeps the same identity across edits, renames included, so incremental reindexing can tell "this changed" from "this is new."
 - **Typed relationships, not just imports.** `CALLS` / `EXTENDS` / `IMPLEMENTS` / `HAS_TYPE` / `RETURNS` edges, including cross-file resolution through `export * from` re-exports and member paths like `auth.client.createAuth`.
@@ -323,6 +323,6 @@ The moat is symbol, not chunk — graph before vector, measured against a fixed 
 
 ## License
 
-MIT — see `LICENSE`. Authors: see `pyproject.toml` `Fazle Elahee / Raj` fork + `Deepjyoti` parity landings `ckg/editors` `secrets Luhn` `merkle`.
+MIT — see `LICENSE`. Authors: see `pyproject.toml` `Fazle Elahee / Raj` fork + `Deepjyoti` parity landings `symbolgraph/editors` `secrets Luhn` `merkle`.
 
-*If CKG saves you tokens, give it a star and cite `budget 800 + commit SHA`.*
+*If symbolgraph saves you tokens, give it a star and cite `budget 800 + commit SHA`.*

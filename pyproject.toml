@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "code-knowledge-graph"
+name = "symbolgraph"
 version = "0.1.0"
 description = "Local-first code intelligence engine with hybrid retrieval and MCP server"
 readme = "README.md"
@@ -36,7 +36,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    # Bounded below 3: ckg/mcp_server.py imports mcp.server.mcpserver.MCPServer,
+    # Bounded below 3: symbolgraph/mcp_server.py imports mcp.server.mcpserver.MCPServer,
     # a 2.x-only path. An unbounded floor risks a future major resolving in
     # and silently dropping that API, at which point the MCP server stops
     # starting with no clear error. Lift only after porting to whatever API
@@ -77,8 +77,8 @@ Issues = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system/issues"
 Changelog = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system/blob/main/CHANGELOG.md"
 
 [project.scripts]
-ckg = "ckg.cli:main"
-ckg-mcp = "ckg.mcp_server:main"
+sg = "symbolgraph.cli:main"
+sg-mcp = "symbolgraph.mcp_server:main"
 
 [dependency-groups]
 dev = [
@@ -100,7 +100,7 @@ dev = [
 packages = [
     "analysis",
     "chunking",
-    "ckg",
+    "symbolgraph",
     "embeddings",
     "evaluation",
     "graph",
@@ -152,7 +152,7 @@ ignore = [
     "SIM115", # indexing/resource_governor.py:73 opens a file without a
               # context manager — possibly a real fd-lifecycle issue, flagged
               # for review rather than silently wrapped.
-    "ASYNC220", # ckg/dashboard/app.py's async reindex handler calls
+    "ASYNC220", # symbolgraph/dashboard/app.py's async reindex handler calls
                 # subprocess.Popen (non-blocking, fire-and-forget — it does
                 # not wait()) inside `async def`; ruff flags process creation
                 # itself as a blocking risk. Left as-is pending a decision on
@@ -160,8 +160,8 @@ ignore = [
 ]
 
 [tool.coverage.run]
-source = ["analysis", "chunking", "ckg", "embeddings", "evaluation", "graph", "indexing", "ingestion", "models", "parsing", "retrieval", "storage", "session_memory"]
-omit = ["tests/*", "code-context-engine/*", "*/__pycache__/*", "ckg/dashboard/app.py"]
+source = ["analysis", "chunking", "symbolgraph", "embeddings", "evaluation", "graph", "indexing", "ingestion", "models", "parsing", "retrieval", "storage", "session_memory"]
+omit = ["tests/*", "code-context-engine/*", "*/__pycache__/*", "symbolgraph/dashboard/app.py"]
 branch = true
 
 [tool.coverage.report]

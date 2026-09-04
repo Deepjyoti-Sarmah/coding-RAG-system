@@ -78,25 +78,25 @@ class TestModelInvalidation(unittest.TestCase):
 
 class TestPackagingImports(unittest.TestCase):
     def test_ckg_config_resolves_to_source_tree(self):
-        import ckg.config
+        import symbolgraph.config
 
-        self.assertIn("ckg/config.py", ckg.config.__file__.replace("\\", "/"))
-        self.assertNotIn("site-packages", ckg.config.__file__)
+        self.assertIn("symbolgraph/config.py", symbolgraph.config.__file__.replace("\\", "/"))
+        self.assertNotIn("site-packages", symbolgraph.config.__file__)
 
     def test_ckg_cli_resolves_to_source_tree(self):
-        import ckg.cli
+        import symbolgraph.cli
 
-        self.assertIn("ckg/cli.py", ckg.cli.__file__.replace("\\", "/"))
+        self.assertIn("symbolgraph/cli.py", symbolgraph.cli.__file__.replace("\\", "/"))
 
     def test_no_torch_on_core_import(self):
-        # Importing ckg.cli should not import torch when sentence-transformers not required
+        # Importing symbolgraph.cli should not import torch when sentence-transformers not required
         import sys
 
-        # Ensure that importing ckg.cli didn't pull torch (if not already loaded)
+        # Ensure that importing symbolgraph.cli didn't pull torch (if not already loaded)
         # If torch is already loaded due to earlier local provider test, skip
         if "torch" in sys.modules:
             self.skipTest("torch already imported by previous test")
-        import ckg.cli  # noqa: F401
+        import symbolgraph.cli  # noqa: F401
         self.assertNotIn("torch", sys.modules)
         self.assertNotIn("sentence_transformers", sys.modules)
 

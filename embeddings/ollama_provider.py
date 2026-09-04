@@ -4,18 +4,18 @@ Talks to a local Ollama server over HTTP (http://localhost:11434/api/embeddings)
 Default model: nomic-embed-text (768 dims). No sentence-transformers / torch required.
 
 Env-var precedence (highest first):
-  - CKG_OLLAMA_URL / CKG_OLLAMA_HOST (CKG-specific override)
+  - SG_OLLAMA_URL / SG_OLLAMA_HOST (symbolgraph-specific override)
   - OLLAMA_HOST (ollama's own var)
   - default http://localhost:11434
 Similarly for model:
-  - CKG_OLLAMA_MODEL
+  - SG_OLLAMA_MODEL
   - OLLAMA_MODEL
   - default nomic-embed-text
-Timeout: CKG_OLLAMA_TIMEOUT (seconds), default 60s.
+Timeout: SG_OLLAMA_TIMEOUT (seconds), default 60s.
 
-Previous CKG fastembed bug #67 (cache in /tmp cleared on reboot) does not
+Previous symbolgraph fastembed bug #67 (cache in /tmp cleared on reboot) does not
 apply here — Ollama stores models outside Python's temp dir — but we keep
-the same env-var layering reasoning so users can isolate CKG's Ollama
+the same env-var layering reasoning so users can isolate symbolgraph's Ollama
 endpoint from other tools sharing Ollama.
 """
 import os
@@ -33,7 +33,7 @@ _MAX_EMBED_CHARS = 3000
 def _resolve_ollama_url(explicit: str | None = None) -> str:
     if explicit:
         return explicit.rstrip("/")
-    for var in ("CKG_OLLAMA_URL", "CKG_OLLAMA_HOST", "OLLAMA_HOST"):
+    for var in ("SG_OLLAMA_URL", "SG_OLLAMA_HOST", "OLLAMA_HOST"):
         val = os.environ.get(var, "").strip()
         if val:
             # OLLAMA_HOST may be like "http://localhost:11434" or "localhost:11434"
@@ -46,7 +46,7 @@ def _resolve_ollama_url(explicit: str | None = None) -> str:
 def _resolve_ollama_model(explicit: str | None = None) -> str:
     if explicit:
         return explicit
-    for var in ("CKG_OLLAMA_MODEL", "OLLAMA_MODEL"):
+    for var in ("SG_OLLAMA_MODEL", "OLLAMA_MODEL"):
         val = os.environ.get(var, "").strip()
         if val:
             return val
@@ -56,7 +56,7 @@ def _resolve_ollama_model(explicit: str | None = None) -> str:
 def _resolve_timeout(explicit: float | None = None) -> float:
     if explicit is not None:
         return explicit
-    raw = os.environ.get("CKG_OLLAMA_TIMEOUT", "").strip()
+    raw = os.environ.get("SG_OLLAMA_TIMEOUT", "").strip()
     if raw:
         try:
             return float(raw)

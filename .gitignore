@@ -20,7 +20,7 @@ local_fiber/
 local_django/
 
 # Local index + coverage artifacts (never meant to be committed)
-.ckg/
+.sg/
 .coverage
 .pytest_cache/
 

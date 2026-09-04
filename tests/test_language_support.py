@@ -1,8 +1,8 @@
 import unittest
 
-from ckg.config import INCLUDE_EXTENSIONS
 from ingestion.language import detect_language
 from parsing.registry import PARSER
+from symbolgraph.config import INCLUDE_EXTENSIONS
 
 
 class TestLanguageParserSupport(unittest.TestCase):

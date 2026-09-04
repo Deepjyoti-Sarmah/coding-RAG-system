@@ -5,7 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ckg.cli import (
+from embeddings.fake_provider import FakeEmbeddingProvider
+from symbolgraph.cli import (
     build_parser,
     cmd_callees,
     cmd_callers,
@@ -20,7 +21,6 @@ from ckg.cli import (
     has_embeddings,
     main,
 )
-from embeddings.fake_provider import FakeEmbeddingProvider
 
 AUTH = {
     "auth.ts": (
@@ -51,7 +51,7 @@ class TestCliCommands(unittest.TestCase):
     def test_default_db_path_is_dot_ckg_under_root(self):
         self.assertEqual(
             default_db_path(str(self.root)),
-            str(self.root / ".ckg" / "index.sqlite"),
+            str(self.root / ".sg" / "index.sqlite"),
         )
 
     def test_index_creates_db_and_reports_parsed_files(self):
@@ -260,8 +260,8 @@ class TestCliInit(unittest.TestCase):
         self.assertTrue(mcp_path.exists())
         data = json.loads(mcp_path.read_text(encoding="utf-8"))
         self.assertIn("mcpServers", data)
-        self.assertIn("ckg", data["mcpServers"])
-        self.assertEqual(data["mcpServers"]["ckg"]["command"], "ckg-mcp")
+        self.assertIn("symbolgraph", data["mcpServers"])
+        self.assertEqual(data["mcpServers"]["symbolgraph"]["command"], "sg-mcp")
         self.assertEqual(results[str(mcp_path)], "written")
 
         # via CLI entry point as well
@@ -280,8 +280,8 @@ class TestCliInit(unittest.TestCase):
         data = json.loads(mcp_path.read_text(encoding="utf-8"))
         self.assertIn("other", data["mcpServers"])
         self.assertEqual(data["mcpServers"]["other"]["command"], "other-server")
-        self.assertIn("ckg", data["mcpServers"])
-        self.assertEqual(data["mcpServers"]["ckg"]["command"], "ckg-mcp")
+        self.assertIn("symbolgraph", data["mcpServers"])
+        self.assertEqual(data["mcpServers"]["symbolgraph"]["command"], "sg-mcp")
         self.assertEqual(results[str(mcp_path)], "written")
 
     def test_init_refuses_to_overwrite_malformed_json(self):
@@ -336,8 +336,8 @@ class TestCliInit(unittest.TestCase):
         self.assertTrue(cursor_path.exists())
         for p in (vscode_path, cursor_path):
             data = json.loads(p.read_text(encoding="utf-8"))
-            self.assertIn("ckg", data["mcpServers"])
-            self.assertEqual(data["mcpServers"]["ckg"]["command"], "ckg-mcp")
+            self.assertIn("symbolgraph", data["mcpServers"])
+            self.assertEqual(data["mcpServers"]["symbolgraph"]["command"], "sg-mcp")
         self.assertEqual(results[str(vscode_path)], "written")
         self.assertEqual(results[str(cursor_path)], "written")
 
@@ -350,8 +350,8 @@ class TestCliInit(unittest.TestCase):
         data = json.loads(opencode_path.read_text(encoding="utf-8"))
         self.assertEqual(data["foo"], "bar")
         self.assertIn("mcp", data)
-        self.assertIn("ckg", data["mcp"])
-        self.assertEqual(data["mcp"]["ckg"]["command"], "ckg-mcp")
+        self.assertIn("symbolgraph", data["mcp"])
+        self.assertEqual(data["mcp"]["symbolgraph"]["command"], "sg-mcp")
         self.assertEqual(results[str(opencode_path)], "written")
 
     def test_init_does_not_create_vscode_when_dir_missing(self):

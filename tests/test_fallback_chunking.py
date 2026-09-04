@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ckg.cli import default_db_path
 from indexing.indexer import reindex_index
+from symbolgraph.cli import default_db_path
 
 
 class TestFallbackChunking(unittest.TestCase):

@@ -2,7 +2,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ckg.cli import cmd_context, cmd_index, cmd_search, cmd_status, default_db_path
+from symbolgraph.cli import (
+    cmd_context,
+    cmd_index,
+    cmd_search,
+    cmd_status,
+    default_db_path,
+)
 
 
 class TestCliE2E(unittest.TestCase):

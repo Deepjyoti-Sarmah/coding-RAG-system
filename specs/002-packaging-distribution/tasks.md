@@ -8,8 +8,8 @@
 
 ## 2. Make the package buildable
 
-- [x] 2.1 Add `[build-system]` (`hatchling`) to `pyproject.toml`; change `requires-python` to `>=3.11`, `name` to `code-knowledge-graph`, replace placeholder `description`
-- [x] 2.2 Add `[project.scripts]` `ckg = "cli:main"` and `ckg-mcp = "mcp_server:main"`; add `[tool.hatch.build.targets.wheel]` listing all 11 packages plus `cli.py`/`mcp_server.py` (and `config.py` for runtime) via `force-include`; exclude `tests`, `test_repo`, `specs`, `code-context-engine`, `benchmarks`, `docs` from wheel/sdist
+- [x] 2.1 Add `[build-system]` (`hatchling`) to `pyproject.toml`; change `requires-python` to `>=3.11`, `name` to `symbolgraph`, replace placeholder `description`
+- [x] 2.2 Add `[project.scripts]` `sg = "cli:main"` and `sg-mcp = "mcp_server:main"`; add `[tool.hatch.build.targets.wheel]` listing all 11 packages plus `cli.py`/`mcp_server.py` (and `config.py` for runtime) via `force-include`; exclude `tests`, `test_repo`, `specs`, `code-context-engine`, `benchmarks`, `docs` from wheel/sdist
 - [x] 2.3 Run `uv lock` after `requires-python` change and re-run full suite (458 passed before init tests)
 
 ## 3. Ruff and gitignore
@@ -22,9 +22,9 @@
 
 - [x] 4.1 Fix `mcp_server.py` `MCPServer(instructions=...)` from "a TypeScript/JavaScript repository" to mention TypeScript, JavaScript, TSX, JSX, Python, and Go
 
-## 5. `ckg init`
+## 5. `sg init`
 
-- [x] 5.1 Add `init` subcommand to `cli.py` following `build_parser()` `path` second / `nargs="?", default="."` convention; implement detection (always `.mcp.json`, `.vscode/ → .vscode/mcp.json`, `.cursor/ → .cursor/mcp.json`, `opencode.json` → update) with merge-only semantics, `ckg-mcp` entry, "already configured" reporting, and printing what was written
+- [x] 5.1 Add `init` subcommand to `cli.py` following `build_parser()` `path` second / `nargs="?", default="."` convention; implement detection (always `.mcp.json`, `.vscode/ → .vscode/mcp.json`, `.cursor/ → .cursor/mcp.json`, `opencode.json` → update) with merge-only semantics, `sg-mcp` entry, "already configured" reporting, and printing what was written
 - [x] 5.2 Add tests in `tests/test_cli.py` (`TestCliInit`) covering fresh directory, preserving unrelated server, idempotent double-run, `.vscode`/`.cursor` when present, `opencode.json` update, and no `.vscode` creation when dir missing
 
 ## 6. CI
@@ -33,4 +33,4 @@
 
 ## 7. Definition of done
 
-- [x] 7.1 Verify `uv run pytest -q` (464 passed), `uv run ruff check .` clean, `uv run python cli.py eval` byte-identical to baseline, `uv build` produces wheel+sdist, `uv tool install .` succeeds, `ckg --help` runs from `/tmp`
+- [x] 7.1 Verify `uv run pytest -q` (464 passed), `uv run ruff check .` clean, `uv run python cli.py eval` byte-identical to baseline, `uv build` produces wheel+sdist, `uv tool install .` succeeds, `sg --help` runs from `/tmp`

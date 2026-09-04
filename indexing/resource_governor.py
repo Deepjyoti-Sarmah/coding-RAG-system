@@ -10,8 +10,8 @@ DEFAULT_PARSE_BATCH = 50
 
 
 def onnx_thread_cap(n: int | None = None) -> None:
-    """Cap ONNX/sentence-transformers threads. Respects CKG_ORT_THREADS env."""
-    env_n = os.environ.get("CKG_ORT_THREADS")
+    """Cap ONNX/sentence-transformers threads. Respects SG_ORT_THREADS env."""
+    env_n = os.environ.get("SG_ORT_THREADS")
     explicit = False
     if env_n is not None:
         try:
@@ -62,7 +62,7 @@ class ProjectIndexLock:
     """Advisory file lock via fcntl.flock, no-op on Windows."""
 
     def __init__(self, project_path: str | Path):
-        self.lock_path = Path(project_path).resolve() / ".ckg" / ".index.lock"
+        self.lock_path = Path(project_path).resolve() / ".sg" / ".index.lock"
         self._fh = None
 
     def acquire(self, blocking: bool = False) -> bool:

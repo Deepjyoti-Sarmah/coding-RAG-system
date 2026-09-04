@@ -1,4 +1,4 @@
-# CKG Constitution
+# symbolgraph Constitution
 
 ## Core Principles
 

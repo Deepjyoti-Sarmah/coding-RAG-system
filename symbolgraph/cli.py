@@ -24,7 +24,7 @@ from retrieval.index_queries import (
 from session_memory import SessionService
 from storage.index_store import count_rows, current_generation
 
-DEFAULT_DB_DIRNAME = ".ckg"
+DEFAULT_DB_DIRNAME = ".sg"
 DEFAULT_DB_FILENAME = "index.sqlite"
 
 
@@ -32,7 +32,7 @@ def _get_version() -> str:
     try:
         from importlib.metadata import version as _pkg_version
 
-        return _pkg_version("code-knowledge-graph")
+        return _pkg_version("symbolgraph")
     except (ImportError, AttributeError, OSError, ValueError, KeyError):
         pass
     # fallback for source checkouts without installed metadata
@@ -222,9 +222,9 @@ def cmd_doctor(root: str = ".", verbose: bool = False) -> int:
     p = Path(root)
     db_path = default_db_path(root)
     checks: list[tuple[str, bool, str]] = []
-    # .ckg exists
+    # .sg exists
     has_db = Path(db_path).exists()
-    checks.append(("index present", has_db, db_path if has_db else "no index — run `ckg index .`"))
+    checks.append(("index present", has_db, db_path if has_db else "no index — run `sg index .`"))
     # lock free
     try:
         from indexing.resource_governor import ProjectIndexLock
@@ -252,8 +252,8 @@ def cmd_doctor(root: str = ".", verbose: bool = False) -> int:
 
         hd = _git_hooks_dir(p)
         hook = (hd / "hooks" / "post-commit") if hd else None
-        has_hook = hook is not None and hook.exists() and "CKG keep-fresh" in hook.read_text(errors="ignore")
-        checks.append(("git hook", has_hook, str(hook) if has_hook else "no hook — run `ckg init`"))
+        has_hook = hook is not None and hook.exists() and "symbolgraph keep-fresh" in hook.read_text(errors="ignore")
+        checks.append(("git hook", has_hook, str(hook) if has_hook else "no hook — run `sg init`"))
     except Exception:
         checks.append(("git hook", False, "unknown"))
     # embedding backend
@@ -275,16 +275,16 @@ def cmd_doctor(root: str = ".", verbose: bool = False) -> int:
 def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | None:
     """Auto-detect: Ollama if reachable, then local sentence-transformers if importable, else None.
 
-    Respects CKG_EMBED_BACKEND (ollama/local) and CKG_OLLAMA_URL/MODEL env vars.
+    Respects SG_EMBED_BACKEND (ollama/local) and SG_OLLAMA_URL/MODEL env vars.
     Local import is lazy so core install never touches torch.
     """
     import os
 
-    forced = os.environ.get("CKG_EMBED_BACKEND", "").strip().lower()
+    forced = os.environ.get("SG_EMBED_BACKEND", "").strip().lower()
     if forced and forced not in ("ollama", "local", "", "auto"):
         raise RuntimeError(
             f"Unknown embedding backend '{forced}'. Expected 'ollama' or 'local'. "
-            "Unset CKG_EMBED_BACKEND or set to 'ollama'/'local'."
+            "Unset SG_EMBED_BACKEND or set to 'ollama'/'local'."
         )
 
     # Ollama first (unless forced to local)
@@ -310,9 +310,9 @@ def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | 
                     # fall through to local
             elif forced == "ollama":
                 raise RuntimeError(
-                    "Ollama backend forced via CKG_EMBED_BACKEND=ollama but no Ollama server reachable at "
-                    f"{os.environ.get('CKG_OLLAMA_URL', os.environ.get('OLLAMA_HOST', 'http://localhost:11434'))}. "
-                    "Start Ollama or unset CKG_EMBED_BACKEND."
+                    "Ollama backend forced via SG_EMBED_BACKEND=ollama but no Ollama server reachable at "
+                    f"{os.environ.get('SG_OLLAMA_URL', os.environ.get('OLLAMA_HOST', 'http://localhost:11434'))}. "
+                    "Start Ollama or unset SG_EMBED_BACKEND."
                 )
         except ImportError:
             pass
@@ -331,8 +331,8 @@ def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | 
                 )
             elif forced == "local":
                 raise RuntimeError(
-                    "Local embeddings forced via CKG_EMBED_BACKEND=local but 'sentence-transformers' not installed. "
-                    "Install with: pip install code-knowledge-graph[local]"
+                    "Local embeddings forced via SG_EMBED_BACKEND=local but 'sentence-transformers' not installed. "
+                    "Install with: pip install symbolgraph[local]"
                 )
         except RuntimeError:
             raise
@@ -344,7 +344,7 @@ def _detect_provider(*, forced_model: str | None = None) -> EmbeddingProvider | 
             if forced == "local":
                 raise RuntimeError(
                     "Local embeddings require 'sentence-transformers'. "
-                    "Install with: pip install code-knowledge-graph[local]"
+                    "Install with: pip install symbolgraph[local]"
                 ) from e
     return None
 
@@ -367,7 +367,7 @@ def _require_provider_or_explain() -> EmbeddingProvider:
     if provider is None:
         raise RuntimeError(
             "No embedding backend available. Either:\n"
-            "  1. Install local embeddings: pip install code-knowledge-graph[local]\n"
+            "  1. Install local embeddings: pip install symbolgraph[local]\n"
             "  2. Start an Ollama server at http://localhost:11434 and pull nomic-embed-text (ollama pull nomic-embed-text)"
         )
     return provider
@@ -376,7 +376,7 @@ def _require_provider_or_explain() -> EmbeddingProvider:
 def _ensure_mcp_entry(path: Path, container_key: str | None) -> str:
     if container_key is None:
         return "written"
-    entry: dict[str, object] = {"command": "ckg-mcp"}
+    entry: dict[str, object] = {"command": "sg-mcp"}
     if path.exists():
         # An unreadable or non-object config is the user's file, not ours to
         # replace: rewriting it would silently discard whatever they had.
@@ -393,27 +393,27 @@ def _ensure_mcp_entry(path: Path, container_key: str | None) -> str:
         # check if already configured under any common container
         for key in (container_key, "mcpServers", "servers", "mcp"):
             container = data.get(key)
-            if isinstance(container, dict) and "ckg" in container:  # type: ignore[operator]
+            if isinstance(container, dict) and "symbolgraph" in container:  # type: ignore[operator]
                 return "already configured"
         container = data.get(container_key)  # type: ignore[assignment]
         if not isinstance(container, dict):
             data[container_key] = {}
             container = data[container_key]
-        if "ckg" in container:  # type: ignore[operator]  # pyright: ignore[reportOperatorIssue]
+        if "symbolgraph" in container:  # type: ignore[operator]  # pyright: ignore[reportOperatorIssue]
             return "already configured"
-        container["ckg"] = entry  # type: ignore[index]  # pyright: ignore[reportIndexIssue,reportOperatorIssue]
+        container["symbolgraph"] = entry  # type: ignore[index]  # pyright: ignore[reportIndexIssue,reportOperatorIssue]
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         return "written"
     else:
-        data = {container_key: {"ckg": entry}}
+        data = {container_key: {"symbolgraph": entry}}
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         return "written"
 
 
 def cmd_init(root: str = ".", *, agents: list[str] | None = None) -> dict[str, str]:
-    from ckg.editors import (
+    from symbolgraph.editors import (
         EDITORS,
         atomic_write_text,
         detect_editors,
@@ -447,10 +447,10 @@ def cmd_init(root: str = ".", *, agents: list[str] | None = None) -> dict[str, s
     for ag, (path, container_key) in editor_targets.items():
         if container_key is None:
             # copilot/pi instruction files — versioned block with upgrade
-            from ckg.editors import CKG_BLOCK_START, ensure_block_content
+            from symbolgraph.editors import SG_BLOCK_START, ensure_block_content
 
             existing = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
-            if CKG_BLOCK_START in existing:
+            if SG_BLOCK_START in existing:
                 results[str(path)] = "already configured"
             else:
                 new_content, already = ensure_block_content(existing)
@@ -463,9 +463,9 @@ def cmd_init(root: str = ".", *, agents: list[str] | None = None) -> dict[str, s
             continue
         if path.suffix == ".toml":
             # codex TOML — append section, not JSON, sanitize
-            from ckg.editors import toml_escape
+            from symbolgraph.editors import toml_escape
 
-            marker = 'ckg-mcp'
+            marker = 'sg-mcp'
             if path.exists() and marker in path.read_text(encoding="utf-8", errors="ignore"):
                 results[str(path)] = "already configured"
             else:
@@ -473,7 +473,7 @@ def cmd_init(root: str = ".", *, agents: list[str] | None = None) -> dict[str, s
                 slug = project_storage_slug(str(root_path.resolve()))
                 # sanitize slug for TOML
                 slug_esc = toml_escape(slug)
-                toml_snippet = f'\n[mcp_servers.ckg-{slug_esc}]\ncommand = "ckg-mcp"\n'
+                toml_snippet = f'\n[mcp_servers.sg-{slug_esc}]\ncommand = "sg-mcp"\n'
                 # atomic append
                 existing = path.read_text(encoding="utf-8") if path.exists() else ""
                 atomic_write_text(path, existing + toml_snippet)
@@ -499,12 +499,12 @@ def cmd_uninstall(root: str = ".") -> dict[str, str]:
     for name in [".mcp.json", ".vscode/mcp.json", ".cursor/mcp.json", "opencode.json"]:
         p = root_path / name
         if p.exists():
-            # remove ckg entry if present
+            # remove sg entry if present
             try:
                 data = json.loads(p.read_text(encoding="utf-8"))
                 for k in ("mcpServers", "mcp", "servers"):
-                    if isinstance(data.get(k), dict) and "ckg" in data[k]:
-                        del data[k]["ckg"]
+                    if isinstance(data.get(k), dict) and "symbolgraph" in data[k]:
+                        del data[k]["symbolgraph"]
                         p.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
                         removed[str(p)] = "removed"
             except Exception:
@@ -609,7 +609,7 @@ def _maybe_spawn_background_embed(db_path: str) -> None:
         "db_path=sys.argv[1]\n"
         "lock=Path(db_path).parent / f'.{Path(db_path).name}.embed.lock'\n"
         "try:\n"
-        "    from ckg.cli import _detect_provider\n"
+        "    from symbolgraph.cli import _detect_provider\n"
         "    from indexing.embedding_queue import run_embedding_worker\n"
         "    provider=_detect_provider()\n"
         "    if provider is not None:\n"
@@ -676,7 +676,7 @@ def _print_status(
         pct = (int(embeddings) / int(chunks) * 100) if chunks else 0  # type: ignore[arg-type]  # pyright: ignore[reportOperatorIssue,reportArgumentType]
         if int(embeddings) < int(chunks):  # type: ignore[arg-type]  # pyright: ignore[reportOperatorIssue,reportArgumentType]
             print(
-                f"embeddings: {embeddings}/{chunks} ({pct:.0f}%) — run `ckg embed` to enable vector search"
+                f"embeddings: {embeddings}/{chunks} ({pct:.0f}%) — run `sg embed` to enable vector search"
             )
         else:
             print(f"embeddings: {embeddings}/{chunks} ({pct:.0f}%)")
@@ -690,7 +690,7 @@ def _print_status(
         pending = jobs.get("PENDING", 0) + jobs.get("FAILED", 0) - jobs.get("exhausted", 0)
         if pending > 0 and int(embeddings) < int(chunks):  # type: ignore[arg-type]  # pyright: ignore[reportOperatorIssue,reportArgumentType]
             print(
-                f"vector search degraded: {pending} chunks pending embedding — run `ckg embed`"
+                f"vector search degraded: {pending} chunks pending embedding — run `sg embed`"
             )
 
 
@@ -794,9 +794,9 @@ def _print_eval_report(report: EvaluationReport) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="ckg",
-        description="Code Knowledge Graph — local-first semantic index",
-        epilog="examples:\n  ckg init --agent all    # configure all editors\n  ckg index .             # index repo\n  ckg search \"login\"     # hybrid search\n  ckg doctor .            # ops check\n  ckg dashboard --no-browser",
+        prog="symbolgraph",
+        description="symbolgraph — local-first semantic index",
+        epilog="examples:\n  sg init --agent all    # configure all editors\n  sg index .             # index repo\n  sg search \"login\"     # hybrid search\n  sg doctor .            # ops check\n  sg dashboard --no-browser",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=_get_version())
@@ -886,7 +886,7 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("path", nargs="?", default=".")
     init_parser.add_argument("--agent", choices=["auto", "claude", "cursor", "vscode", "codex", "copilot", "pi", "opencode", "gemini", "all"], default="auto")
     init_parser.add_argument("--plugin", action="store_true", help="also generate plugin")
-    uninstall_parser = subparsers.add_parser("uninstall", help="remove CKG MCP configs and hooks")
+    uninstall_parser = subparsers.add_parser("uninstall", help="remove symbolgraph MCP configs and hooks")
     uninstall_parser.add_argument("path", nargs="?", default=".")
 
     embed_parser = subparsers.add_parser("embed", help="drain the embedding queue")
@@ -934,10 +934,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--allow-remote", action="store_true", help="allow non-local binding (unsafe)"
     )
 
-    ab = subparsers.add_parser("eval-ab", help="run the task-level CKG A/B harness")
+    ab = subparsers.add_parser("eval-ab", help="run the task-level symbolgraph A/B harness")
     ab.add_argument("--manifest", default="evaluation/tasks.json")
     ab.add_argument(
-        "--condition", choices=("with_ckg", "without_ckg", "both"), default="both"
+        "--condition", choices=("with_sg", "without_sg", "both"), default="both"
     )
     ab.add_argument("--output", default="results/")
     ab.add_argument("--dry-run", action="store_true")
@@ -950,7 +950,7 @@ def build_parser() -> argparse.ArgumentParser:
     ab.add_argument(
         "--preflight",
         action="store_true",
-        help="validate paired CKG provisioning without launching an agent",
+        help="validate paired symbolgraph provisioning without launching an agent",
     )
     ab.add_argument(
         "--timeout",
@@ -1019,11 +1019,11 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                 return 1
             import webbrowser
 
-            from ckg.dashboard.server import create_server
+            from symbolgraph.dashboard.server import create_server
 
             server = create_server(args.path, args.host, args.port)
             print(
-                f"CKG dashboard: http://{args.host}:{args.port}/ (local read-only; do not expose publicly)"
+                f"symbolgraph dashboard: http://{args.host}:{args.port}/ (local read-only; do not expose publicly)"
             )
             if not args.no_browser:
                 webbrowser.open(f"http://{args.host}:{args.port}/")
@@ -1119,7 +1119,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
             return 0
 
         if not Path(db_path).exists():
-            print(f"No index found at {db_path}. Run `ckg index {args.path}` first.")
+            print(f"No index found at {db_path}. Run `sg index {args.path}` first.")
             return 1
 
         if args.command == "embed":
@@ -1137,7 +1137,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                     if backend is None:
                         print(
                             "Vector search disabled: no embedding backend available. "
-                            "Install with 'pip install code-knowledge-graph[local]' "
+                            "Install with 'pip install symbolgraph[local]' "
                             "or start Ollama at http://localhost:11434 (ollama pull nomic-embed-text).",
                             file=sys.stderr,
                         )
@@ -1150,7 +1150,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                         )  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
                         if pending > 0:
                             print(
-                                f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`"
+                                f"vector search inactive: {pending} chunks pending embedding — run `sg embed`"
                             )
                 except Exception:
                     pass
@@ -1173,7 +1173,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                     if backend is None:
                         print(
                             "Vector search disabled: no embedding backend available. "
-                            "Install with 'pip install code-knowledge-graph[local]' "
+                            "Install with 'pip install symbolgraph[local]' "
                             "or start Ollama at http://localhost:11434 (ollama pull nomic-embed-text).",
                             file=sys.stderr,
                         )
@@ -1186,7 +1186,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
                         )  # pyright: ignore[reportAttributeAccessIssue,reportOperatorIssue,reportIndexIssue]
                         if pending > 0:
                             print(
-                                f"vector search inactive: {pending} chunks pending embedding — run `ckg embed`"
+                                f"vector search inactive: {pending} chunks pending embedding — run `sg embed`"
                             )
                 except Exception:
                     pass
@@ -1210,7 +1210,7 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
     except sqlite3.Error as exc:
         db = locals().get("db_path", "index")
         print(
-            f"Database error at {db}: {exc} — try removing the database and re-running `ckg index`.",
+            f"Database error at {db}: {exc} — try removing the database and re-running `sg index`.",
             file=sys.stderr,
         )
         return 1

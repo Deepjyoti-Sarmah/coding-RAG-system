@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.Deepjyoti-Sarmah/ckg",
+  "name": "io.github.Deepjyoti-Sarmah/sg",
   "description": "Local-first symbol graph + hybrid retrieval for AI coding agents. No cloud, no estimates — measured recall on real repos.",
-  "title": "Code Knowledge Graph",
+  "title": "symbolgraph",
   "repository": {
     "url": "https://github.com/Deepjyoti-Sarmah/coding-RAG-system",
     "source": "github"
@@ -12,10 +12,10 @@
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
-      "identifier": "code-knowledge-graph",
+      "identifier": "symbolgraph",
       "version": "0.1.0",
       "runtimeHint": "uvx",
-      "runtimeArguments": ["--from", "code-knowledge-graph", "ckg-mcp"],
+      "runtimeArguments": ["--from", "symbolgraph", "sg-mcp"],
       "transport": {
         "type": "stdio"
       }

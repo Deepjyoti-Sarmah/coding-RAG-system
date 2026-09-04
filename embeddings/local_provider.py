@@ -4,7 +4,7 @@ from embeddings.provider import EmbeddingProvider
 
 
 class LocalEmbeddingProvider(EmbeddingProvider):
-    """Sentence-transformers backend. Optional — requires `pip install code-knowledge-graph[local]`."""
+    """Sentence-transformers backend. Optional — requires `pip install symbolgraph[local]`."""
 
     def __init__(
         self,
@@ -16,7 +16,7 @@ class LocalEmbeddingProvider(EmbeddingProvider):
         except ImportError as exc:
             raise RuntimeError(
                 "Local embeddings require 'sentence-transformers'. "
-                "Install with: pip install code-knowledge-graph[local]"
+                "Install with: pip install symbolgraph[local]"
             ) from exc
         self._model_name = model_name
         self._model = SentenceTransformer(model_name, device=device)

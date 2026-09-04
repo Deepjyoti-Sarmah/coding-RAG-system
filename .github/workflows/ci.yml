@@ -32,8 +32,8 @@ jobs:
         run: |
           uv tool install --force dist/*.whl
           cd "$RUNNER_TEMP"
-          ckg --help
-          ckg init
+          sg --help
+          sg init
           test -f .mcp.json
 
   test:

@@ -1,4 +1,4 @@
-"""Read-only local dashboard for CKG."""
+"""Read-only local dashboard for symbolgraph."""
 
 from .server import DashboardServer, create_server
 

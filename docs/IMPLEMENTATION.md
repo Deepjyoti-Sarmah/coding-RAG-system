@@ -1,6 +1,6 @@
 # Production Codebase RAG / Code Intelligence Implementation Plan
 
-> This file is the execution specification for turning CKG into a production-grade, local-first code intelligence and RAG system.
+> This file is the execution specification for turning symbolgraph into a production-grade, local-first code intelligence and RAG system.
 >
 > It is intentionally written for both a junior engineer and an implementation agent such as Codex:
 >
@@ -33,7 +33,7 @@ Semantic Compiler
     ├── Resolution
     └── Relationships
     ↓
-Code Knowledge Graph
+symbolgraph
     ↓
 Semantic Chunk Builder
     ↓
@@ -1830,7 +1830,7 @@ Rules:
   - **Prioritize direct evidence**: candidates whose only source is `("graph",)` become `supporting`; everything else is `primary`. Primaries are added in rank order first, then supporting — a supporting symbol can never starve a primary.
   - **Enforce a hard budget / never silently exceed**: an entry is added only if its `header + source` fits the remaining budget. If only the source does not fit, the symbol is emitted header-only (`source=""`, `location="path:line"`); if even the header does not fit, it is skipped — so **symbol boundaries are preserved** (a symbol's source is never truncated mid-body) and `total_tokens <= token_budget` always holds.
   - **Important relationships**: `(source.qualified_name -> callee.qualified_name (calls))` edges from `graph.callees_of`, emitted only when _both_ endpoints were selected, deduplicated and sorted deterministically.
-- `storage/index_store.py` — `build_context_pack_from_index(db_path, query, *, token_budget, provider=None, top_k=5)` = `load_index` + `build_hybrid_retriever` + `retrieve` + `build_context_pack`, mirroring the `build_hybrid_retriever` convenience (consumer: Phase 21 `ckg context` CLI).
+- `storage/index_store.py` — `build_context_pack_from_index(db_path, query, *, token_budget, provider=None, top_k=5)` = `load_index` + `build_hybrid_retriever` + `retrieve` + `build_context_pack`, mirroring the `build_hybrid_retriever` convenience (consumer: Phase 21 `sg context` CLI).
 
 ### Tests
 
@@ -1917,27 +1917,27 @@ Honor:
 
 ```text
 .gitignore
-.ckgignore
+.sgignore
 ```
 
 before parsing or embedding.
 
 ### Implemented
 
-- `ingestion/ignore_rules.py` — `IgnoreRules.is_ignored(relative_path, *, is_dir=False)` wraps a `pathspec.PathSpec` (the `gitignore` pattern factory, full gitwildmatch semantics including negation and directory-only patterns). `load_ignore_rules(root_dir)` reads `.gitignore` then `.ckgignore` from the repo root and concatenates their patterns — `.ckgignore` adds project-specific ignores on top of `.gitignore` rather than replacing it. Only root-level ignore files are read; nested per-directory ignore files are not supported yet (no consumer needs them — rule 1.5). Missing files simply contribute no patterns, so a repo with neither file ignores nothing (never `None`, so callers don't need extra branching).
-- `ingestion/loader.py:iter_repo_files` — the single file-discovery choke point already used by `load_code_files` and (transitively, via `indexing/diff.py:scan_files`) by the incremental indexer. It now loads ignore rules once per call and skips any file whose repo-relative path matches, alongside the existing `EXCLUDE_DIRS`/`INCLUDE_EXTENSIONS` checks. Every consumer of `iter_repo_files` — `load_code_files`, `scan_files`, `reindex_index` — honors `.gitignore`/`.ckgignore` for free before parsing or embedding.
+- `ingestion/ignore_rules.py` — `IgnoreRules.is_ignored(relative_path, *, is_dir=False)` wraps a `pathspec.PathSpec` (the `gitignore` pattern factory, full gitwildmatch semantics including negation and directory-only patterns). `load_ignore_rules(root_dir)` reads `.gitignore` then `.sgignore` from the repo root and concatenates their patterns — `.sgignore` adds project-specific ignores on top of `.gitignore` rather than replacing it. Only root-level ignore files are read; nested per-directory ignore files are not supported yet (no consumer needs them — rule 1.5). Missing files simply contribute no patterns, so a repo with neither file ignores nothing (never `None`, so callers don't need extra branching).
+- `ingestion/loader.py:iter_repo_files` — the single file-discovery choke point already used by `load_code_files` and (transitively, via `indexing/diff.py:scan_files`) by the incremental indexer. It now loads ignore rules once per call and skips any file whose repo-relative path matches, alongside the existing `EXCLUDE_DIRS`/`INCLUDE_EXTENSIONS` checks. Every consumer of `iter_repo_files` — `load_code_files`, `scan_files`, `reindex_index` — honors `.gitignore`/`.sgignore` for free before parsing or embedding.
 - `indexing/merkle.py:compute_merkle_tree` — walks the tree independently of `iter_repo_files` (it hashes all files, not just supported extensions), so it did **not** automatically inherit the new rule; `_build_directory` now also takes `ignore_rules` and checks it for every entry (`is_dir=True` for directories, so a directory-only pattern like `vendor/` prunes the whole subtree instead of only individual files) — otherwise a `.gitignore`'d directory would still perturb ancestor hashes.
 
 ### Tests
 
-- `tests/test_ignore_rules.py` (new) — no ignore files ignores nothing; a `.gitignore` glob pattern; a directory pattern matches nested files at any depth; `.ckgignore` patterns are honored on their own; `.gitignore` and `.ckgignore` combine; negation (`!pattern`) un-ignores; `is_dir=True` applies a directory-only pattern that a same-named file wouldn't match.
-- `tests/test_document_loading.py` — `load_code_files` skips a `.gitignore`'d glob and a `.ckgignore`'d directory.
+- `tests/test_ignore_rules.py` (new) — no ignore files ignores nothing; a `.gitignore` glob pattern; a directory pattern matches nested files at any depth; `.sgignore` patterns are honored on their own; `.gitignore` and `.sgignore` combine; negation (`!pattern`) un-ignores; `is_dir=True` applies a directory-only pattern that a same-named file wouldn't match.
+- `tests/test_document_loading.py` — `load_code_files` skips a `.gitignore`'d glob and a `.sgignore`'d directory.
 - `tests/test_merkle.py` — `compute_merkle_tree` excludes both a `.gitignore`'d file and an entire `.gitignore`'d directory (neither the directory node nor anything under it appears in the tree).
 
 ### Decision notes
 
 - Chose `pathspec` (the standard library for this) over hand-rolling gitignore semantics — directory pruning, negation, and glob edge cases are exactly the kind of thing rule 1.4 says not to guess at.
-- `.gitignore` and `.ckgignore` are additive, not alternatives: a repo already has a `.gitignore` for its own reasons (build output, `node_modules`, etc.) and `.ckgignore` is for indexer-specific exclusions (e.g. fixtures/generated code a developer still wants tracked in git but not semantically indexed).
+- `.gitignore` and `.sgignore` are additive, not alternatives: a repo already has a `.gitignore` for its own reasons (build output, `node_modules`, etc.) and `.sgignore` is for indexer-specific exclusions (e.g. fixtures/generated code a developer still wants tracked in git but not semantically indexed).
 
 ## Derived-state boundary
 
@@ -2002,7 +2002,7 @@ Use SQLite transactions for atomic publication.
 ### Decision notes
 
 - No separate "generations" table or history: the spec only requires that readers never see a torn generation, not that past generations be enumerable or diffable — that would be speculative (rule 1.5) without a consumer needing generation history.
-- `IndexRunReport` is intentionally not extended with a `generation` field yet: nothing in the current codebase reads it (Phase 21's `ckg status` is the natural future consumer). `current_generation(db_path)` is available as a plain reader in the meantime.
+- `IndexRunReport` is intentionally not extended with a `generation` field yet: nothing in the current codebase reads it (Phase 21's `sg status` is the natural future consumer). `current_generation(db_path)` is available as a plain reader in the meantime.
 
 ---
 
@@ -2015,14 +2015,14 @@ Only after retrieval is reliable.
 Start with a local CLI/library:
 
 ```text
-ckg index .
-ckg status
-ckg search "authentication flow"
-ckg definition createAuth
-ckg callers login
-ckg callees login
-ckg imports auth.ts
-ckg context "how does login work?"
+sg index .
+sg status
+sg search "authentication flow"
+sg definition createAuth
+sg callers login
+sg callees login
+sg imports auth.ts
+sg context "how does login work?"
 ```
 
 Then expose an agent protocol such as MCP.
@@ -2039,12 +2039,12 @@ context pack
 ## Implemented
 
 - `cli.py` (repo root) — a thin `argparse` dispatcher over pure, independently-testable `cmd_*` functions (`cmd_index`, `cmd_status`, `cmd_search`, `cmd_definition`, `cmd_callers`, `cmd_callees`, `cmd_imports`, `cmd_context`), each taking a `db_path` and returning a value (`IndexRunReport`, `HybridRetrieval`, `ContextPack`, a status `dict`, or a list of `(ImportReference, ResolvedImportReference | None)`). `main(argv)` parses arguments, formats, and prints; it contains no logic of its own, so tests exercise the `cmd_*` functions directly and only lightly touch `main()` for dispatch/exit-code behavior.
-- `ckg index <path>` — `Path(db_path).parent.mkdir(parents=True, exist_ok=True)` then `reindex_index`; embedding is opt-in via `--embed` (loads `LocalEmbeddingProvider` and runs the Phase 18 worker after indexing), consistent with "embedding must not block indexing" — a plain `ckg index` never loads the ML model.
-- `ckg status` — generation (Phase 20), document/symbol/chunk/embedding counts, and the embedding job queue breakdown (Phase 18's `queue_status`), so a user can see whether embeddings are still pending before running `search`.
-- `ckg search` / `ckg context` — the only commands that can use vector search, since they alone reach `HybridRetriever`'s general `hybrid` strategy; `_resolve_provider` auto-detects whether embeddings exist (`has_embeddings`, via the Phase 11 embedding cache) and only then lazily imports and loads `LocalEmbeddingProvider` — `--no-vector` forces FTS/exact-only. `definition`/`callers`/`callees` route through `HybridRetriever`'s dedicated regex-matched strategies (`exact_symbol`/`graph_callers`/`graph_callees`), which never touch FTS or vectors, so they never load a provider at all.
-- `ckg definition` / `ckg callers` / `ckg callees` — formats the query into the exact phrasing `HybridRetriever.retrieve` already routes deterministically (`"where is {name} defined"`, `"who calls {name}"`, `"what does {name} call"`) rather than duplicating routing logic in the CLI.
-- `ckg imports <file>` — lists the file's own `import_reference`s (module path, imported name, local name) each paired with its `ResolvedImportReference` when one exists, matched by object identity (`id()`) within a single `load_index()` call — the same reused-instance pattern persistence already relies on (`ids_by_import_object` in `import_repository`). An import to a target outside the repo (no matching document) has no `ResolvedImportReference` at all and prints as `unresolved`, rather than being silently dropped.
-- Read commands (`status`/`search`/`definition`/`callers`/`callees`/`imports`/`context`) check `Path(db_path).exists()` first and print a "run `ckg index` first" message with exit code `1` instead of a raw `sqlite3` error on a repo that was never indexed.
+- `sg index <path>` — `Path(db_path).parent.mkdir(parents=True, exist_ok=True)` then `reindex_index`; embedding is opt-in via `--embed` (loads `LocalEmbeddingProvider` and runs the Phase 18 worker after indexing), consistent with "embedding must not block indexing" — a plain `sg index` never loads the ML model.
+- `sg status` — generation (Phase 20), document/symbol/chunk/embedding counts, and the embedding job queue breakdown (Phase 18's `queue_status`), so a user can see whether embeddings are still pending before running `search`.
+- `sg search` / `sg context` — the only commands that can use vector search, since they alone reach `HybridRetriever`'s general `hybrid` strategy; `_resolve_provider` auto-detects whether embeddings exist (`has_embeddings`, via the Phase 11 embedding cache) and only then lazily imports and loads `LocalEmbeddingProvider` — `--no-vector` forces FTS/exact-only. `definition`/`callers`/`callees` route through `HybridRetriever`'s dedicated regex-matched strategies (`exact_symbol`/`graph_callers`/`graph_callees`), which never touch FTS or vectors, so they never load a provider at all.
+- `sg definition` / `sg callers` / `sg callees` — formats the query into the exact phrasing `HybridRetriever.retrieve` already routes deterministically (`"where is {name} defined"`, `"who calls {name}"`, `"what does {name} call"`) rather than duplicating routing logic in the CLI.
+- `sg imports <file>` — lists the file's own `import_reference`s (module path, imported name, local name) each paired with its `ResolvedImportReference` when one exists, matched by object identity (`id()`) within a single `load_index()` call — the same reused-instance pattern persistence already relies on (`ids_by_import_object` in `import_repository`). An import to a target outside the repo (no matching document) has no `ResolvedImportReference` at all and prints as `unresolved`, rather than being silently dropped.
+- Read commands (`status`/`search`/`definition`/`callers`/`callees`/`imports`/`context`) check `Path(db_path).exists()` first and print a "run `sg index` first" message with exit code `1` instead of a raw `sqlite3` error on a repo that was never indexed.
 - No `[project.scripts]` entry point: this project isn't currently packaged (`uv sync` warned that entry points need `tool.uv.package = true` or a `[build-system]`, which would require restructuring the flat top-level module layout) — invoke via `uv run python cli.py <command>` for now. Revisit if/when the project is packaged for distribution.
 - `mcp_server.py` (repo root) — an MCP server (`mcp` dependency, `mcp.server.mcpserver.MCPServer`) exposing eight `@mcp.tool()`-decorated functions that wrap the _same_ `cmd_*` functions the CLI uses: `index_repository`, `repository_status`, `definition`, `callers`, `callees`, `search`, `imports`, `context` — directly covering the spec's four agent requests (exact definition → `definition`; graph neighborhood → `callers`/`callees`; semantic search → `search`; context pack → `context`), plus indexing/status so an agent can bootstrap a repo through the same protocol without shelling out to the CLI first.
   - Every tool returns a plain JSON-serializable `dict` (never a raw dataclass/`HybridRetrieval`/`ContextPack`) via small `_candidate_dict`/`_import_dict`/`_context_entry_dict` helpers — deliberately not relying on the framework's dataclass-to-schema inference, so serialization is exactly what the docstring promises regardless of SDK internals.
@@ -2059,7 +2059,7 @@ context pack
 
 ### Decision notes
 
-- The CLI resolves its own default database location (`<path>/.ckg/index.sqlite`) rather than requiring `--db` on every call, so the example commands in this spec (`ckg index .`, `ckg status`, ...) work as written from within a repo. `mcp_server.py` reuses the same `default_db_path`, so an agent and a human running the CLI against the same repo share one index.
+- The CLI resolves its own default database location (`<path>/.sg/index.sqlite`) rather than requiring `--db` on every call, so the example commands in this spec (`sg index .`, `sg status`, ...) work as written from within a repo. `mcp_server.py` reuses the same `default_db_path`, so an agent and a human running the CLI against the same repo share one index.
 - MCP tools take the same `path` parameter the CLI does (not an implicit cwd) because an MCP server is a long-lived process an agent may point at multiple repositories across a session, unlike the CLI which is invoked fresh per command from within a repo.
 - `structured_content` on tool results is left as the framework default (no `structured_output=True`) because every tool's return type is a generic `dict`, not a `TypedDict`/pydantic model — forcing structured output would only yield an unhelpful `{"type": "object"}` schema. The JSON text content already carries the full structured payload, which is what every test asserts against.
 
@@ -2121,19 +2121,19 @@ embedding cache hit rate
   - **query latency** — wall-clock around each `retriever.retrieve()` call, reported per question.
   - **initial / incremental indexing latency** — wall-clock around the first `reindex_index` and a second, no-op `reindex_index` over the same unchanged repo (the cheapest realistic "steady state" run).
   - **embedding cache hit rate** — embeds every chunk once, edits exactly one symbol's body (a change outside every symbol span wouldn't touch any chunk, since chunk identity is keyed off symbol content), re-indexes, and re-embeds: `1 - (jobs claimed / total chunks)`. Only the edited chunk should ever reach the worker; every other chunk should stay `DONE` without being re-enqueued at all (Phase 18's queue, not Phase 11's in-run cache dict, is what's actually being measured here — that dict only ever holds the _current_ hash per chunk, so it can't demonstrate a hit across an edit-and-revert).
-- `cli.py` — `ckg eval [--embed] [--top-k N]` runs the suite and prints a table (per-question PASS/FAIL/`-` for the deterministic checks, Recall@K, MRR) plus the aggregate metrics. `--embed` loads `LocalEmbeddingProvider` so vector search is actually exercised; without it, `eval` never touches the network/model, matching `search`/`context`'s existing "vector is opt-in" behavior.
+- `cli.py` — `sg eval [--embed] [--top-k N]` runs the suite and prints a table (per-question PASS/FAIL/`-` for the deterministic checks, Recall@K, MRR) plus the aggregate metrics. `--embed` loads `LocalEmbeddingProvider` so vector search is actually exercised; without it, `eval` never touches the network/model, matching `search`/`context`'s existing "vector is opt-in" behavior.
 
 ### Tests
 
 - `tests/test_evaluation_metrics.py` — unit tests for every function in `evaluation/metrics.py` (recall@k boundaries including the empty-expected-set edge case, MRR position/tie-breaking, mean, token reduction, accuracy).
 - `tests/test_evaluation_runner.py` — `run_evaluation()` with and without a provider: all seven fixed questions are answered; deterministic ground truth (definition/relationship/import-resolution accuracy) is `1.0` on the fixture in both cases; structural questions always carry a `bool` `correct` flag while semantic questions carry `None` (no deterministic ground truth exists for them, honestly reported rather than faked); Recall@K/MRR are perfect for the three structural non-import questions once vectors are available; the embedding-cache-hit-rate scenario lands strictly between 0 and 1 (some chunks reused, one wasn't); the checked-in fixture repo is untouched after the run (the temp-copy isolation actually holds).
-- `tests/test_cli.py` — `ckg eval` runs end-to-end via `main()` with exit code `0` and no `--db`/path (it's self-contained).
+- `tests/test_cli.py` — `sg eval` runs end-to-end via `main()` with exit code `0` and no `--db`/path (it's self-contained).
 
 ### Results
 
-Actual `ckg eval` output on the fixed benchmark repo (`tests/fixtures/evaluation_repo`), captured 2026-08-20. Not simulated — this is the real CLI run against the real pipeline.
+Actual `sg eval` output on the fixed benchmark repo (`tests/fixtures/evaluation_repo`), captured 2026-08-20. Not simulated — this is the real CLI run against the real pipeline.
 
-**Without vector search** (`ckg eval` — FTS + exact + graph only, no ML model loaded):
+**Without vector search** (`sg eval` — FTS + exact + graph only, no ML model loaded):
 
 ```text
 [structural] PASS recall@k=1.00 mrr=1.00 Where is createAuth defined?
@@ -2155,7 +2155,7 @@ incremental indexing:       0.6 ms
 embedding cache hit rate:   0.00
 ```
 
-**With vector search** (`ckg eval --embed` — real `LocalEmbeddingProvider`, `all-MiniLM-L6-v2`):
+**With vector search** (`sg eval --embed` — real `LocalEmbeddingProvider`, `all-MiniLM-L6-v2`):
 
 ```text
 [structural] PASS recall@k=1.00 mrr=1.00 Where is createAuth defined?
@@ -2190,7 +2190,7 @@ embedding cache hit rate:   0.89
 
 Same fixture, same commands, after the Phase 23 importers strategy landed.
 
-**Without vector search** (`ckg eval`):
+**Without vector search** (`sg eval`):
 
 ```text
 [structural] PASS recall@k=1.00 mrr=1.00 Where is createAuth defined?
@@ -2212,7 +2212,7 @@ incremental indexing:       0.6 ms
 embedding cache hit rate:   0.00
 ```
 
-**With vector search** (`ckg eval --embed`):
+**With vector search** (`sg eval --embed`):
 
 ```text
 [structural] PASS recall@k=1.00 mrr=1.00 What imports auth.ts?  (was mrr=0.20)
@@ -2363,7 +2363,7 @@ caller-intent integration test):
 ### Done when
 
 - All tests pass; existing router/retriever tests unchanged.
-- Re-run `ckg eval` and `ckg eval --embed`; record actual numbers in
+- Re-run `sg eval` and `sg eval --embed`; record actual numbers in
   `# 28` Results next to the old ones. Required direction: importers
   question improves over recall 0.00 / MRR 0.20. Do not tune weights to
   chase a number; the dedicated route either works or it doesn't.
@@ -2740,7 +2740,7 @@ whose own hierarchy was invisible — a half-finished type model.
 
 ### Done when
 
-Full suite passes; README type gap removed; `ckg eval` output recorded
+Full suite passes; README type gap removed; `sg eval` output recorded
 unchanged or improved (chunk texts untouched, so embeddings are not
 invalidated).
 
@@ -2760,7 +2760,7 @@ invalidated).
 
 ### Result
 
-`ckg eval` and `ckg eval --embed` reproduce the post-Phase-23 numbers
+`sg eval` and `sg eval --embed` reproduce the post-Phase-23 numbers
 **exactly**, including `embedding cache hit rate: 0.89`. That equality is
 the evidence for Rule 1.5: new interface/alias symbols add new chunks,
 but no existing chunk's `content_hash` moved, so nothing was re-embedded.
@@ -2992,10 +2992,10 @@ Update this section as work progresses.
 - [x] Heuristic reranking (Phase 16: deterministic feature scoring — exact/path/kind/FTS/vector/graph-distance/relationship — graph-expanded candidates compete in `top_k`)
 - [x] Context builder (Phase 17: budgeted `ContextPack` — primary/supporting definitions, important relationships, file paths, symbol-bounded source excerpts, hard token budget)
 - [x] Async embedding worker / incremental embedding (Phase 18: PENDING/PROCESSING/DONE/FAILED queue, retry-only-failed, no re-embedding of unchanged content hashes)
-- [x] Ignore rules (Phase 19: `.gitignore`/`.ckgignore` honored by file discovery and the Merkle walk)
+- [x] Ignore rules (Phase 19: `.gitignore`/`.sgignore` honored by file discovery and the Merkle walk)
 - [x] Index generations (Phase 20: atomic generation counter published in the same transaction as the snapshot it labels)
-- [x] Local CLI (Phase 21: `ckg index/status/search/definition/callers/callees/imports/context/eval`)
-- [x] Evaluation suite (Phase 22: fixed benchmark repo + questions, compiler-accuracy + retrieval-quality + latency + cache-hit-rate metrics, `ckg eval`)
+- [x] Local CLI (Phase 21: `sg index/status/search/definition/callers/callees/imports/context/eval`)
+- [x] Evaluation suite (Phase 22: fixed benchmark repo + questions, compiler-accuracy + retrieval-quality + latency + cache-hit-rate metrics, `sg eval`)
 - [x] MCP / agent protocol integration (Phase 21: `mcp_server.py`, eight tools over stdio, wrapping the same `cmd_*` functions the CLI uses)
 
 ## In Progress
@@ -3006,7 +3006,7 @@ Update this section as work progresses.
 
 No phase is scheduled. **Every item in `# 38. Definition of v1` is now
 met**, including "hybrid retrieval has measurable quality", which the
-post-Phase-23 `ckg eval` numbers in `# 28` settle: mean recall 0.95,
+post-Phase-23 `sg eval` numbers in `# 28` settle: mean recall 0.95,
 mean MRR 1.00 with vectors, measured rather than asserted.
 
 ~~Phase 23 (`# 29`) — importers retrieval strategy~~ — COMPLETE
@@ -3032,7 +3032,7 @@ evidence behind them:
    barrel-file repositories under-resolve silently.
 3. **Incremental persistence** — each run rewrites the whole snapshot.
    Gate D applies: measure before optimizing.
-4. `ckg` console-script packaging; background embedding worker.
+4. `sg` console-script packaging; background embedding worker.
 
 ---
 
@@ -3105,7 +3105,7 @@ UI dashboards
 
 They may become useful later.
 
-They are not prerequisites for a correct local-first CKG.
+They are not prerequisites for a correct local-first symbolgraph.
 
 ---
 
@@ -3178,7 +3178,7 @@ Files changed:
 - `parsing/tree_sitter_parser.py:8` thread-local `Parser`, `storage/db.py:11` `PRAGMA synchronous=NORMAL/temp_store=MEMORY/cache_size=-64000`, `indexing/resource_governor.py:1` adaptive batch
 - `indexing/secrets.py:1` (`AKIA/ghp/PRIVATE KEY`), `ingestion/loader.py:69` `redact_secrets`+`should_skip_file_content`, `session_memory/service.py:24` `_bounded` redacts, `tests/test_secrets.py:1`
 - `pyproject.toml:36` `pytest-cov` + `[tool.coverage.run]` branch, `[tool.coverage.report] fail_under=65`, `tests/conftest.py:1` `tmp_db` WAL cleanup, `tests/test_watcher.py:9` `@pytest.mark.slow`, `.github/workflows/ci.yml:57` `pytest --cov --cov-fail-under=65`
-- `retrieval/hybrid_retriever.py:55` `PER_FILE_CAP_CANDIDATES`, `retrieval/context_builder.py:28` `ContextPack.baseline_tokens`, `retrieval/index_queries.py:67` honest baseline, `ckg/mcp_server.py:265` fixes always-0
+- `retrieval/hybrid_retriever.py:55` `PER_FILE_CAP_CANDIDATES`, `retrieval/context_builder.py:28` `ContextPack.baseline_tokens`, `retrieval/index_queries.py:67` honest baseline, `symbolgraph/mcp_server.py:265` fixes always-0
 - `README.md` token methodology box `retrieval/tokenizer.py:15` `o200k_base` + `benchmarks/run_external.py` + `evaluation/external.py:184` ground-truth files
 
 Result: 612 passed, 1 skipped, 82.93% cov (gate 65). Still requires `benchmarks/run_external.py --recompute` on real repos before publishing `X%`.
@@ -3218,7 +3218,7 @@ Tests:
 
 Result:
 
-- `ckg eval` and `ckg eval --embed` reproduce the post-Phase-23 numbers
+- `sg eval` and `sg eval --embed` reproduce the post-Phase-23 numbers
   exactly, cache hit rate included. Rule 1.5 held: new symbols added new
   chunks, no existing chunk text moved.
 - End-to-end spot check on a scratch TS repo: `Shape (interface)` and
@@ -3493,7 +3493,7 @@ Decision / deviation:
 
 - Deleted the unused values rather than annotating them as reserved. They are recorded as intended work in README `Planned`, which keeps the intent visible without an enum member that no code can produce.
 - Interface / type-alias extraction was documented as a gap rather than implemented. Adding it requires AST inspection first per `# 1.3`, plus symbol/export/fingerprint handling, and does not belong in a documentation-accuracy change.
-- README now states the CLI is invoked as `python cli.py <command>`; `ckg` is used as shorthand elsewhere in this file but no console script is installed.
+- README now states the CLI is invoked as `python cli.py <command>`; `sg` is used as shorthand elsewhere in this file but no console script is installed.
 
 ## 2026-08-21 — Phase 8 Task 8.3 Fix: new files must invalidate importers
 

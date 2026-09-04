@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
-from ckg.cli import (  # pyright: ignore[reportImportCycles]
+from session_memory import session_db_path
+from symbolgraph.cli import (  # pyright: ignore[reportImportCycles]
     cmd_search,
     cmd_status,
     default_db_path,
 )
-from session_memory import session_db_path
 
 from .page import PAGE
 
@@ -33,12 +33,12 @@ class DashboardServer(ThreadingHTTPServer):
 
 class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompatibleVariableOverride]
     server: Any  # type: ignore[assignment]  # pyright: ignore[reportIncompatibleVariableOverride]
-    server_version = "CKGDashboard/1.0"
+    server_version = "SymbolgraphDashboard/1.0"
     def _check_auth(self) -> bool:
         import hmac
         import os
 
-        token = os.environ.get("CKG_DASHBOARD_TOKEN")
+        token = os.environ.get("SG_DASHBOARD_TOKEN")
         if token:
             auth = self.headers.get("Authorization", "")
             if not hmac.compare_digest(f"Bearer {token}", auth):
@@ -79,7 +79,7 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
                 import subprocess
                 import sys
 
-                subprocess.Popen([sys.executable, "-m", "ckg.cli", "index", cast(DashboardServer, self.server).project], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.Popen([sys.executable, "-m", "symbolgraph.cli", "index", cast(DashboardServer, self.server).project], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 return self._send({"status": "reindex started"})
             except Exception as e:
                 return self._send({"error": str(e)}, 500)
@@ -127,7 +127,7 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
         self._send({"error":"not found"},404)
     def _health(self) -> None:
         project = cast(DashboardServer, self.server).project
-        db=Path(project)/".ckg"/"index.sqlite"; sdb=Path(session_db_path(project))
+        db=Path(project)/".sg"/"index.sqlite"; sdb=Path(session_db_path(project))
         return self._send({"status":"ok","project_path":project,"index_present":db.exists(),"session_database_present":sdb.exists(),"schema_version":"session-v1"})
     def _status(self) -> None:
         project = cast(DashboardServer, self.server).project

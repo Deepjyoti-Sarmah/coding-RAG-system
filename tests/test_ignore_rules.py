@@ -36,7 +36,7 @@ class TestIgnoreRules(unittest.TestCase):
     def test_ckgignore_patterns_are_honored(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / ".ckgignore").write_text("fixtures/\n", encoding="utf-8")
+            (root / ".sgignore").write_text("fixtures/\n", encoding="utf-8")
 
             rules = load_ignore_rules(root)
 
@@ -46,7 +46,7 @@ class TestIgnoreRules(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / ".gitignore").write_text("*.gen.ts\n", encoding="utf-8")
-            (root / ".ckgignore").write_text("fixtures/\n", encoding="utf-8")
+            (root / ".sgignore").write_text("fixtures/\n", encoding="utf-8")
 
             rules = load_ignore_rules(root)
 

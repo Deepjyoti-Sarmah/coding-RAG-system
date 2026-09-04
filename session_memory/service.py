@@ -1,4 +1,4 @@
-"""Small, local-only, bounded session memory for CKG projects."""
+"""Small, local-only, bounded session memory for symbolgraph projects."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ MAX_JSON = 4000
 
 
 def session_db_path(project_path: str) -> str:
-    return str(Path(project_path).resolve() / ".ckg" / "session.sqlite")
+    return str(Path(project_path).resolve() / ".sg" / "session.sqlite")
 
 
 def _now() -> str:
@@ -196,7 +196,7 @@ class SessionService:
             return json.dumps(data, indent=2, sort_keys=True)
         if format != "markdown":
             raise ValueError("format must be json or markdown")
-        lines = [f"# CKG session {session['id']}", "", f"- Project: `{session['project_path']}`", f"- Status: {session['status']}", "", "## Timeline", ""]
+        lines = [f"# symbolgraph session {session['id']}", "", f"- Project: `{session['project_path']}`", f"- Status: {session['status']}", "", "## Timeline", ""]
         for item in data["timeline"]:
             detail = item.get("decision") or item.get("description") or item.get("query") or item.get("type")  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
             lines.append(f"- `{item['timestamp']}` **{item['type']}**: {detail}")  # pyright: ignore[reportArgumentType]

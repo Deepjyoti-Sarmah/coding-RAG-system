@@ -17,7 +17,7 @@ class TestGitHooks(unittest.TestCase):
             self.assertEqual(len(installed), 3)
             for name in ("post-commit", "post-checkout", "post-merge"):
                 self.assertTrue((root / ".git" / "hooks" / name).exists())
-                self.assertIn("CKG keep-fresh", (root / ".git" / "hooks" / name).read_text())
+                self.assertIn("symbolgraph keep-fresh", (root / ".git" / "hooks" / name).read_text())
 
     def test_uninstall_removes_hooks(self):
         with tempfile.TemporaryDirectory() as tmp:

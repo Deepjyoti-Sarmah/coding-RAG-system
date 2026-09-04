@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ckg import mcp_server
 from embeddings.fake_provider import FakeEmbeddingProvider
+from symbolgraph import mcp_server
 
 AUTH = {
     "auth.ts": (

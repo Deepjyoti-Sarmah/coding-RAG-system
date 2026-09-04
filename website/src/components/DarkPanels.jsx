@@ -5,43 +5,55 @@ const EDITORS = ["claude", "cursor", "vscode", "opencode", "gemini", "copilot", 
 
 function IncrementalPanel() {
   return (
-    <div className="flex min-h-[220px] w-full flex-col justify-center gap-3 rounded-sm bg-panel border border-white/10 p-6 font-mono text-sm">
-      <div className="flex justify-between text-white/40">
-        <span>full index</span>
-        <span className="text-white/70">1,842 files · 4.1s</span>
+    <div className="flex min-h-[220px] w-full flex-col justify-center gap-2 border border-white bg-blue p-5 font-mono text-[11px] font-normal">
+      <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-white">
+        <span>scenario</span>
+        <span>result</span>
       </div>
-      <div className="h-px bg-white/10" />
-      <div className="flex justify-between text-white/40">
-        <span>edit 1 file, reindex</span>
-        <span className="text-[#8f8fff]">parsed_files=1 · 41ms</span>
+      <div className="flex justify-between bg-white px-3 py-2.5">
+        <span className="font-normal tracking-[0.02em] text-blue">full index</span>
+        <span className="font-normal text-ink">1,842 files · 4.1s</span>
       </div>
-      <div className="flex justify-between text-white/40">
-        <span>no changes, reindex</span>
-        <span className="text-[#8f8fff]">parsed_files=0 · &lt;50ms</span>
+      <div className="flex justify-between border border-white bg-white/15 px-3 py-2.5">
+        <span className="text-white">edit 1 file</span>
+        <span className="font-normal text-white">parsed=1 · 41ms</span>
       </div>
+      <div className="flex justify-between border border-white bg-white/15 px-3 py-2.5">
+        <span className="text-white">no changes</span>
+        <span className="font-normal text-white">parsed=0 · &lt;50ms</span>
+      </div>
+      <p className="mt-1 text-center text-[10px] font-normal uppercase tracking-[0.14em] text-white">Merkle root · stable_key</p>
     </div>
   );
 }
 
 function EditorsPanel() {
   return (
-    <div className="flex min-h-[220px] w-full flex-col justify-center gap-2 rounded-sm bg-panel border border-white/10 p-6 font-mono text-sm">
+    <div className="grid min-h-[220px] w-full grid-cols-2 gap-2 border border-white bg-blue p-4">
       {EDITORS.map((e) => (
-        <div key={e} className="flex items-center gap-2 text-white/70">
-          <span className="text-[#8f8fff]">✓</span> {e}
+        <div key={e} className="flex items-center gap-2 border border-white bg-white px-3 py-2.5">
+          <span className="flex h-5 w-5 items-center justify-center bg-blue font-mono text-[10px] font-normal text-white">✓</span>
+          <span className="font-mono text-[11px] font-normal capitalize tracking-[0.02em] text-blue">{e}</span>
         </div>
       ))}
+      <div className="col-span-2 mt-1 text-center font-mono text-[10px] font-normal uppercase tracking-[0.14em] text-white">sg init --agent all · idempotent</div>
     </div>
   );
 }
 
 function LocalFirstPanel() {
   return (
-    <div className="flex min-h-[220px] w-full flex-col items-center justify-center gap-4 rounded-sm bg-panel border border-white/10 p-6 font-mono text-sm text-white/70">
-      <div className="rounded-sm border border-white/20 px-4 py-2">your repo</div>
-      <span className="text-white/30">↓</span>
-      <div className="rounded-sm border border-[#8f8fff]/50 px-4 py-2 text-[#8f8fff]">.ckg/index.sqlite</div>
-      <span className="mt-2 text-xs text-white/30">no network egress by default</span>
+    <div className="flex min-h-[220px] w-full flex-col items-center justify-center gap-3 border border-white bg-blue p-6">
+      <div className="flex items-center gap-2 border border-white bg-white px-4 py-2 font-mono text-[11px] font-normal tracking-[0.04em] text-blue">
+        <span className="h-2 w-2 bg-blue" /> your repo
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <span className="h-6 w-px bg-white" />
+        <span className="font-mono text-[10px] font-normal uppercase tracking-[0.14em] text-white">local write</span>
+        <span className="h-6 w-px bg-white" />
+      </div>
+      <div className="border border-white bg-white px-4 py-2.5 font-mono text-[11px] font-normal tracking-[0.04em] text-blue">.sg/index.sqlite</div>
+      <span className="font-mono text-[10px] font-normal uppercase tracking-[0.14em] text-white">no network egress</span>
     </div>
   );
 }
@@ -50,30 +62,30 @@ const VISUALS = [ExampleGraph, IncrementalPanel, EditorsPanel, LocalFirstPanel];
 
 export default function DarkPanels() {
   return (
-    <section className="bg-ink px-6 py-20">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-16">
+    <section className="bg-ink px-6 py-10 sm:py-12">
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-10 sm:gap-12">
         {FEATURE_ROWS.map((row, i) => {
           const Visual = VISUALS[i % VISUALS.length];
           const reversed = i % 2 === 1;
           return (
             <div
               key={row.tag}
-              className={`grid items-center gap-10 md:grid-cols-2 ${reversed ? "md:[&>*:first-child]:order-2" : ""}`}
+              className={`grid items-center gap-8 md:grid-cols-2 md:gap-10 ${reversed ? "md:[&>*:first-child]:order-2" : ""}`}
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 bg-[#8f8fff]" />
-                  <span className="font-mono text-xs uppercase tracking-widest text-white/50">{row.tag}</span>
+                  <span className="h-1.5 w-1.5 bg-white" />
+                  <span className="font-mono text-[11px] font-normal uppercase tracking-[0.16em] text-white">{row.tag}</span>
                 </div>
-                <h3 className="mt-4 font-display text-3xl font-bold leading-tight text-white sm:text-4xl">
-                  {row.title}
+                <h3 className="mt-3 font-display text-[26px] font-[300] uppercase leading-[0.9] tracking-[-0.02em] text-white sm:text-[32px]">
+                  {row.title.toUpperCase()}
                 </h3>
-                <p className="mt-4 max-w-md text-white/60">{row.desc}</p>
-                <div className="mt-6 flex flex-wrap gap-2">
+                <p className="mt-3 max-w-[38ch] font-mono text-[11px] font-normal leading-[1.65] tracking-[0.02em] text-white">{row.desc}</p>
+                <div className="mt-5 flex flex-wrap gap-1.5">
                   {row.pills.map((p) => (
                     <span
                       key={p}
-                      className="rounded-sm border border-white/15 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-white/50"
+                      className="border border-white px-2.5 py-1 font-mono text-[10px] font-normal uppercase tracking-[0.12em] text-white"
                     >
                       {p}
                     </span>

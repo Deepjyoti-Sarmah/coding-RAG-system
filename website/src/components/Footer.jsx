@@ -10,11 +10,11 @@ function GitHubIcon(props) {
 
 export default function Footer() {
   return (
-    <footer className="bg-ink px-6 py-14">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-10 md:flex-row md:items-start md:justify-between">
-        <div className="max-w-xs">
-          <p className="font-display text-2xl font-bold text-white">CKG</p>
-          <p className="mt-3 text-sm leading-relaxed text-white/50">
+    <footer className="bg-ink px-6 py-8">
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-8 md:flex-row md:items-start md:justify-between">
+        <div className="max-w-[32ch]">
+          <p className="font-display text-[22px] font-[400] tracking-[-0.02em] text-white">symbolgraph</p>
+          <p className="mt-2 font-mono text-[11px] font-normal leading-[1.6] tracking-[0.02em] text-white">
             A local-first symbol graph and hybrid retrieval engine for AI
             coding agents.
           </p>
@@ -22,21 +22,21 @@ export default function Footer() {
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            className="mt-5 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-white/30 hover:text-white"
-            aria-label="CKG on GitHub"
+            className="mt-4 flex h-8 w-8 items-center justify-center border border-white text-white transition hover:bg-white hover:text-ink"
+            aria-label="symbolgraph on GitHub"
           >
-            <GitHubIcon className="h-4 w-4" />
+            <GitHubIcon className="h-3.5 w-3.5" />
           </a>
         </div>
 
-        <div className="flex flex-wrap gap-x-10 gap-y-6">
+        <div className="flex flex-wrap gap-x-8 gap-y-4">
           {FOOTER_LINKS.map((l) => (
             <a
               key={l.label}
               href={l.href}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-xs uppercase tracking-widest text-white/55 transition hover:text-white"
+              className="font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white transition hover:text-white/70"
             >
               {l.label}
             </a>
@@ -44,9 +44,9 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="mx-auto mt-12 flex max-w-[1280px] flex-col gap-2 border-t border-line-on-ink pt-6 font-mono text-xs text-white/35 sm:flex-row sm:items-center sm:justify-between">
-        <span>© 2026 CKG — v0.1.0, MIT licensed</span>
-        <span>Local-first. No cloud, no estimates.</span>
+      <div className="mx-auto mt-8 flex max-w-[1280px] flex-col gap-1.5 border-t border-white pt-5 font-mono text-[10px] font-normal tracking-[0.12em] text-white sm:flex-row sm:items-center sm:justify-between">
+        <span>© 2026 symbolgraph — v0.1.0, MIT licensed</span>
+        <span>HERMES-INSPIRED · LOCAL-FIRST · NO CLOUD</span>
       </div>
     </footer>
   );

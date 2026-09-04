@@ -2,7 +2,7 @@
 
 Watches a repository and re-runs the incremental indexer after edits go
 quiet for a debounce window. Writes to the index database itself (the
-`.ckg` directory) are ignored so indexing cannot trigger itself.
+`.sg` directory) are ignored so indexing cannot trigger itself.
 """
 
 import threading

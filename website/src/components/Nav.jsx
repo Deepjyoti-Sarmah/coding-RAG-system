@@ -5,18 +5,18 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line-on-blue bg-blue/95 backdrop-blur">
-      <nav className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-5">
-        <a href="#top" className="font-display text-xl font-bold text-white">
-          CKG
+    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-blue/95 backdrop-blur supports-[backdrop-filter]:bg-blue/85">
+      <nav className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-3.5">
+        <a href="#top" className="font-display text-[17px] font-normal tracking-[-0.02em] text-white">
+          symbolgraph
         </a>
 
-        <div className="hidden items-center gap-9 md:flex">
+        <div className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((l) => (
             <a
               key={l.label}
               href={l.href}
-              className="font-mono text-xs uppercase tracking-widest text-white/75 transition hover:text-white"
+              className="font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white transition hover:text-white/70"
             >
               {l.label}
             </a>
@@ -25,7 +25,7 @@ export default function Nav() {
             href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            className="font-mono text-xs uppercase tracking-widest text-white/75 transition hover:text-white"
+            className="font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-white transition hover:text-white/70"
           >
             GitHub
           </a>
@@ -33,7 +33,7 @@ export default function Nav() {
 
         <a
           href="#install"
-          className="hidden rounded-sm bg-white px-4 py-2 font-mono text-xs font-semibold uppercase tracking-widest text-blue-deep transition hover:bg-white/90 md:inline-block"
+          className="hidden bg-white px-4 py-1.5 font-mono text-[11px] font-normal uppercase tracking-[0.12em] text-blue transition hover:bg-white/90 md:inline-block"
         >
           Install →
         </a>
@@ -52,25 +52,25 @@ export default function Nav() {
       </nav>
 
       {open && (
-        <div className="border-t border-line-on-blue px-6 py-4 md:hidden">
+        <div className="border-t border-white/20 bg-blue px-6 py-4 md:hidden">
           <div className="flex flex-col gap-4">
             {NAV_LINKS.map((l) => (
               <a
                 key={l.label}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="font-mono text-xs uppercase tracking-widest text-white/80"
+                className="font-mono text-xs uppercase tracking-widest text-white"
               >
                 {l.label}
               </a>
             ))}
-            <a href={REPO_URL} target="_blank" rel="noreferrer" className="font-mono text-xs uppercase tracking-widest text-white/80">
+            <a href={REPO_URL} target="_blank" rel="noreferrer" className="font-mono text-xs uppercase tracking-widest text-white">
               GitHub
             </a>
             <a
               href="#install"
               onClick={() => setOpen(false)}
-              className="mt-2 rounded-sm bg-white px-4 py-2 text-center font-mono text-xs font-semibold uppercase tracking-widest text-blue-deep"
+              className="mt-2 bg-white px-4 py-2 text-center font-mono text-xs font-semibold uppercase tracking-widest text-blue"
             >
               Install →
             </a>

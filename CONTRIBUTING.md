@@ -1,4 +1,4 @@
-# Contributing to CKG
+# Contributing to symbolgraph
 
 ## Setup
 
@@ -17,7 +17,7 @@ uv run pytest -m "not slow" -q                                   # fast subset, 
 
 CI (`.github/workflows/ci.yml`) runs the same three checks across
 `ubuntu/macos/windows` × Python `3.11/3.12/3.13`, plus a build job that
-installs the wheel and runs `ckg init` from outside the checkout — that
+installs the wheel and runs `sg init` from outside the checkout — that
 proves the packaging config, not just the source.
 
 ## Engineering rule
@@ -41,7 +41,7 @@ task done, don't reason your way to a checkmark.
 | Incremental indexing, git hooks, resource governor | `indexing/` |
 | Retrieval (hybrid search, reranker) | `retrieval/` |
 | Embeddings (local + Ollama) | `embeddings/` |
-| CLI, MCP server, dashboard | `ckg/` |
+| CLI, MCP server, dashboard | `symbolgraph/` |
 | Evaluation harnesses | `evaluation/`, `benchmarks/` |
 | Tests | `tests/` |
 
@@ -51,7 +51,7 @@ change, and should come with the reasoning, not just the diff.
 
 ## Reporting a bug
 
-Open a GitHub issue with the `ckg doctor .` output and, if it's a
+Open a GitHub issue with the `sg doctor .` output and, if it's a
 retrieval-quality issue, the query and expected vs. actual result.
 
 ## Security

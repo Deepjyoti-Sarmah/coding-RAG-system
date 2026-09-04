@@ -17,7 +17,7 @@ class TestDebouncedReindexer(unittest.TestCase):
             "export function createAuth() { return 1; }\n",
             encoding="utf-8",
         )
-        self.db_path = str(self.root / ".ckg" / "index.sqlite")
+        self.db_path = str(self.root / ".sg" / "index.sqlite")
         self.reports: list = []
         self.handler = _DebouncedReindexer(
             str(self.root),

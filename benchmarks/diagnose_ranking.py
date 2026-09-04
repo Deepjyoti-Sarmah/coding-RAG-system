@@ -27,7 +27,7 @@ Usage:
       --target ctx.go [--embed]
 
   # Or build a fresh index first:
-  python benchmarks/diagnose_ranking.py --repo /tmp/ckg_audit/fiber \
+  python benchmarks/diagnose_ranking.py --repo /tmp/sg_audit/fiber \
       --query "..." --target ctx.go --embed
 """
 from __future__ import annotations

@@ -45,14 +45,14 @@ def summarize(results):
     for r in results: groups.setdefault(r["language"],[]).append(r)
     out={}
     for name,rows in groups.items():
-        out[name]={"runs":len(rows),"success_rate":sum(bool(r.get("success")) for r in rows)/len(rows) if rows else 0,"latency":_stats(rows,"elapsed_seconds"),"tokens":_stats(rows,"total_tokens"),"tool_calls":_stats(rows,"tool_calls"),"ckg_tools_used":_stats(rows,"ckg_tools_used")}
+        out[name]={"runs":len(rows),"success_rate":sum(bool(r.get("success")) for r in rows)/len(rows) if rows else 0,"latency":_stats(rows,"elapsed_seconds"),"tokens":_stats(rows,"total_tokens"),"tool_calls":_stats(rows,"tool_calls"),"sg_tools_used":_stats(rows,"sg_tools_used")}
     pairs={}
     for r in results: pairs.setdefault(r["task_id"],{})[r["condition"]]=r
-    diffs=[p["with_ckg"]["total_tokens"]-p["without_ckg"]["total_tokens"] for p in pairs.values() if "with_ckg" in p and "without_ckg" in p and all(isinstance(p[x].get("total_tokens"),(int,float)) for x in ("with_ckg","without_ckg"))]
+    diffs=[p["with_sg"]["total_tokens"]-p["without_sg"]["total_tokens"] for p in pairs.values() if "with_sg" in p and "without_sg" in p and all(isinstance(p[x].get("total_tokens"),(int,float)) for x in ("with_sg","without_sg"))]
     out["paired"]={"token_difference_mean":statistics.mean(diffs) if diffs else None,"pairs_with_tokens":len(diffs)}
     return out
 
 def write_report(results, summary, path):
-    lines=["# CKG task-level A/B evaluation","","Results are an instrumentation benchmark, not a productivity claim.","", "## Aggregate", "", "```json",json.dumps(summary,indent=2),"```", "", "## Tasks", "", "| Task | Condition | Success | Files found | Files changed | Symbols | CKG provisioned | CKG tools | Tokens | Tool calls | Latency |", "|---|---|---:|---|---|---|---:|---:|---:|---:|---:|"]
-    lines += [f"| {r['task_id']} | {r['condition']} | {r.get('success')} | {r.get('files_found',[])} | {r.get('files_changed',[])} | {r.get('symbols_found',[])} | {bool((r.get('ckg_retrieval') or {}).get('enabled'))} | {r.get('ckg_tools_used')} | {r.get('total_tokens')} | {r.get('tool_calls')} | {r.get('elapsed_seconds')} |" for r in results]
+    lines=["# symbolgraph task-level A/B evaluation","","Results are an instrumentation benchmark, not a productivity claim.","", "## Aggregate", "", "```json",json.dumps(summary,indent=2),"```", "", "## Tasks", "", "| Task | Condition | Success | Files found | Files changed | Symbols | symbolgraph provisioned | symbolgraph tools | Tokens | Tool calls | Latency |", "|---|---|---:|---|---|---|---:|---:|---:|---:|---:|"]
+    lines += [f"| {r['task_id']} | {r['condition']} | {r.get('success')} | {r.get('files_found',[])} | {r.get('files_changed',[])} | {r.get('symbols_found',[])} | {bool((r.get('sg_retrieval') or {}).get('enabled'))} | {r.get('sg_tools_used')} | {r.get('total_tokens')} | {r.get('tool_calls')} | {r.get('elapsed_seconds')} |" for r in results]
     path.write_text("\n".join(lines)+"\n",encoding="utf-8")

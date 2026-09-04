@@ -12,8 +12,8 @@
 
 ### User Story 1 - Index a Go repository end-to-end (Priority: P1)
 
-A developer points CKG at a repository containing `.go` files. Running
-`ckg index` extracts every top-level function, struct type, interface type,
+A developer points symbolgraph at a repository containing `.go` files. Running
+`sg index` extracts every top-level function, struct type, interface type,
 and method with correct kinds, persists them alongside documents/chunks,
 and reports parsed-file counts in the run summary.
 
@@ -26,7 +26,7 @@ kinds, and file paths match expectations.
 **Acceptance Scenarios**:
 
 1. **Given** a repo with Go functions, structs, interfaces and methods,
-   **When** `ckg index` runs, **Then** every construct appears as a Symbol
+   **When** `sg index` runs, **Then** every construct appears as a Symbol
    with kind `function`, `class`, or `method` and the right relative path.
 2. **Given** a Go file with syntax errors, **When** indexing runs, **Then**
    the file is flagged as having parse errors without crashing the run.
@@ -42,7 +42,7 @@ When one Go file imports another package/file inside the same repository,
 the import resolves to that document and its exported symbols, so callers/
 callees queries and import listings return exact answers.
 
-**Why this priority**: Cross-file resolution is what elevates CKG above
+**Why this priority**: Cross-file resolution is what elevates symbolgraph above
 text search; it depends on extraction but is independently verifiable.
 
 **Independent Test**: Index two Go files where `main.go` imports

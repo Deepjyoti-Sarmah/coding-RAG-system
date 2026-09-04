@@ -1,8 +1,8 @@
 """Probe whether hard-task fixture files are reachable via prompt-only search.
 
 For each task in a manifest, this script:
-  1. Indexes the task's fixture repo into a fresh temp CKG index.
-  2. Runs `ckg search` with the query set to EXACTLY task["prompt"] at top-k 10.
+  1. Indexes the task's fixture repo into a fresh temp symbolgraph index.
+  2. Runs `sg search` with the query set to EXACTLY task["prompt"] at top-k 10.
   3. Reports whether each of the task's expected_files shows up in the top-10
      results, and at what rank.
 
@@ -36,9 +36,9 @@ sys.path.insert(0, str(REPO_ROOT))
 def _embeddings_active() -> bool:
     """Best-effort check for whether the vector/embedding path is available.
 
-    Mirrors ckg.cli._detect_provider's own checks (Ollama reachable, or the
+    Mirrors symbolgraph.cli._detect_provider's own checks (Ollama reachable, or the
     'local' extra's sentence-transformers importable) without importing the
-    heavier ckg.cli module just for this.
+    heavier symbolgraph.cli module just for this.
     """
     if importlib.util.find_spec("sentence_transformers") is not None:
         return True
@@ -53,7 +53,7 @@ def _embeddings_active() -> bool:
 def _index_fixture(fixture_root: Path, db_path: Path) -> None:
     """Index fixture_root into db_path using the CLI's --db override."""
     proc = subprocess.run(
-        [sys.executable, "-m", "ckg.cli", "--db", str(db_path), "index", str(fixture_root)],
+        [sys.executable, "-m", "symbolgraph.cli", "--db", str(db_path), "index", str(fixture_root)],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
@@ -67,7 +67,7 @@ def _index_fixture(fixture_root: Path, db_path: Path) -> None:
 
 
 def _search_top_k(db_path: Path, query: str, task_prompt: str, top_k: int) -> list[str]:
-    """Run ckg search with query, returning the relative_path of each hit in rank order.
+    """Run sg search with query, returning the relative_path of each hit in rank order.
 
     Hard constraint: query MUST be exactly the task's prompt. This assertion
     is the whole point of this script — do not remove it, and do not add any
@@ -79,7 +79,7 @@ def _search_top_k(db_path: Path, query: str, task_prompt: str, top_k: int) -> li
         "reachability results circular and meaningless."
     )
 
-    from ckg.cli import cmd_search, resolve_provider
+    from symbolgraph.cli import cmd_search, resolve_provider
 
     provider = None
     try:
@@ -187,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
 
     reports = []
     db_cache: dict[str, Path] = {}
-    with tempfile.TemporaryDirectory(prefix="ckg-probe-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="sg-probe-") as tmp:
         tmp_root = Path(tmp)
         for task in tasks:
             reports.append(probe_task(task, args.top_k, db_cache, tmp_root))

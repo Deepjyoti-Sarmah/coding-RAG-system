@@ -4,7 +4,8 @@ from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
-from ckg.cli import (
+from session_memory import SessionService
+from symbolgraph.cli import (
     cmd_callees,
     cmd_callers,
     cmd_context,
@@ -17,7 +18,6 @@ from ckg.cli import (
     has_embeddings,
     resolve_provider,
 )
-from session_memory import SessionService
 
 _mcp_provider = None
 
@@ -43,7 +43,7 @@ def _get_mcp_provider():
     if _mcp_provider is None:
         try:
             # Auto-detect: Ollama if reachable, then local
-            from ckg.cli import _detect_provider
+            from symbolgraph.cli import _detect_provider
 
             _mcp_provider = _detect_provider()
         except Exception:
@@ -58,9 +58,9 @@ def set_mcp_provider(provider) -> None:
 
 
 mcp = MCPServer(
-    name="ckg",
+    name="symbolgraph",
     instructions=(
-        "Code Knowledge Graph: a local-first semantic index over a repository "
+        "symbolgraph: a local-first semantic index over a repository "
         "supporting TypeScript, JavaScript, TSX, JSX, Python, and Go. Call "
         "index_repository once before any other tool for a given path. Prefer "
         "definition/callers/callees for exact structural questions and "
@@ -221,7 +221,7 @@ async def callees(name: str, path: str = ".") -> dict[str, Any]:
 @mcp.tool()
 async def search(query: str, path: str = ".", top_k: int = 5) -> dict[str, Any]:
     """Hybrid search: lexical (FTS) + exact-symbol + graph expansion + reranking;
-    vector similarity is used when embeddings are available (run `ckg embed`
+    vector similarity is used when embeddings are available (run `sg embed`
     to generate them). Use for open-ended questions; use definition/callers/callees
     for exact lookups instead.
     """
@@ -276,7 +276,7 @@ async def imports(file: str, path: str = ".") -> dict[str, Any]:
 async def context(query: str, path: str = ".", token_budget: int = 2000, top_k: int = 5) -> dict[str, Any]:
     """Build a token-budgeted context pack: primary/supporting definitions
     with source excerpts and relationships. Uses vector search when embeddings
-    are available (run `ckg embed` otherwise).
+    are available (run `sg embed` otherwise).
     """
     _touch_idle()
     db_path = default_db_path(path)

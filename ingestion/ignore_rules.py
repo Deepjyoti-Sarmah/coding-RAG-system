@@ -3,7 +3,7 @@ from typing import Any
 
 import pathspec
 
-IGNORE_FILE_NAMES = (".gitignore", ".ckgignore")
+IGNORE_FILE_NAMES = (".gitignore", ".sgignore")
 
 
 class IgnoreRules:
@@ -18,9 +18,9 @@ class IgnoreRules:
 
 
 def load_ignore_rules(root_dir: str | Path) -> IgnoreRules:
-    """Load .gitignore and .ckgignore patterns from the repo root.
+    """Load .gitignore and .sgignore patterns from the repo root.
 
-    Both files are honored together: .ckgignore adds project-specific
+    Both files are honored together: .sgignore adds project-specific
     ignores on top of .gitignore rather than replacing it. Only root-level
     ignore files are read; nested per-directory ignore files are not
     supported yet.

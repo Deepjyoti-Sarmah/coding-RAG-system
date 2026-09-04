@@ -104,7 +104,7 @@ class TestDirectoryLoad(unittest.TestCase):
     def test_honors_ckgignore(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / ".ckgignore").write_text("fixtures/\n", encoding="utf-8")
+            (root / ".sgignore").write_text("fixtures/\n", encoding="utf-8")
             (root / "auth.ts").write_text("export const a = 1;\n", encoding="utf-8")
             fixtures = root / "fixtures"
             fixtures.mkdir()

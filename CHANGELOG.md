@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to CKG (Code Knowledge Graph) are documented here.
+All notable changes to symbolgraph are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project uses [SemVer](https://semver.org/).
 
@@ -12,7 +12,7 @@ this project uses [SemVer](https://semver.org/).
   were derived from a third-party project's benchmark suite, and this
   project no longer ships anything derived from another project's work.
   A real-repo benchmark with original queries is planned (`ROADMAP.md`
-  `P5-4`). `CCE_ORT_THREADS` renamed to `CKG_ORT_THREADS`.
+  `P5-4`). `CCE_ORT_THREADS` renamed to `SG_ORT_THREADS`.
 
 ## [0.1.0] — 2026-09-04
 
@@ -34,23 +34,23 @@ total); grouped by area rather than listed commit-by-commit.
 - **Incremental indexing** — Merkle-hashed change detection, append-only
   chunk reuse via `content_hash`, interface-aware re-resolution instead
   of full snapshot rewrites, embedding-dimension migration on model change.
-- **CLI** — `ckg init` (8-editor matrix: Claude, Cursor, VS Code, OpenCode,
+- **CLI** — `sg init` (8-editor matrix: Claude, Cursor, VS Code, OpenCode,
   Gemini, Copilot, Pi, Codex, plus `--agent all`), `index`, `status`,
   `search`, `definition`, `callers`, `callees`, `imports`, `context`,
   `embed`, `recall`, `timeline`, `export`, `prune`, `doctor`, `eval` /
   `eval-ab`, `uninstall`.
-- **MCP server** (`ckg-mcp`) — exposes the same tool surface to agents
+- **MCP server** (`sg-mcp`) — exposes the same tool surface to agents
   over the Model Context Protocol.
 - **Ops** — resource governor (PSI/ONNX-thread caps, idle tracker,
-  memory-pressure backoff), file locking for concurrent `ckg index`, git
+  memory-pressure backoff), file locking for concurrent `sg index`, git
   hooks (`post-commit`/`post-checkout`/`post-merge`) for keep-fresh
   reindexing, a local FastAPI dashboard (HMAC bearer auth + CSRF checks,
   8 endpoints) with a coverage/savings view.
 - **Security** — secret redaction (15+ regexes incl. Luhn-validated card
   numbers, `GENERIC_CREDENTIAL` heuristic) and PII scrubbing applied
   before anything is indexed or stored in session memory.
-- **Evaluation** — fixed-benchmark suite (`ckg eval`), paired A/B harness
-  (`ckg eval-ab`) against real coding-agent runs, and a reusable
+- **Evaluation** — fixed-benchmark suite (`sg eval`), paired A/B harness
+  (`sg eval-ab`) against real coding-agent runs, and a reusable
   external file-level benchmark harness (`benchmarks/run_external.py`)
   for running against any repo with a `{query, expected_files}` set.
 - **Session memory** — local, project-scoped decision/code-area/timeline

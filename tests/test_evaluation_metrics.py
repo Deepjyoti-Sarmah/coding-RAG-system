@@ -88,7 +88,7 @@ class TestAccuracy(unittest.TestCase):
 
 class TestRetrievalGate(unittest.TestCase):
     def test_gate_definition_recall(self):
-        # Gate: FTS+graph without vectors must keep 0.83/0.78 fixture baseline ckg/cli.py:295
+        # Gate: FTS+graph without vectors must keep 0.83/0.78 fixture baseline symbolgraph/cli.py:295
         from evaluation.runner import run_evaluation
 
         report = run_evaluation(provider=None, top_k=5)

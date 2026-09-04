@@ -6,8 +6,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from ckg.dashboard.server import create_server
 from session_memory import SessionService
+from symbolgraph.dashboard.server import create_server
 
 
 class DashboardTests(unittest.TestCase):
@@ -29,7 +29,7 @@ class DashboardTests(unittest.TestCase):
     def test_health_empty_and_html(self):
         status, health = self.get("/api/health")
         self.assertEqual(status, 200); self.assertFalse(health["index_present"])
-        status, page = self.get("/"); self.assertEqual(status, 200); self.assertIn("CKG Dashboard", page)
+        status, page = self.get("/"); self.assertEqual(status, 200); self.assertIn("symbolgraph Dashboard", page)
 
     def test_session_detail_search_and_safe_paths(self):
         service = SessionService(str(self.project)); session = service.start()

@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ckg.cli import _ensure_mcp_entry, cmd_init
-from ckg.editors import EDITORS, atomic_write_text, detect_editors
+from symbolgraph.cli import _ensure_mcp_entry, cmd_init
+from symbolgraph.editors import EDITORS, atomic_write_text, detect_editors
 
 
 class TestEditors(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestEditors(unittest.TestCase):
     def test_ensure_mcp_entry_idempotent(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / ".mcp.json"
-            p.write_text(json.dumps({"mcpServers": {"ckg": {"command": "ckg-mcp"}}}))
+            p.write_text(json.dumps({"mcpServers": {"symbolgraph": {"command": "sg-mcp"}}}))
             self.assertEqual(_ensure_mcp_entry(p, "mcpServers"), "already configured")
 
     def test_ensure_mcp_entry_corruption(self):
@@ -59,15 +59,19 @@ class TestEditors(unittest.TestCase):
             self.assertTrue((root / "AGENTS.md").exists())
 
     def test_toml_escape(self):
-        from ckg.editors import ensure_block_content, project_storage_slug, toml_escape
+        from symbolgraph.editors import (
+            ensure_block_content,
+            project_storage_slug,
+            toml_escape,
+        )
         self.assertEqual(toml_escape('a\\b"c'), 'a\\\\b\\"c')
         self.assertIn("-", project_storage_slug("/tmp/foo\\bar"))
         content, already = ensure_block_content("")
         self.assertFalse(already)
-        self.assertIn("ckg-block-version", content)
+        self.assertIn("sg-block-version", content)
         _content2, already2 = ensure_block_content(content)
         self.assertTrue(already2)
         # legacy upgrade
-        old = "<!-- CKG MCP: ckg-mcp -->\nhello"
+        old = "<!-- symbolgraph MCP: sg-mcp -->\nhello"
         new, _ = ensure_block_content(old)
-        self.assertIn("ckg-block-version", new)
+        self.assertIn("sg-block-version", new)
