@@ -5,7 +5,7 @@ export default function Languages() {
     <section id="languages" className="scroll-mt-16 bg-white px-6 py-8 sm:py-10">
       <div className="mx-auto max-w-[1280px]">
         <p className="font-mono text-[10px] font-normal uppercase tracking-[0.22em] text-blue">Languages</p>
-        <h2 className="mt-2 font-display text-[26px] font-[300] uppercase leading-[0.95] tracking-[-0.02em] text-blue sm:text-[32px]">
+        <h2 className="mt-2 font-display text-[34px] font-[400] uppercase leading-[0.95] tracking-[-0.02em] text-blue sm:text-[44px]">
           AST-AWARE WHERE IT COUNTS
         </h2>
 
@@ -40,7 +40,7 @@ export default function Languages() {
                 </span>
               ))}
             </div>
-            <p className="mt-4 font-mono text-[11px] font-normal leading-[1.65] tracking-[0.02em] text-white">
+            <p className="mt-4 font-mono text-[12.5px] font-normal leading-[1.65] tracking-[0.02em] text-white">
               Everything here gets a module-level symbol and stays searchable through FTS and vector search. Nothing is silently skipped.
             </p>
           </div>

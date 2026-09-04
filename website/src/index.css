@@ -45,15 +45,33 @@ body {
   text-wrap: balance;
 }
 
-/* Hermes-accurate bursts — crisp, high-contrast, not subtle */
+/* Engraved radial burst.
+   The mask is a DONUT, not a disc: a conic gradient's wedges converge to
+   zero width at the centre, so a disc mask renders the middle as a solid
+   blown-out core (it reads as static, and anything placed over it is
+   unreadable). Punching the centre out leaves clean, individually
+   legible rays and gives content a quiet field to sit in — which is how
+   the reference art actually behaves. */
 .line-burst {
   background-image: repeating-conic-gradient(
     from var(--burst-from, 0deg),
-    var(--burst-color, rgba(255, 255, 255, 0.95)) 0deg 0.55deg,
-    transparent 0.55deg 4.2deg
+    var(--burst-color, rgba(255, 255, 255, 0.9)) 0deg 0.5deg,
+    transparent 0.5deg var(--burst-period, 5.4deg)
   );
-  -webkit-mask-image: radial-gradient(circle at center, black 0%, black 38%, transparent 72%);
-  mask-image: radial-gradient(circle at center, black 0%, black 38%, transparent 72%);
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent var(--burst-hole, 30%),
+    black calc(var(--burst-hole, 30%) + 12%),
+    transparent var(--burst-edge, 74%)
+  );
+  mask-image: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent var(--burst-hole, 30%),
+    black calc(var(--burst-hole, 30%) + 12%),
+    transparent var(--burst-edge, 74%)
+  );
 }
 
 /* halftone + grain helpers — Hermes uses heavy duotone engraving texture */

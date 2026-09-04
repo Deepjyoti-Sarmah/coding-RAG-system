@@ -58,7 +58,7 @@ export default function PlatformCards() {
         <p className="text-center font-mono text-[10px] font-normal uppercase tracking-[0.22em] text-white">
           Native app
         </p>
-        <h2 className="mt-2 text-center font-display text-[26px] font-[300] uppercase leading-[0.9] tracking-[-0.03em] text-white sm:text-[36px]">
+        <h2 className="mt-2 text-center font-display text-[34px] font-[400] uppercase leading-[0.95] tracking-[-0.03em] text-white sm:text-[44px]">
           symbolgraph FOR MACOS,
           <br className="sm:hidden" /> WINDOWS &amp; LINUX
         </h2>

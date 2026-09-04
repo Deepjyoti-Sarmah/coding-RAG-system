@@ -3,63 +3,69 @@ import CopyButton from "./CopyButton";
 import { INSTALL_TABS } from "../data/content";
 
 function HeroArt() {
+  // One burst, not four. Its centre is masked out (see .line-burst in
+  // index.css), so the rays frame the graph instead of sitting on top of it.
   return (
     <div className="relative flex h-[420px] w-full items-center justify-center overflow-hidden sm:h-[460px] lg:h-[520px]">
-      {/* 3 radial bursts like Hermes — crisp, high-contrast */}
-      <div className="line-burst absolute -left-8 -top-10 h-[280px] w-[320px] rotate-[-18deg] opacity-100" style={{ "--burst-color": "rgba(255,255,255,0.98)", "--burst-from": " -20deg" }} />
-      <div className="line-burst absolute -right-6 -top-4 h-[300px] w-[340px] rotate-[22deg] opacity-100" style={{ "--burst-color": "rgba(255,255,255,0.98)", "--burst-from": " 18deg" }} />
-      <div className="line-burst absolute left-1/2 top-[46%] h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 opacity-35" style={{ "--burst-color": "rgba(255,255,255,0.9)" }} />
-      <div className="line-burst absolute bottom-0 right-10 h-[220px] w-[260px] rotate-[35deg] opacity-90" style={{ "--burst-color": "rgba(255,255,255,0.9)" }} />
+      <div
+        className="line-burst pointer-events-none absolute left-1/2 top-1/2 h-[720px] w-[720px] -translate-x-1/2 -translate-y-1/2"
+        style={{
+          "--burst-color": "rgba(255,255,255,0.8)",
+          "--burst-period": "6deg",
+          "--burst-hole": "33%",
+          "--burst-edge": "68%",
+        }}
+      />
 
-      {/* Engraved graph — bold white on blue */}
-      <svg viewBox="0 0 360 360" className="relative h-[88%] w-[88%] max-w-[420px] drop-shadow-[0_2px_12px_rgba(0,0,0,0.2)]" role="img" aria-label="Symbol graph engraving">
+      <svg
+        viewBox="0 0 360 320"
+        className="relative h-full w-full max-w-[440px]"
+        role="img"
+        aria-label="Symbol graph: login calls createAuth, run calls login, indexed by sg into a local graph"
+      >
         <defs>
-          <pattern id="hero-halftone" width="6" height="6" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.9" fill="white" opacity="0.14" />
-          </pattern>
+          <marker id="hero-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M0,0 L8,4 L0,8 Z" fill="white" />
+          </marker>
         </defs>
-        <rect x="34" y="28" width="292" height="304" rx="4" fill="white" opacity="0.07" />
-        <rect x="34" y="28" width="292" height="304" rx="4" fill="url(#hero-halftone)" opacity="0.35" />
-        <circle cx="180" cy="168" r="82" fill="none" stroke="white" strokeWidth="0.7" opacity="0.18" />
-        <circle cx="180" cy="168" r="106" fill="none" stroke="white" strokeWidth="0.5" opacity="0.12" />
-        {Array.from({ length: 24 }).map((_, i) => {
-          const a = (i * 15 * Math.PI) / 180;
-          const x1 = 180 + Math.cos(a) * 8;
-          const y1 = 168 + Math.sin(a) * 8;
-          const x2 = 180 + Math.cos(a) * 122;
-          const y2 = 168 + Math.sin(a) * 122;
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="white" strokeWidth="0.6" opacity="0.22" />;
-        })}
+
+        {/* edges first so the node plates sit on top of them */}
+        <path d="M158 60 L 190 60" fill="none" stroke="white" strokeWidth="1.6" markerEnd="url(#hero-arrow)" />
+        <text x="174" y="52" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="7" letterSpacing="0.8" fill="white" opacity="0.85">CALLS</text>
+        <path d="M96 80 C 96 116, 140 118, 140 136" fill="none" stroke="white" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.8" />
+        <path d="M264 80 C 264 116, 220 118, 220 136" fill="none" stroke="white" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.8" />
+        <path d="M140 190 C 140 214, 96 218, 96 238" fill="none" stroke="white" strokeWidth="1.2" opacity="0.8" />
+        <path d="M220 190 C 220 214, 264 218, 264 238" fill="none" stroke="white" strokeWidth="1.2" opacity="0.8" />
+
+        {/* symbol nodes — boxes widened so the longest name has real margin */}
         <g>
-          <rect x="78" y="52" width="92" height="36" rx="3" fill="white" />
-          <text x="124" y="74" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10" fontWeight="700" fill="#1c1cf0">login()</text>
-          <text x="124" y="82" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="5.5" fill="#1c1cf0" opacity="0.7">CALLS</text>
+          <rect x="30" y="42" width="128" height="38" fill="white" />
+          <text x="94" y="66" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="600" fill="#1c1cf0">login()</text>
         </g>
         <g>
-          <rect x="190" y="52" width="92" height="36" rx="3" fill="none" stroke="white" strokeWidth="1.6" />
-          <text x="236" y="74" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10" fontWeight="700" fill="white">createAuth()</text>
+          <rect x="190" y="42" width="140" height="38" fill="none" stroke="white" strokeWidth="1.6" />
+          <text x="260" y="66" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="600" fill="white">createAuth()</text>
         </g>
         <g>
-          <rect x="78" y="248" width="92" height="36" rx="3" fill="none" stroke="white" strokeWidth="1.4" />
-          <text x="124" y="270" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10" fontWeight="700" fill="white">run()</text>
+          <rect x="30" y="238" width="128" height="38" fill="none" stroke="white" strokeWidth="1.6" />
+          <text x="94" y="262" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="600" fill="white">run()</text>
         </g>
         <g>
-          <rect x="190" y="248" width="92" height="36" rx="3" fill="white" />
-          <text x="236" y="270" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10" fontWeight="700" fill="#1c1cf0">logout()</text>
+          <rect x="190" y="238" width="140" height="38" fill="white" />
+          <text x="260" y="262" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="600" fill="#1c1cf0">logout()</text>
         </g>
+
+        {/* the index itself, on a solid plate in the middle of the burst hole.
+            Numbers are this repo indexed by sg, not illustrative filler. */}
         <g>
-          <rect x="124" y="148" width="112" height="40" rx="4" fill="white" />
-          <text x="180" y="167" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="7.5" fontWeight="700" fill="#1c1cf0">sg index .</text>
-          <text x="180" y="178" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="6" fill="#1c1cf0" opacity="0.75">9201 symbols · 4.1s</text>
+          <rect x="108" y="136" width="144" height="54" fill="white" />
+          <text x="180" y="158" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="600" fill="#1c1cf0">sg index .</text>
+          <line x1="122" y1="166" x2="238" y2="166" stroke="#1c1cf0" strokeWidth="0.6" opacity="0.25" />
+          <text x="180" y="180" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fill="#1c1cf0" opacity="0.75">2,023 symbols · 381 files</text>
         </g>
-        <path d="M170 70 L 190 70" stroke="white" strokeWidth="1.8" />
-        <path d="M124 88 L 150 148" stroke="white" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.95" />
-        <path d="M236 88 L 210 148" stroke="white" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.95" />
-        <path d="M136 188 L 124 248" stroke="white" strokeWidth="1.4" />
-        <path d="M224 188 L 236 248" stroke="white" strokeWidth="1.4" />
-        <circle cx="180" cy="168" r="2.2" fill="#1c1cf0" stroke="white" strokeWidth="1" />
-        <rect x="118" y="18" width="124" height="18" rx="9" fill="white" />
-        <text x="180" y="29.5" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="6.5" fontWeight="700" letterSpacing="1.2" fill="#1c1cf0">SYMBOL GRAPH · MCP</text>
+
+        <rect x="110" y="6" width="140" height="20" fill="none" stroke="white" strokeWidth="1" opacity="0.5" />
+        <text x="180" y="19.5" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="7.5" letterSpacing="1.6" fill="white" opacity="0.9">SYMBOL GRAPH · MCP</text>
       </svg>
     </div>
   );
@@ -80,7 +86,7 @@ export default function Hero() {
               Open source · MIT license
             </p>
 
-            <h1 className="mt-3 max-w-[12ch] font-display text-[44px] font-[300] leading-[0.85] tracking-[-0.035em] text-white sm:text-[56px] lg:text-[64px]">
+            <h1 className="mt-3 max-w-[12ch] font-display text-[44px] font-[400] leading-[0.85] tracking-[-0.035em] text-white sm:text-[56px] lg:text-[64px]">
               A SYMBOL
               <br />
               GRAPH FOR
@@ -90,7 +96,7 @@ export default function Hero() {
               CODEBASE
             </h1>
 
-            <p className="mt-4 max-w-[42ch] font-mono text-[11px] font-normal leading-[1.7] tracking-[0.06em] text-white">
+            <p className="mt-5 max-w-[52ch] font-mono text-[13px] font-normal leading-[1.75] tracking-[0.01em] text-white/90">
               symbolgraph parses your repo with tree-sitter, resolves every function
               and class into a real graph, and serves it to your agent over
               MCP — not text chunks. Entirely on your machine.

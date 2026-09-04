@@ -77,10 +77,10 @@ export default function DarkPanels() {
                   <span className="h-1.5 w-1.5 bg-white" />
                   <span className="font-mono text-[11px] font-normal uppercase tracking-[0.16em] text-white">{row.tag}</span>
                 </div>
-                <h3 className="mt-3 font-display text-[26px] font-[300] uppercase leading-[0.9] tracking-[-0.02em] text-white sm:text-[32px]">
+                <h3 className="mt-3 font-display text-[26px] font-[400] uppercase leading-[0.9] tracking-[-0.02em] text-white sm:text-[32px]">
                   {row.title.toUpperCase()}
                 </h3>
-                <p className="mt-3 max-w-[38ch] font-mono text-[11px] font-normal leading-[1.65] tracking-[0.02em] text-white">{row.desc}</p>
+                <p className="mt-3 max-w-[38ch] font-mono text-[12.5px] font-normal leading-[1.65] tracking-[0.02em] text-white">{row.desc}</p>
                 <div className="mt-5 flex flex-wrap gap-1.5">
                   {row.pills.map((p) => (
                     <span

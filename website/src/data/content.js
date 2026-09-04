@@ -33,10 +33,12 @@ export const PLATFORMS = [
   { name: "Windows", detail: "10/11, via pipx (WSL for uv)" },
 ];
 
+// Real output from running these against this repository, not illustrative
+// filler: 381 files parsed, 2,023 symbols, 35,795 resolved references.
 export const TERMINAL_STEPS = [
-  { cmd: "sg init --agent all", out: "wired 4 editors + git hooks" },
-  { cmd: "sg index .", out: "1,842 files parsed, 9,201 symbols" },
-  { cmd: "sg status --oneline", out: "symbols 9201 chunks 9201 pending 0 gen 1" },
+  { cmd: "sg init", out: "wrote .mcp.json" },
+  { cmd: "sg index .", out: "381 files parsed · 35,795 references resolved" },
+  { cmd: "sg status --oneline", out: "symbols 2023 chunks 2022 pending 2022 gen 1" },
 ];
 
 // The pipeline stages, in order — a genuine sequence, so numbering here
@@ -107,10 +109,15 @@ export const FEATURE_ROWS = [
     pills: ["RRF", "graph expand", "reranker"],
   },
   {
+    // The "<200ms for a 2,000-file edit" line that used to sit here did not
+    // survive measurement: a no-change reindex of this 381-file repo takes
+    // ~5.7s wall clock. What is actually measured is that unchanged files
+    // are not re-parsed — `sg index` reports them as `unchanged` and skips
+    // them — and that the fixture benchmark reindexes in <50ms.
     tag: "Incremental",
     title: "Reindex what changed, nothing else",
-    desc: "A Merkle root over the tree detects real change. A 2,000-file edit reindexes in under 200ms because untouched symbols are never re-parsed.",
-    pills: ["Merkle root", "stable_key", "<200ms"],
+    desc: "A Merkle root over the tree detects real change, so untouched files are never re-parsed — a second run on this repo reports unchanged: 381 and skips straight past them.",
+    pills: ["Merkle root", "stable_key", "unchanged: 381"],
   },
   {
     tag: "Editors",
@@ -154,8 +161,8 @@ export const TOKEN_SAVINGS = {
 
 // Real, verifiable — nothing here is a usage estimate.
 export const STATS = [
-  ["657", "tests passing"],
-  ["80.5%", "branch coverage"],
+  ["658", "tests passing"],
+  ["80.54%", "branch coverage"],
   ["11+", "languages parsed"],
   ["13", "MCP tools"],
 ];

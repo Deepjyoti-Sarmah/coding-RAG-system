@@ -223,7 +223,7 @@ export default function FeatureGrid() {
               <div className="mt-3.5">
                 <StageArt index={i} />
               </div>
-              <p className="mt-3 max-w-[32ch] font-mono text-[11px] font-normal leading-[1.65] tracking-[0.02em] text-blue">
+              <p className="mt-3 max-w-[32ch] font-mono text-[12.5px] font-normal leading-[1.65] tracking-[0.02em] text-blue">
                 {step.detail}
               </p>
               <p className="mt-2 font-mono text-[10px] font-normal uppercase tracking-[0.12em] text-blue/60">{step.ref}</p>

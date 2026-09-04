@@ -14,7 +14,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-[1280px] flex-col gap-8 md:flex-row md:items-start md:justify-between">
         <div className="max-w-[32ch]">
           <p className="font-display text-[22px] font-[400] tracking-[-0.02em] text-white">symbolgraph</p>
-          <p className="mt-2 font-mono text-[11px] font-normal leading-[1.6] tracking-[0.02em] text-white">
+          <p className="mt-2 font-mono text-[12.5px] font-normal leading-[1.6] tracking-[0.02em] text-white">
             A local-first symbol graph and hybrid retrieval engine for AI
             coding agents.
           </p>

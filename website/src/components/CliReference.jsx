@@ -5,7 +5,7 @@ export default function CliReference() {
     <section className="bg-white px-6 py-8 sm:py-10">
       <div className="mx-auto max-w-[1280px]">
         <p className="font-mono text-[10px] font-normal uppercase tracking-[0.22em] text-blue">CLI</p>
-        <h2 className="mt-2 font-display text-[22px] font-[300] uppercase leading-[0.95] tracking-[-0.02em] text-blue sm:text-[28px]">
+        <h2 className="mt-2 font-display text-[34px] font-[400] uppercase leading-[0.95] tracking-[-0.02em] text-blue sm:text-[44px]">
           SIX COMMANDS COVER MOST OF IT
         </h2>
 

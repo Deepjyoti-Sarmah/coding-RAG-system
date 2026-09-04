@@ -6,8 +6,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.0-blue?style=flat-square" alt="version">
-  <img src="https://img.shields.io/badge/tests-657%20passed-brightgreen?style=flat-square" alt="tests">
-  <img src="https://img.shields.io/badge/coverage-80.53%25%20branch-brightgreen?style=flat-square" alt="coverage">
+  <img src="https://img.shields.io/badge/tests-658%20passed-brightgreen?style=flat-square" alt="tests">
+  <img src="https://img.shields.io/badge/coverage-80.54%25%20branch-brightgreen?style=flat-square" alt="coverage">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square" alt="python">
   <img src="https://img.shields.io/badge/MCP-2.0%20ready-purple?style=flat-square" alt="mcp">
   <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square" alt="license">
@@ -77,7 +77,7 @@ Measured on `tests/fixtures/evaluation_repo` with fixed `token_budget=800` `o200
 | **MRR** | 0.71 | 0.94 |
 | **initial indexing** | ~18ms (fixture) | same + embed queue |
 | **incremental (`parsed_files==0`)** | `<50ms` | `cache_hit_rate 1.0` |
-| **coverage** | **80.53% branch** | `657 passed 0 skipped` |
+| **coverage** | **80.54% branch** | `658 passed 0 skipped` |
 
 Token savings are reported as `ExternalReport.mean_savings_pct` at `budget 800` with `baseline = expected_files only` (`evaluation/external.py:184`) — whole-repo `99%` is intentionally `0.0` (`evaluation/runner.py:202`). Cited with `mean_recall@10 + p50` or not at all. See `benchmarks/run_external.py`.
 
@@ -248,7 +248,7 @@ ones.** Full per-query breakdown in `benchmarks/results/self_retrieval.json`.
 
 ## Current status — what 0.1.0 is, what is not
 
-**Shipped (657p 80.53% branch, `docs/IMPLEMENTATION.md` phases `COMPLETE`):** tree-sitter parse once, document load, symbol/index, reference + member-expression `auth.client.createAuth`, cross-file import/export resolve incl. `re_export export * from` + `export {x} from`, `CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS`, interface `property_signature/method_signature` as child symbols, SQLite `13 tables + vec0 + FTS5 porter`, incremental `hash + Merkle root_hash + interface-aware reresolve`, semantic chunks `content_hash`, `FTS + vector + exact + graph expand 6+2 + RRF + reranker + per-file cap 3 + budget 800`, `FTS+graph 0.83/0.78` out-of-box, `sg 13 cmds + sg-mcp 13 tools`, `doctor + dashboard 8 endpoints CSRF+bearer hmac`, `eval + eval-ab 20 tasks`.
+**Shipped (658p 80.54% branch, `docs/IMPLEMENTATION.md` phases `COMPLETE`):** tree-sitter parse once, document load, symbol/index, reference + member-expression `auth.client.createAuth`, cross-file import/export resolve incl. `re_export export * from` + `export {x} from`, `CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS`, interface `property_signature/method_signature` as child symbols, SQLite `13 tables + vec0 + FTS5 porter`, incremental `hash + Merkle root_hash + interface-aware reresolve`, semantic chunks `content_hash`, `FTS + vector + exact + graph expand 6+2 + RRF + reranker + per-file cap 3 + budget 800`, `FTS+graph 0.83/0.78` out-of-box, `sg 13 cmds + sg-mcp 13 tools`, `doctor + dashboard 8 endpoints CSRF+bearer hmac`, `eval + eval-ab 20 tasks`.
 
 **Not yet (deliberate, not oversights):** `learned_weights.json` heuristic `relationship 1.15` needs real `AGENT_CMD` train; `export *` wildcard `target_symbol None`; `P5-2` append-only already `INSERT OR REPLACE` but `chunks_fts prune_not_in` not yet `HNSW`.
 

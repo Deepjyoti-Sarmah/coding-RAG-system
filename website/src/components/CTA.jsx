@@ -6,16 +6,23 @@ export default function CTA() {
 
   return (
     <section className="relative overflow-hidden bg-blue px-6 py-10 sm:py-12">
+      {/* Burst is pushed wide and dimmed: at full strength directly behind the
+          copy it rendered white-on-white and the body line was unreadable. */}
       <div
-        className="line-burst pointer-events-none absolute left-1/2 top-0 h-[28rem] w-[48rem] -translate-x-1/2 -translate-y-1/3 opacity-90"
-        style={{ "--burst-color": "rgba(255,255,255,0.95)" }}
+        className="line-burst pointer-events-none absolute left-1/2 top-1/2 h-[46rem] w-[46rem] -translate-x-1/2 -translate-y-1/2 opacity-35"
+        style={{
+          "--burst-color": "rgba(255,255,255,0.75)",
+          "--burst-period": "7deg",
+          "--burst-hole": "40%",
+          "--burst-edge": "62%",
+        }}
       />
 
       <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-5 text-center">
-        <h2 className="max-w-[18ch] font-display text-[28px] font-[300] uppercase leading-[0.9] tracking-[-0.02em] text-white sm:text-[38px]">
+        <h2 className="max-w-[18ch] font-display text-[34px] font-[400] uppercase leading-[0.95] tracking-[-0.02em] text-white sm:text-[44px]">
           POINT IT AT A REPO AND SEE THE GRAPH IT BUILDS
         </h2>
-        <p className="max-w-md font-mono text-[11px] font-normal leading-[1.6] tracking-[0.06em] text-white">
+        <p className="max-w-md font-mono text-[13px] font-normal leading-[1.7] tracking-[0.01em] text-white">
           One index, every editor. Your code never leaves your machine.
         </p>
 
