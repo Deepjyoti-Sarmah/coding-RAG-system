@@ -351,13 +351,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mcp", specifier = ">=2.0.0" },
+    { name = "mcp", specifier = ">=2.0,<3" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "pathspec", specifier = ">=1.1.1" },
     { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=3.0" },
     { name = "sqlite-vec", specifier = ">=0.1.9" },
     { name = "tiktoken", specifier = ">=0.14" },
-    { name = "tree-sitter", specifier = ">=0.25.2" },
+    { name = "tree-sitter", specifier = ">=0.25.2,<0.26" },
     { name = "tree-sitter-c", specifier = "==0.24.1" },
     { name = "tree-sitter-c-sharp", specifier = ">=0.23.5" },
     { name = "tree-sitter-cpp", specifier = "==0.23.4" },

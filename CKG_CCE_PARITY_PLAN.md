@@ -268,10 +268,10 @@
 - **Why:** CCE's `code-context-engine/pyproject.toml:11-40` carries two long comments documenting *production* breakages it already suffered: (a) `tree-sitter` `0.26` changed the `Node`/`Point` ABI and **SIGSEGV'd `cce init`** against `0.25`-ABI grammar wheels (their issues #113/#114); (b) unbounded `mcp>=1.0` resolved to `2.x`, which removed the decorator API, and the MCP server silently failed to start (their #147). CKG has the identical exposure in the opposite direction — `pyproject.toml:12 mcp>=2.0.0` and `pyproject.toml:17 tree-sitter>=0.25.2` are both **unbounded**. `uv tool install` resolves fresh from PyPI and **ignores `uv.lock`**, so the lockfile does not protect end users.
 - **Target:** `pyproject.toml:12`, `pyproject.toml:17`
 - **Tasks:**
-  - [ ] `"mcp>=2.0,<3"` — `ckg/mcp_server.py:5` imports `mcp.server.mcpserver.MCPServer`, a 2.x-only path; a 3.x release breaks it exactly as 2.x broke CCE.
-  - [ ] `"tree-sitter>=0.25.2,<0.26"` — the grammar pins at `pyproject.toml:18-25` (`tree-sitter-c==0.24.1`, `tree-sitter-cpp==0.23.4`, `tree-sitter-java==0.23.5`) are 0.25-ABI wheels. Mixing a 0.26 core with them corrupts memory.
-  - [ ] Add a one-line comment above each cap saying why and when it may be lifted.
-- **Acceptance:** a fresh install from the wheel still runs.
+  - [x] `"mcp>=2.0,<3"` — `ckg/mcp_server.py:5` imports `mcp.server.mcpserver.MCPServer`, a 2.x-only path; a 3.x release breaks it exactly as 2.x broke CCE.
+  - [x] `"tree-sitter>=0.25.2,<0.26"` — the grammar pins at `pyproject.toml:18-25` (`tree-sitter-c==0.24.1`, `tree-sitter-cpp==0.23.4`, `tree-sitter-java==0.23.5`) are 0.25-ABI wheels. Mixing a 0.26 core with them corrupts memory. **This was not theoretical:** `uv tool install --force dist/*.whl` on this exact machine, before the cap, had already resolved `tree-sitter==0.26.0` unbounded — the fix changed a live install to `0.25.2`.
+  - [x] Added a comment above each cap saying why and when it may be lifted.
+- **Acceptance:** a fresh install from the wheel still runs. — **DONE 2026-09-04**: `uv tool install --force` → `ckg --version` → `0.1.0`, `ckg init` → `Wrote .mcp.json`, confirmed from a clean `mktemp -d` outside the checkout.
 - **Verify:** `uv build && uv tool install --force dist/*.whl && cd "$(mktemp -d)" && ckg --version && ckg init && test -f .mcp.json && echo OK`
 
 ### P6-5: Reconcile README numbers with measurement
