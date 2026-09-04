@@ -4,13 +4,15 @@
 
 > **RERUN 2026-09-03:** `uv run pytest -q 652 passed 81.23%` `--cov-fail-under=80` `ckg doctor + help epilog` — Rerun rating **CKG 8.5/10** (was 7.9) vs **CCE 8.6/10**. Gap `0.1`; P0-P4 landed (`IdleTracker` `GENERIC+Luhn` `DELETE real` `TOML sanitize` `doctor` `fuzz+fallback+e2e+gate` `80% gate`), **P5 S1-S2** re-export+interface child done `20p` → `8.7` to **surpass** with `P5-2` append-only next.
 
+> **AUDIT 2026-09-04 (publish readiness):** re-measured `uv run pytest -q --cov` → **`655 passed, 1 skipped, 80.77% branch`** (header line above says `652 / 81.23%` — stale, see `P6-5`). `uv build` green. `uv run ruff check .` → **`Failed to spawn: ruff`** — the `ci.yml:17` lint job cannot pass because `ruff` is in no dependency group. Split rating: **engine `8.5`** (ahead of CCE `8.6` on semantics/retrieval), **packaging `4.5`** (no `LICENSE`, no tags, no publish workflow, no PyPI metadata). New **`P6 — Publish`** section below supersedes P5 in priority: ship the 8.5 engine, then improve it in public.
+
 ## How to use
 
 - Work phase-by-phase. Do not skip P0.
 - Each task lists `Source reference (CCE)` and `Target (CKG)` with `file_path:line`.
 - After each task: run its `Verify` command and update the checkbox.
 - Overall verify: `uv run pytest -q && uv run pytest --cov --cov-fail-under=65` and `ckg eval --embed` on `tests/fixtures/evaluation_repo`.
-- Current truth: P0 stubs done, remaining TODOs below must be executed to reach parity. Don't trust prior `DONE ✅` — run verify.
+- Current truth: P0-P4 landed, P5 partially. **Start at `P6` — it is the only thing between CKG and a published tool.** Don't trust prior `DONE ✅` — run verify.
 
 ---
 
@@ -202,6 +204,152 @@
 - Verify: `uv run pytest tests/test_name_resolution.py tests/test_member_expressions.py -v` + `hypothesis 10k` no crash
 
 **Execute order for genuine:** `S1+S2 (1 week) → S4+P5-2 (1 week) → P5-3 train (needs AGENT_CMD) → P5-4 benchmark`. After `S1+S2+P5-2` you are `8.9` genuinely better than CCE `8.6`; polish then is icing.
+
+---
+
+## P6 — Publish (2026-09-04 audit) — SHIP BLOCKERS, do before any P5 work
+
+> Audit re-measured on `2026-09-04`: `uv run pytest -q --cov` → **`655 passed, 1 skipped, 80.77% branch`** in `24.03s` (not `652 / 81.23%` as `README.md:9-10` and the header note claim). `uv build` → wheel + sdist OK. `uv run ruff check .` → **`error: Failed to spawn: ruff`**.
+>
+> Finding: CKG's *engine* is ahead of CCE (symbol graph vs chunks, HNSW vec0, 401-LOC reranker, Merkle incremental); CKG's *distribution* does not exist. Rating split — core `8.5`, packaging `4.5`. Every task below is packaging, not code. None of them require touching `analysis/`, `retrieval/`, `indexing/`, or `storage/`.
+>
+> Three hard facts an agent must not re-litigate:
+> 1. `LICENSE` does not exist, yet `README.md:13` badges MIT and `README.md:294` says "MIT — see `LICENSE`".
+> 2. `.github/workflows/ci.yml:17` runs `uv run ruff check .` but `ruff` is in no dependency group (`pyproject.toml:36-40` dev = pytest, pytest-cov only) — the lint job cannot pass, and `README.md:14` badges that workflow.
+> 3. `benchmarks/results/django.json` **already exists and is tracked** (24 tracked `*.json` in `benchmarks/results/`) with real numbers — `mean_recall_at_10 0.8182`, `mean_reciprocal_rank 0.6470`, `p50_latency_seconds 0.0546`, `index_seconds 59.85`, `commit 3b767c5f6ab6a4421ea3892ac6afacd8aa1345d6`, `total_questions 22`. `README.md:218` still claims this benchmark is "not yet in `benchmarks/results/*.json`". The claim is stale, not the data.
+
+### Small-agent execution contract — read before starting
+
+- **One task per run.** Do `P6-N`, run its `Verify`, tick its boxes, stop. Do not batch.
+- **Touch only the files listed in that task's `Target`.** If a fix seems to need another file, stop and report instead.
+- **`Verify` is the definition of done.** Paste the actual command output into the commit body. Never tick a box off reasoning alone.
+- **Never invent numbers.** Every metric written into `README.md` must be copy-pasted from a command run in that same session, or read out of a tracked file in `benchmarks/results/`.
+- **Regression gate after every task:** `uv run pytest -q` must stay at `655 passed, 1 skipped` and `uv build` must stay green. If either breaks, revert.
+- **Commit format:** `chore(P6-N): <what>` with the verify output quoted.
+- **Order is fixed:** `P6-1 → P6-2 → P6-3 → P6-4 → P6-5` are blocking. `P6-6 → P6-10` after.
+
+### P6-1: `LICENSE` file — LEGAL BLOCKER
+
+- **Why:** Without it CKG grants no rights: nobody at a company can adopt it and PyPI renders `License: UNKNOWN`. The MIT badge is currently an unbacked claim. Also `benchmarks/ATTRIBUTION.md:1` records that 99 benchmark queries derive from CCE (MIT, `Copyright (c) 2026 Fazle Elahee`) — an MIT redistribution obligation that only a `LICENSE` file can discharge.
+- **Target:** `LICENSE` (new), `pyproject.toml:5` `[project]`
+- **Tasks:**
+  - [x] Create `LICENSE` — standard MIT text, `Copyright (c) 2026 Deepjyoti Sarmah`.
+  - [x] Append the CCE notice below the MIT text: derived benchmark query sets from `code-context-engine` (MIT, `Copyright (c) 2026 Fazle Elahee`), pointing at `benchmarks/ATTRIBUTION.md`.
+  - [x] `pyproject.toml:10` after `requires-python` add `license = "MIT"` and `license-files = ["LICENSE"]`.
+- **Acceptance:** `LICENSE` exists; built wheel metadata carries `License-Expression: MIT`. — **DONE 2026-09-04** `License-Expression: MIT` `License-File: LICENSE` confirmed in built wheel METADATA.
+- **Verify:** `test -f LICENSE && uv build && python -c "import zipfile,glob; w=sorted(glob.glob('dist/*.whl'))[-1]; m=zipfile.ZipFile(w).read([n for n in zipfile.ZipFile(w).namelist() if n.endswith('METADATA')][0]).decode(); print([l for l in m.splitlines() if 'License' in l])"`
+
+### P6-2: Make the lint job runnable — CI BLOCKER
+
+- **Why:** `README.md:14` renders a CI badge for a workflow whose `lint` job fails at step 1 on every push. A red badge on a repo selling engineering rigor is worse than no badge. `ruff` has also **never been run on this codebase** — `[tool.ruff]` config exists at `pyproject.toml:75` but the binary was never installed — so expect real findings on first run.
+- **Target:** `pyproject.toml:36-40` `[dependency-groups] dev`, then whatever ruff flags.
+- **Tasks:**
+  - [ ] Add `"ruff>=0.13"` to `pyproject.toml:39` dev group; `uv sync`.
+  - [ ] Run `uv run ruff check .` and fix findings. Prefer `--fix` for mechanical ones; for anything requiring a judgement call in `analysis/` or `retrieval/`, **stop and report the list** rather than editing engine code under a packaging task.
+  - [ ] Confirm `pyproject.toml:76 exclude` still covers `code-context-engine`, `tests/fixtures`, `.venv`.
+- **Acceptance:** `uv run ruff check .` exits `0`; `uv run pytest -q` still `655 passed, 1 skipped`.
+- **Verify:** `uv run ruff check . && uv run pytest -q | tail -1`
+
+### P6-3: PyPI metadata — the package page
+
+- **Why:** `pyproject.toml` has **no** `authors`, `urls`, `classifiers`, or `keywords`. On PyPI that renders as a blank card with no repo link, next to CCE's fully populated one. Highest legitimacy-per-minute item in the whole plan.
+- **Target:** `pyproject.toml:5-10` `[project]`
+- **Tasks:**
+  - [ ] `authors = [{ name = "Deepjyoti Sarmah", email = "<email>" }]`
+  - [ ] `keywords = ["mcp", "rag", "code-search", "tree-sitter", "knowledge-graph", "llm", "code-intelligence"]`
+  - [ ] `classifiers` — `Development Status :: 4 - Beta`, `Intended Audience :: Developers`, `License :: OSI Approved :: MIT License`, `Programming Language :: Python :: 3.11/3.12/3.13`, `Operating System :: OS Independent`, `Topic :: Software Development :: Libraries`.
+  - [ ] `[project.urls]` — `Homepage`/`Repository`/`Issues` = `https://github.com/Deepjyoti-Sarmah/coding-RAG-system` (+ `/issues`), `Changelog` = `.../blob/main/CHANGELOG.md`.
+- **Acceptance:** wheel METADATA contains `Project-URL`, `Classifier`, `Keywords`, `Author`.
+- **Verify:** `uv build && python -c "import zipfile,glob; w=sorted(glob.glob('dist/*.whl'))[-1]; z=zipfile.ZipFile(w); m=z.read([n for n in z.namelist() if n.endswith('METADATA')][0]).decode(); print('\n'.join(l for l in m.splitlines() if l.startswith(('Project-URL','Classifier','Keywords','Author'))))"`
+
+### P6-4: Cap dependency ranges — inherit CCE's scar tissue for free
+
+- **Why:** CCE's `code-context-engine/pyproject.toml:11-40` carries two long comments documenting *production* breakages it already suffered: (a) `tree-sitter` `0.26` changed the `Node`/`Point` ABI and **SIGSEGV'd `cce init`** against `0.25`-ABI grammar wheels (their issues #113/#114); (b) unbounded `mcp>=1.0` resolved to `2.x`, which removed the decorator API, and the MCP server silently failed to start (their #147). CKG has the identical exposure in the opposite direction — `pyproject.toml:12 mcp>=2.0.0` and `pyproject.toml:17 tree-sitter>=0.25.2` are both **unbounded**. `uv tool install` resolves fresh from PyPI and **ignores `uv.lock`**, so the lockfile does not protect end users.
+- **Target:** `pyproject.toml:12`, `pyproject.toml:17`
+- **Tasks:**
+  - [ ] `"mcp>=2.0,<3"` — `ckg/mcp_server.py:5` imports `mcp.server.mcpserver.MCPServer`, a 2.x-only path; a 3.x release breaks it exactly as 2.x broke CCE.
+  - [ ] `"tree-sitter>=0.25.2,<0.26"` — the grammar pins at `pyproject.toml:18-25` (`tree-sitter-c==0.24.1`, `tree-sitter-cpp==0.23.4`, `tree-sitter-java==0.23.5`) are 0.25-ABI wheels. Mixing a 0.26 core with them corrupts memory.
+  - [ ] Add a one-line comment above each cap saying why and when it may be lifted.
+- **Acceptance:** a fresh install from the wheel still runs.
+- **Verify:** `uv build && uv tool install --force dist/*.whl && cd "$(mktemp -d)" && ckg --version && ckg init && test -f .mcp.json && echo OK`
+
+### P6-5: Reconcile README numbers with measurement
+
+- **Why:** Honesty is the differentiator CKG claims over CCE (`README.md:69` "honest, not 94%"; `README.md:276` comparison table). Drifted badges cost exactly that. Measured `2026-09-04`: `655 passed, 1 skipped, 80.77%` — README says `652` / `81%`.
+- **Target:** `README.md:9`, `README.md:10`, `README.md:218`, `README.md:281`
+- **Tasks:**
+  - [ ] `README.md:9` `tests-652%20passed` → `655`. `README.md:10` `coverage-81%25` → `coverage-80.77%25`.
+  - [ ] `README.md:218` delete the stale clause "large-repo `Django 2k` benchmark not yet in `benchmarks/results/*.json`" — it *is* there (see P6-6). Keep the other two "Not yet" items; they remain true.
+  - [ ] `README.md:281` comparison table `CKG 0.1.0 652p 81%` → `655p 80.77%`.
+  - [ ] Grep the whole README for any other `652` / `81.23` / `81%` occurrence and fix each.
+- **Acceptance:** no stale count remains.
+- **Verify:** `uv run pytest -q --cov 2>&1 | tail -2` then `grep -n '652\|81\.23' README.md` returns nothing
+
+### P6-6: Publish the Django benchmark that already exists
+
+- **Why:** Every number a reader currently sees comes from `tests/fixtures/evaluation_repo` — a fixture the author wrote. That is the weakest load-bearing claim in the project, and it does not have to be: `benchmarks/results/django.json` holds a real result on a pinned Django commit. "recall@10 0.818 on Django, 55ms p50, full index in 60s" is categorically stronger than any fixture number, and five repos across three languages (`django/fastapi/express/chi/fiber`, 99 queries per `benchmarks/ATTRIBUTION.md:14`) is stronger still.
+- **Target:** `README.md:69` `## Benchmark` (add a second table), read-only from `benchmarks/results/*.json`
+- **Tasks:**
+  - [ ] Add `### External repos (file-level, pinned commits)` under `README.md:69` with columns repo / commit / questions / `mean_recall_at_10` / `mean_reciprocal_rank` / `p50_latency_seconds` / `index_seconds`.
+  - [ ] Fill **only** from the tracked JSON — `django.json`, `fastapi.json`, `express.json`, `chi.json`, `fiber.json`. Do not re-run, do not round up, do not average across repos.
+  - [ ] Note that `precision@10` is reported normalized (`mean_precision_at_10_normalized`, ceiling-aware) and say why in one line, so the low raw `0.0909` is not mistaken for a hidden weakness.
+  - [ ] Link `benchmarks/ATTRIBUTION.md` — the queries come from CCE, and saying so is an asset, not a liability.
+- **Acceptance:** every README number is `grep`-able in a tracked file under `benchmarks/results/`.
+- **Verify:** `python -c "import json,glob; [print(f, json.load(open(f)).get('mean_recall_at_10'), json.load(open(f)).get('commit')) for f in ['benchmarks/results/django.json','benchmarks/results/fastapi.json','benchmarks/results/express.json','benchmarks/results/chi.json','benchmarks/results/fiber.json']]"`
+
+### P6-7: `CHANGELOG.md` + `CONTRIBUTING.md` + `SECURITY.md`
+
+- **Why:** CCE ships all three (`code-context-engine/CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`). Their absence is the tell separating "someone's project" from "a project". `SECURITY.md` is not boilerplate here: CKG reads source trees and redacts credentials (`indexing/secrets.py:1`, 15 regexes + Luhn), so a disclosure path is on-topic.
+- **Target:** `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md` (all new)
+- **Tasks:**
+  - [ ] `CHANGELOG.md` — Keep-a-Changelog. Seed `0.1.0` from the `feat(P*)` commit subjects (`git log --oneline --grep='^feat'`), which are already well formed.
+  - [ ] `CONTRIBUTING.md` — `uv sync`, `uv run pytest -q`, `uv run ruff check .`, the `--cov-fail-under=80` gate, and the rule at `README.md:241 ## Engineering rule`.
+  - [ ] `SECURITY.md` — supported version, private disclosure contact, plus what CKG deliberately never does (no network egress, index stays in `.ckg/`, secrets redacted pre-index).
+- **Verify:** `ls CHANGELOG.md CONTRIBUTING.md SECURITY.md && head -5 CHANGELOG.md`
+
+### P6-8: Tag `v0.1.0` + `publish.yml`
+
+- **Why:** 217 commits, **zero tags**. There is no installable known-good CKG and no way to say "fixed in 0.1.1". The hard half is already done — `.github/workflows/ci.yml:19-37` `build` installs the wheel and runs `ckg init` from outside the checkout, which is exactly the check that proves the packaging config.
+- **Target:** `.github/workflows/publish.yml` (new), modelled on `code-context-engine/.github/workflows/publish.yml`
+- **Tasks:**
+  - [ ] `publish.yml` — trigger `on: push: tags: ['v*']`; `uv build`; publish via PyPI **trusted publishing** (OIDC, `permissions: id-token: write`) — no API token in secrets.
+  - [ ] Require the `test` job to pass before publish.
+  - [ ] Only after `P6-1..P6-5` are green: `git tag -a v0.1.0 -m "..." && git push origin v0.1.0`.
+- **Acceptance:** tag push produces a PyPI release; `uv tool install code-knowledge-graph` works from a clean machine.
+- **Verify:** `git tag | grep v0.1.0 && test -f .github/workflows/publish.yml`
+
+### P6-9: `server.json` — MCP registry listing
+
+- **Why:** The MCP registry is the actual distribution channel for a tool like this. CCE ships `code-context-engine/server.json` (675 B) for exactly that reason. CKG already declares the `ckg-mcp` entry point at `pyproject.toml:34` and exposes **13 tools** via `mcp.tool()` in `ckg/mcp_server.py` — the work is a manifest, not code.
+- **Target:** `server.json` (new)
+- **Tasks:**
+  - [ ] Mirror CCE's `server.json` shape; name `io.github.Deepjyoti-Sarmah/ckg`, package `code-knowledge-graph` from PyPI, command `ckg-mcp`.
+  - [ ] Keep `version` in lockstep with `pyproject.toml:7`.
+- **Verify:** `python -c "import json; d=json.load(open('server.json')); print(d['name'], d['version'])"`
+
+### P6-10: Repo-root hygiene
+
+- **Why:** `IMPLEMENTATION.md` is **186 KB** and this plan is 25 KB; at the repo root they are the 2nd and 3rd thing a visitor sees, and a 186 KB engineering log reads as unfinished rather than thorough. Separately `.ckg/` and `.coverage` are sitting untracked in the working tree because `.gitignore` omits them.
+- **Target:** `.gitignore`, `docs/` (new)
+- **Tasks:**
+  - [ ] `.gitignore` — add `.ckg/`, `.coverage`, `.pytest_cache/`, `results/`.
+  - [ ] `git mv IMPLEMENTATION.md CKG_CCE_PARITY_PLAN.md DESIGN_C_CPP.md docs/` and fix inbound references (`README.md:225`, `README.md:290`).
+  - [ ] Leave `README.md` + `LICENSE` + the three P6-7 files as the only root markdown.
+- **Verify:** `git status --porcelain | grep -E '\.ckg|\.coverage' | wc -l` → `0`; `ls *.md` → `README.md` only
+
+### P6 — done when
+
+```bash
+test -f LICENSE && \
+uv run ruff check . && \
+uv run pytest -q | tail -1 && \
+uv build && \
+git tag | grep -q v0.1.0 && echo "READY TO PUBLISH"
+```
+
+**Order restated for the agent:** `P6-1 → P6-2 → P6-3 → P6-4 → P6-5` (blocking, ~2h total) → `P6-6` (the credibility win) → `P6-8` (tag + ship) → `P6-7`, `P6-9`, `P6-10` (after publish is fine). **P5-3 / P5-4 / P5-5 stay open and are explicitly *not* blockers** — publishing an 8.5 engine beats polishing an unpublished 8.9 one.
+
+> **Note on P5-3 honesty:** `retrieval/learned_weights.json` currently self-documents as `"_method": "grid search relationship/exact vs heuristic"` on the fixture. A 2-parameter grid search over a self-authored 20-task fixture is a *tuned heuristic*, not a learned reranker — while `README.md:281` sells "retrieval that learns" against CCE's admittedly-heuristic `retrieval/confidence.py:47`. Either finish P5-3 by fitting on the **external** repos (not the fixture, or you have only overfit it more precisely), or relabel it "tuned weights" in the README. Both are fine. Both at once is not.
 
 ---
 
