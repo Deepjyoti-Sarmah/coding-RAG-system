@@ -18,3 +18,12 @@ local_fastapi/
 # Local fiber/django clones for hard A/B tasks (pinned commits, not cloned per run)
 local_fiber/
 local_django/
+
+# Local index + coverage artifacts (never meant to be committed)
+.ckg/
+.coverage
+.pytest_cache/
+
+# Root-level scratch dir, distinct from the tracked benchmarks/results/
+# (anchored so this does NOT also match benchmarks/results/)
+/results/

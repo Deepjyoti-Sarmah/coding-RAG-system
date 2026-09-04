@@ -69,6 +69,6 @@ Complexity must be justified by a measured need.
 
 This constitution supersedes ad-hoc practice where they conflict. Amendments
 require updating this file with a version bump and a commit message explaining
-the change. Anything not covered here defaults to `IMPLEMENTATION.md` guidance.
+the change. Anything not covered here defaults to `docs/IMPLEMENTATION.md` guidance.
 
 **Version**: 1.1.0 | **Ratified**: 2026-08-26 | **Last Amended**: 2026-08-27

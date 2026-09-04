@@ -229,7 +229,7 @@ ckg eval-ab --manifest evaluation/tasks.json --condition both --output results/ 
 
 ## Current status — what 0.1.0 is, what is not
 
-**Shipped (657p 80.53% branch, `IMPLEMENTATION.md` phases `COMPLETE`):** tree-sitter parse once, document load, symbol/index, reference + member-expression `auth.client.createAuth`, cross-file import/export resolve incl. `re_export export * from` + `export {x} from`, `CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS`, interface `property_signature/method_signature` as child symbols, SQLite `13 tables + vec0 + FTS5 porter`, incremental `hash + Merkle root_hash + interface-aware reresolve`, semantic chunks `content_hash`, `FTS + vector + exact + graph expand 6+2 + RRF + reranker + per-file cap 3 + budget 800`, `FTS+graph 0.83/0.78` out-of-box, `ckg 13 cmds + ckg-mcp 13 tools`, `doctor + dashboard 8 endpoints CSRF+bearer hmac`, `eval + eval-ab 20 tasks`.
+**Shipped (657p 80.53% branch, `docs/IMPLEMENTATION.md` phases `COMPLETE`):** tree-sitter parse once, document load, symbol/index, reference + member-expression `auth.client.createAuth`, cross-file import/export resolve incl. `re_export export * from` + `export {x} from`, `CALLS/EXTENDS/IMPLEMENTS/HAS_TYPE/RETURNS`, interface `property_signature/method_signature` as child symbols, SQLite `13 tables + vec0 + FTS5 porter`, incremental `hash + Merkle root_hash + interface-aware reresolve`, semantic chunks `content_hash`, `FTS + vector + exact + graph expand 6+2 + RRF + reranker + per-file cap 3 + budget 800`, `FTS+graph 0.83/0.78` out-of-box, `ckg 13 cmds + ckg-mcp 13 tools`, `doctor + dashboard 8 endpoints CSRF+bearer hmac`, `eval + eval-ab 20 tasks`.
 
 **Not yet (deliberate, not oversights):** `learned_weights.json` heuristic `relationship 1.15` needs real `AGENT_CMD` train; `export *` wildcard `target_symbol None`; `P5-2` append-only already `INSERT OR REPLACE` but `chunks_fts prune_not_in` not yet `HNSW`.
 
@@ -237,7 +237,7 @@ ckg eval-ab --manifest evaluation/tasks.json --condition both --output results/ 
 
 **Planned:** `Docker remote` `fastembed→sqlite-vec HNSW` `C/C++ overload DEFINITION_OF refinement`.
 
-`IMPLEMENTATION.md` per-phase `### Implemented` is authoritative.
+`docs/IMPLEMENTATION.md` per-phase `### Implemented` is authoritative.
 
 ---
 
@@ -262,7 +262,7 @@ Correctness → Semantic completeness → Persistence → Incremental → Retrie
 
 > Understand the repository first. Retrieve only what matters. Then let the LLM reason.
 
-Only the next layer may be optimized; never embed before resolution is trustworthy. See `specs/` + `IMPLEMENTATION.md` phases `0..24`.
+Only the next layer may be optimized; never embed before resolution is trustworthy. See `specs/` + `docs/IMPLEMENTATION.md` phases `0..24`.
 
 ---
 
