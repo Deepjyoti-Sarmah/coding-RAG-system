@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Blueprint / drafting-table palette. Light base, one accent used once. */
+  --color-paper: #ece8dc;
+  --color-paper-2: #e2ddce;
+  --color-ink: #1b2430;
+  --color-ink-soft: #4a5568;
+  --color-line: #c3bca6;
+  --color-blueprint: #2456c9;
+  --color-blueprint-soft: #e8edfb;
+  --color-verified: #3f6b4f;
+  --color-verified-soft: #e6ede8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-blueprint);
+  color: var(--color-paper);
+}
+
+/* Faint drafting grid — used behind the architecture diagram only */
+.grid-paper {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+  opacity: 1;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+@keyframes draw {
+  from { stroke-dashoffset: var(--len, 400); }
+  to { stroke-dashoffset: 0; }
+}
+.diagram-path {
+  stroke-dasharray: var(--len, 400);
+  animation: draw 1.4s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .diagram-path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

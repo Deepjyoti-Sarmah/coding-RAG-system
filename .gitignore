@@ -27,3 +27,8 @@ local_django/
 # Root-level scratch dir, distinct from the tracked benchmarks/results/
 # (anchored so this does NOT also match benchmarks/results/)
 /results/
+
+# Claude Code machine-local state (permission overrides, task lock) —
+# .claude/skills/ (a symlink into .agents/skills/) stays tracked.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
