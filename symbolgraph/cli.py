@@ -195,6 +195,101 @@ def cmd_eval(
     return run_evaluation(provider=provider, top_k=top_k)
 
 
+def _benchmark_savings_rows(results_dir: str, model: str) -> list[dict[str, Any]]:
+    """One row per (result file, budget, bucket) plus an overall row.
+
+    Dollars are a projection from aggregate token means (input tokens only),
+    never from the mean of per-query ratios. A bucket with no data reports
+    null, not 0.0.
+    """
+    from retrieval.pricing import PRICE_DATE, dollars_saved, resolve_pricing
+
+    price_in, _ = resolve_pricing(model)
+    rows: list[dict[str, Any]] = []
+    base = Path(results_dir)
+    if not base.is_dir():
+        return rows
+    for path in sorted(base.glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if "total_questions" not in data:
+            continue
+        repo = data.get("repo", path.stem)
+        blocks = dict(data.get("budgets", {}))
+        blocks[str(data.get("token_budget", 800))] = data
+        for budget_key, block in blocks.items():
+            try:
+                budget = int(budget_key)
+            except (TypeError, ValueError):
+                continue
+            mean_baseline = block.get("mean_baseline_tokens", 0) or 0
+            mean_context = block.get("mean_context_tokens", 0) or 0
+            saved = mean_baseline - mean_context
+            rows.append(
+                {
+                    "file": path.name,
+                    "repo": repo,
+                    "budget": budget,
+                    "bucket": None,
+                    "aggregate_pct": block.get("aggregate_savings_pct"),
+                    "tokens_saved": saved,
+                    "dollars_saved": dollars_saved(saved, model),
+                    "model": model.lower(),
+                    "price_in_per_1m": price_in,
+                    "price_date": PRICE_DATE,
+                    "recall_at_10": block.get("mean_recall_at_10"),
+                }
+            )
+            for bucket_name, bucket in (block.get("buckets") or {}).items():
+                if bucket.get("count", 0) == 0:
+                    rows.append(
+                        {
+                            "file": path.name,
+                            "repo": repo,
+                            "budget": budget,
+                            "bucket": bucket_name,
+                            "aggregate_pct": None,
+                            "tokens_saved": None,
+                            "dollars_saved": None,
+                            "model": model.lower(),
+                            "price_in_per_1m": price_in,
+                            "price_date": PRICE_DATE,
+                            "recall_at_10": None,
+                        }
+                    )
+                    continue
+                b_saved = (bucket.get("mean_baseline_tokens", 0) or 0) - (
+                    bucket.get("mean_context_tokens", 0) or 0
+                )
+                rows.append(
+                    {
+                        "file": path.name,
+                        "repo": repo,
+                        "budget": budget,
+                        "bucket": bucket_name,
+                        "aggregate_pct": bucket.get("aggregate_savings_pct"),
+                        "tokens_saved": b_saved,
+                        "dollars_saved": dollars_saved(b_saved, model),
+                        "model": model.lower(),
+                        "price_in_per_1m": price_in,
+                        "price_date": PRICE_DATE,
+                        "recall_at_10": bucket.get("mean_recall_at_10"),
+                    }
+                )
+    return rows
+
+
+def cmd_savings(
+    results_dir: str | None = None, *, model: str = "sonnet"
+) -> list[dict[str, Any]]:
+    """Summarize benchmark token/$ savings from tracked result files."""
+    if results_dir is None:
+        results_dir = str(Path(__file__).resolve().parent.parent / "benchmarks" / "results")
+    return _benchmark_savings_rows(results_dir, model)
+
+
 def cmd_watch(
     root: str,
     db_path: str,
@@ -934,6 +1029,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--allow-remote", action="store_true", help="allow non-local binding (unsafe)"
     )
 
+    savings_parser = subparsers.add_parser(
+        "savings", help="summarize benchmark token/$ savings from tracked result files"
+    )
+    savings_parser.add_argument("--results-dir", default=None, help="benchmarks/results dir (default: checkout's)")
+    savings_parser.add_argument("--model", default="sonnet", help="pricing model for $ projection (default: sonnet)")
+    savings_parser.add_argument("--json", action="store_true", help="machine-readable output")
+
     ab = subparsers.add_parser("eval-ab", help="run the task-level symbolgraph A/B harness")
     ab.add_argument("--manifest", default="evaluation/tasks.json")
     ab.add_argument(
@@ -1097,6 +1199,43 @@ def main(argv: list[str] | None = None) -> int:  # pyright: ignore[reportGeneral
             results = cmd_uninstall(args.path)
             for p, s in results.items():
                 print(f"{s}: {p}")
+            return 0
+
+        if args.command == "savings":
+            from retrieval.pricing import PRICE_DATE
+
+            rows = cmd_savings(args.results_dir, model=args.model)
+            if not rows:
+                print("No benchmark result files found. Run benchmarks/run_external.py first.")
+                return 1
+            if args.json:
+                print(json.dumps(rows, indent=2))
+                return 0
+            print(f"Dollars are a projection (input tokens only, {args.model} pricing as of {PRICE_DATE}).")
+            current: tuple = ("", 0)
+            for r in rows:
+                key = (r["file"], r["budget"])
+                if key != current:
+                    current = key
+                    print(f"\n{r['file']} budget {r['budget']}:")
+                if r["bucket"] is None:
+                    pct = r["aggregate_pct"]
+                    pct_s = f"{pct * 100:.1f}%" if pct is not None else "n/a"
+                    rec = r["recall_at_10"]
+                    rec_s = f"{rec:.2f}" if rec is not None else "n/a"
+                    print(
+                        f"  overall: {pct_s} aggregate "
+                        f"({r['tokens_saved']:.0f} tokens/query, "
+                        f"${r['dollars_saved']:.4f}/query @ R@10 {rec_s})"
+                    )
+                elif r["aggregate_pct"] is None:
+                    print(f"  bucket {r['bucket']}: no data")
+                else:
+                    print(
+                        f"  bucket {r['bucket']}: {r['aggregate_pct'] * 100:.1f}% "
+                        f"({r['tokens_saved']:.0f} tokens/query, "
+                        f"${r['dollars_saved']:.4f}/query @ R@10 {r['recall_at_10']:.2f})"
+                    )
             return 0
 
         db_path = args.db or default_db_path(args.path)

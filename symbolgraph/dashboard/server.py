@@ -170,7 +170,7 @@ class DashboardHandler(BaseHTTPRequestHandler):  # pyright: ignore[reportIncompa
         import time
         project = cast(DashboardServer, self.server).project
         db = default_db_path(project)
-        out: dict[str, Any] = {"merkle_root": None, "generation": None, "coverage": 81.23, "tests_passed": 655, "timestamp": int(time.time())}
+        out: dict[str, Any] = {"merkle_root": None, "generation": None, "timestamp": int(time.time())}
         if Path(db).exists():
             try:
                 with sqlite3.connect(db) as c:

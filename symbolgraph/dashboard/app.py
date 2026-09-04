@@ -109,18 +109,30 @@ def create_app(project: str):
             return {"files": [{"path": r[0], "chunks": r[1]} for r in rows]}
 
     @app.get("/api/savings")
-    async def savings():
+    async def savings(model: str = "sonnet"):
         import sqlite3
         from pathlib import Path
 
         sdb = Path(session_db_path(project))
         if not sdb.exists():
-            return {"savings_percentage": None, "retrieval_events": 0}
-        with sqlite3.connect(sdb) as c:
-            row = c.execute("select count(*),coalesce(sum(context_tokens),0),coalesce(sum(baseline_tokens),0) from retrieval_events").fetchone()
-            cnt, ct, bt = row
-            pct = round((1 - ct / bt) * 100, 2) if bt else None
-            return {"retrieval_events": cnt, "context_tokens": ct, "baseline_tokens": bt, "savings_percentage": pct}
+            out: dict = {"savings_percentage": None, "retrieval_events": 0}
+        else:
+            with sqlite3.connect(sdb) as c:
+                row = c.execute("select count(*),coalesce(sum(context_tokens),0),coalesce(sum(baseline_tokens),0) from retrieval_events").fetchone()
+                cnt, ct, bt = row
+                pct = round((1 - ct / bt) * 100, 2) if bt else None
+                out = {"retrieval_events": cnt, "context_tokens": ct, "baseline_tokens": bt, "savings_percentage": pct}
+        # Benchmark-backed rows (P5-4d): per (file, budget, bucket) with
+        # aggregate_pct + tokens_saved + dollars_saved + recall. Present only
+        # when the checkout's tracked result files are reachable.
+        try:
+            from symbolgraph.cli import cmd_savings
+
+            results_dir = Path(__file__).resolve().parent.parent.parent / "benchmarks" / "results"
+            out["benchmarks"] = cmd_savings(str(results_dir), model=model) if results_dir.is_dir() else []
+        except (ImportError, OSError, ValueError):
+            out["benchmarks"] = []
+        return out
 
     @app.post("/api/reindex")
     async def reindex(request: Request):
@@ -147,7 +159,10 @@ def create_app(project: str):
         from pathlib import Path as p
 
         db = default_db_path(project)
-        out: dict = {"merkle_root": None, "generation": None, "coverage": 81.23, "tests_passed": 655}
+        # Only runtime-measurable keys: coverage/tests counts are CI facts,
+        # not index facts — hardcoding them here drifted twice (655/81.23
+        # vs measured). Report them in README/CI, never from this endpoint.
+        out: dict = {"merkle_root": None, "generation": None}
         if p(db).exists():
             try:
                 import sqlite3
