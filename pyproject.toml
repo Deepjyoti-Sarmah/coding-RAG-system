@@ -10,6 +10,31 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
+authors = [
+    { name = "Deepjyoti Sarmah", email = "deepjyoti-sarmah@users.noreply.github.com" },
+]
+keywords = [
+    "mcp",
+    "rag",
+    "code-search",
+    "tree-sitter",
+    "knowledge-graph",
+    "llm",
+    "code-intelligence",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Documentation",
+    "Typing :: Typed",
+]
 dependencies = [
     "mcp>=2.0.0",
     "numpy>=2.0",
@@ -30,6 +55,12 @@ dependencies = [
 
 [project.optional-dependencies]
 local = ["sentence-transformers>=3.0"]
+
+[project.urls]
+Homepage = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system"
+Repository = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system"
+Issues = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system/issues"
+Changelog = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system/blob/main/CHANGELOG.md"
 
 [project.scripts]
 ckg = "ckg.cli:main"

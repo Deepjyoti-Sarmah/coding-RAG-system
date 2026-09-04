@@ -256,11 +256,11 @@
 - **Why:** `pyproject.toml` has **no** `authors`, `urls`, `classifiers`, or `keywords`. On PyPI that renders as a blank card with no repo link, next to CCE's fully populated one. Highest legitimacy-per-minute item in the whole plan.
 - **Target:** `pyproject.toml:5-10` `[project]`
 - **Tasks:**
-  - [ ] `authors = [{ name = "Deepjyoti Sarmah", email = "<email>" }]`
-  - [ ] `keywords = ["mcp", "rag", "code-search", "tree-sitter", "knowledge-graph", "llm", "code-intelligence"]`
-  - [ ] `classifiers` — `Development Status :: 4 - Beta`, `Intended Audience :: Developers`, `License :: OSI Approved :: MIT License`, `Programming Language :: Python :: 3.11/3.12/3.13`, `Operating System :: OS Independent`, `Topic :: Software Development :: Libraries`.
-  - [ ] `[project.urls]` — `Homepage`/`Repository`/`Issues` = `https://github.com/Deepjyoti-Sarmah/coding-RAG-system` (+ `/issues`), `Changelog` = `.../blob/main/CHANGELOG.md`.
-- **Acceptance:** wheel METADATA contains `Project-URL`, `Classifier`, `Keywords`, `Author`.
+  - [x] `authors = [{ name = "Deepjyoti Sarmah", email = "deepjyoti-sarmah@users.noreply.github.com" }]` — GitHub noreply placeholder used since no personal email was given for public PyPI metadata; one-line swap if a different address is preferred.
+  - [x] `keywords = ["mcp", "rag", "code-search", "tree-sitter", "knowledge-graph", "llm", "code-intelligence"]`
+  - [x] `classifiers` — `Development Status :: 4 - Beta`, `Intended Audience :: Developers`, `License :: OSI Approved :: MIT License`, `Operating System :: OS Independent`, Python `3` / `3.11` / `3.12` / `3.13`, `Topic :: Software Development :: Libraries :: Python Modules`, `Topic :: Software Development :: Documentation`, `Typing :: Typed`.
+  - [x] `[project.urls]` — `Homepage`/`Repository`/`Issues` = `https://github.com/Deepjyoti-Sarmah/coding-RAG-system` (+ `/issues`), `Changelog` = `.../blob/main/CHANGELOG.md` (forward reference — file lands in `P6-7`).
+- **Acceptance:** wheel METADATA contains `Project-URL`, `Classifier`, `Keywords`, `Author`. — **DONE 2026-09-04**, all four confirmed present in built wheel METADATA.
 - **Verify:** `uv build && python -c "import zipfile,glob; w=sorted(glob.glob('dist/*.whl'))[-1]; z=zipfile.ZipFile(w); m=z.read([n for n in z.namelist() if n.endswith('METADATA')][0]).decode(); print('\n'.join(l for l in m.splitlines() if l.startswith(('Project-URL','Classifier','Keywords','Author'))))"`
 
 ### P6-4: Cap dependency ranges — inherit CCE's scar tissue for free
