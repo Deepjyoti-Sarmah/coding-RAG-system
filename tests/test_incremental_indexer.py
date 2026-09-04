@@ -157,6 +157,7 @@ class TestDeltaPersistence(unittest.TestCase):
         masked before comparison. Autoincrement-id tables are skipped.
         """
         conn = db.connect(db_path)
+        root_path = str(Path(db_path).parent.resolve())
         try:
             tables = [
                 row["name"]
@@ -171,6 +172,7 @@ class TestDeltaPersistence(unittest.TestCase):
                 text = repr(tuple(row))
                 text = _UUID_PATTERN.sub("<uuid>", text)
                 text = _TIMESTAMP_PATTERN.sub("<ts>", text)
+                text = text.replace(root_path, "<root>")
                 text = _TMPDIR_PATTERN.sub("<root>", text)
                 text = _MTIME_PATTERN.sub("<mtime>", text)
                 return _GENERATION_PATTERN.sub("('generation', <gen>)", text)

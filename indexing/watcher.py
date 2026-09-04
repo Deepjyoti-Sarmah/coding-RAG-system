@@ -36,7 +36,7 @@ class _DebouncedReindexer(FileSystemEventHandler):
         self._provider = provider
         self._embed_limit = embed_limit
         self._on_report = on_report
-        self._index_dir = str(Path(db_path).parent.resolve())
+        self._index_dir = Path(db_path).parent.resolve()
         self._lock = threading.Lock()
         self._timer: threading.Timer | None = None
 
@@ -46,7 +46,14 @@ class _DebouncedReindexer(FileSystemEventHandler):
 
         source = str(event.src_path or "")
 
-        if source.startswith(self._index_dir):
+        # Compare normalized paths instead of string prefixes. This works
+        # across POSIX and Windows separators and avoids treating a sibling
+        # path such as `.sg-backup` as the index directory.
+        try:
+            Path(source).resolve().relative_to(self._index_dir)
+        except ValueError:
+            pass
+        else:
             return
 
         with self._lock:

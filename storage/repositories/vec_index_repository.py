@@ -17,7 +17,16 @@ def upsert(
         return
 
     dimension = len(items[0][1])
-    _ensure_table(conn, dimension, model_id)
+    try:
+        _ensure_table(conn, dimension, model_id)
+    except sqlite3.OperationalError as exc:
+        # sqlite-vec is optional at runtime. Some Python/SQLite builds (most
+        # notably the macOS and Windows runners) refuse to load the extension.
+        # Embeddings are still persisted in the regular `embeddings` table;
+        # retrieval will use NumpyVectorStore when the vec0 table is absent.
+        if "no such module: vec0" not in str(exc):
+            raise
+        return
 
     # vec0 has no UPSERT/ON CONFLICT support: replace is delete + insert.
     keys = [chunk_key for chunk_key, _, _ in items]
