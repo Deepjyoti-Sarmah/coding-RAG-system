@@ -23,14 +23,14 @@ export default function Languages() {
               {LANGUAGES.map((l) => (
                 <div key={l.lang} className="flex items-baseline justify-between gap-3 bg-white px-5 py-3.5">
                   <span className="text-[12.5px] text-ultra">{l.lang}</span>
-                  <code className="text-[10.5px] text-ultra/45">{l.ext}</code>
+                  <code className="text-[10.5px] text-ultra/62">{l.ext}</code>
                 </div>
               ))}
             </div>
 
             <div className="mt-px border border-ultra/25 border-t-0 bg-ultra/5 px-5 py-4">
-              <div className="tag-index text-ultra/60">{FALLBACK_COUNT} more · text-indexed only</div>
-              <code className="mt-2 block text-[10.5px] leading-[1.6] text-ultra/45">
+              <div className="tag-index text-ultra/72">{FALLBACK_COUNT} more · text-indexed only</div>
+              <code className="mt-2 block text-[10.5px] leading-[1.6] text-ultra/62">
                 {FALLBACK_EXAMPLE}
               </code>
             </div>
@@ -55,7 +55,7 @@ export default function Languages() {
                 >
                   <div className="min-w-0">
                     <code className="block truncate text-[12px] text-ultra">{c.cmd}</code>
-                    <div className="mt-1 text-[11px] text-ultra/50">{c.desc}</div>
+                    <div className="mt-1 text-[11px] text-ultra/65">{c.desc}</div>
                   </div>
                   <CopyButton text={c.cmd} />
                 </li>

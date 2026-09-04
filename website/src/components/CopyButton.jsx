@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function CopyButton({ text, className = "text-ultra/50 hover:bg-ultra/8 hover:text-ultra" }) {
+export default function CopyButton({ text, className = "text-ultra/65 hover:bg-ultra/8 hover:text-ultra" }) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {

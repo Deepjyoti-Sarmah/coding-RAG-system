@@ -22,7 +22,7 @@ export default function Benchmark() {
           {STATS.map(([value, label]) => (
             <div key={label} className="bg-white px-6 py-8">
               <div className="font-display text-[2.75rem] leading-none tracking-[-0.02em]">{value}</div>
-              <div className="tag-index mt-3 text-ultra/55">{label}</div>
+              <div className="tag-index mt-3 text-ultra/70">{label}</div>
             </div>
           ))}
         </div>
@@ -30,7 +30,7 @@ export default function Benchmark() {
         {/* Retrieval quality on the fixture */}
         <div className="mt-16">
           <IndexTag n="A" tone="on-white">Retrieval quality</IndexTag>
-          <p className="tag-index mt-3 text-ultra/50">{BENCHMARK.caption}</p>
+          <p className="tag-index mt-3 text-ultra/65">{BENCHMARK.caption}</p>
 
           <div className="mt-5 overflow-x-auto border border-ultra/25">
             <table className="w-full min-w-[520px] border-collapse text-left">
@@ -45,7 +45,7 @@ export default function Benchmark() {
                 {BENCHMARK.rows.map((r) => (
                   <tr key={r.metric} className="border-b border-ultra/12 last:border-b-0">
                     <td className="px-5 py-3.5 text-[12.5px] text-ultra/75">{r.metric}</td>
-                    <td className="px-5 py-3.5 text-[12.5px] text-ultra/55">{r.noVectors}</td>
+                    <td className="px-5 py-3.5 text-[12.5px] text-ultra/70">{r.noVectors}</td>
                     <td className="px-5 py-3.5 text-[12.5px] font-medium text-ultra">{r.withVectors}</td>
                   </tr>
                 ))}
@@ -90,7 +90,7 @@ export default function Benchmark() {
                         <td
                           key={i}
                           className={`px-5 py-3.5 text-[12.5px] ${
-                            strong ? "font-medium text-white" : negative ? "text-ultra/45" : "text-ultra/75"
+                            strong ? "font-medium text-white" : negative ? "text-ultra/62" : "text-ultra/75"
                           }`}
                         >
                           {v}
@@ -103,7 +103,7 @@ export default function Benchmark() {
             </table>
           </div>
 
-          <p className="tag-index mt-4 text-ultra/50">{TOKEN_SAVINGS.gate}</p>
+          <p className="tag-index mt-4 text-ultra/65">{TOKEN_SAVINGS.gate}</p>
 
           {/* Per-repo aggregates */}
           <div className="hairline-matrix-blue mt-10 grid border border-ultra/25 sm:grid-cols-3">
@@ -111,10 +111,10 @@ export default function Benchmark() {
               <div key={r.name} className="bg-white p-6">
                 <div className="flex items-baseline justify-between">
                   <span className="font-display text-xl">{r.name}</span>
-                  <span className="tag-index text-ultra/45">{r.lang}</span>
+                  <span className="tag-index text-ultra/62">{r.lang}</span>
                 </div>
                 <div className="font-display mt-4 text-[2.25rem] leading-none">{r.aggregatePct}</div>
-                <dl className="mt-5 flex flex-col gap-2 text-[11.5px] text-ultra/60">
+                <dl className="mt-5 flex flex-col gap-2 text-[11.5px] text-ultra/72">
                   <Row k="tokens" v={r.baseline} />
                   <Row k="recall@10" v={r.recall} />
                   <Row k="p50" v={r.p50} />
@@ -124,7 +124,7 @@ export default function Benchmark() {
             ))}
           </div>
 
-          <p className="tag-index mt-5 text-ultra/45">
+          <p className="tag-index mt-5 text-ultra/62">
             Pre-registered · queries and repo SHAs committed before the first run · {TOKEN_SAVINGS.dollarsNote}
           </p>
         </div>
@@ -136,7 +136,7 @@ export default function Benchmark() {
 function Row({ k, v }) {
   return (
     <div className="flex items-baseline justify-between gap-3 border-t border-ultra/12 pt-2 first:border-t-0 first:pt-0">
-      <dt className="tag-index text-ultra/45">{k}</dt>
+      <dt className="tag-index text-ultra/62">{k}</dt>
       <dd className="text-ultra/80">{v}</dd>
     </div>
   );

@@ -7,7 +7,7 @@ export default function Nav() {
       <Shell className="flex h-14 items-center justify-between gap-6">
         <a href="#top" className="flex items-baseline gap-2.5">
           <span className="font-display text-lg tracking-tight text-white">symbolgraph</span>
-          <span className="tag-index hidden text-white/45 sm:inline">local code intelligence</span>
+          <span className="tag-index hidden text-white/70 sm:inline">local code intelligence</span>
         </a>
 
         <nav className="hidden items-center gap-7 md:flex">
@@ -15,7 +15,7 @@ export default function Nav() {
             <a
               key={l.label}
               href={l.href}
-              className="tag-index text-white/60 transition hover:text-white"
+              className="tag-index text-white/78 transition hover:text-white"
             >
               {l.label}
             </a>
@@ -23,7 +23,7 @@ export default function Nav() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="tag-index hidden text-white/45 lg:inline">MIT · v0.1.0</span>
+          <span className="tag-index hidden text-white/70 lg:inline">MIT · v0.1.0</span>
           <a
             href={REPO_URL}
             target="_blank"

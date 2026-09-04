@@ -12,7 +12,7 @@ export default function TerminalShowcase() {
               What it prints on this repo
             </h2>
           </div>
-          <span className="tag-index max-w-xs text-white/45">
+          <span className="tag-index max-w-xs text-white/70">
             Real output · 381 files · not a mockup
           </span>
         </div>
@@ -24,7 +24,7 @@ export default function TerminalShowcase() {
               <span className="h-2.5 w-2.5 border border-white/45" />
               <span className="tag-index text-white/70">~/coding-RAG-system</span>
             </div>
-            <span className="tag-index text-white/40">zsh</span>
+            <span className="tag-index text-white/70">zsh</span>
           </div>
 
           <div className="overflow-x-auto p-6">
@@ -32,13 +32,13 @@ export default function TerminalShowcase() {
               {TERMINAL_STEPS.map((s) => (
                 <div key={s.cmd} className="mb-3 last:mb-0">
                   <div>
-                    <span className="select-none text-white/40">~/repo $ </span>
+                    <span className="select-none text-white/70">~/repo $ </span>
                     <span className="text-white">{s.cmd}</span>
                   </div>
-                  <div className="text-white/60">  {s.out}</div>
+                  <div className="text-white/78">  {s.out}</div>
                 </div>
               ))}
-              <div className="mt-4 border-t border-white/20 pt-3 text-white/55">
+              <div className="mt-4 border-t border-white/20 pt-3 text-white/72">
                 index complete · <span className="text-white">.sg/index.sqlite</span> · sqlite-vec active
               </div>
             </pre>

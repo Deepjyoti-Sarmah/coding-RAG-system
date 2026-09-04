@@ -42,10 +42,14 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Display serif: high-contrast humanist, never bold-by-default. */
+/* Display serif: high-contrast humanist, never bold-by-default.
+   Playfair defaults to old-style (text) figures, which sit at varying
+   heights — "677" steps up and down, and the zero in "80.68%" reads as a
+   lowercase o. Lining + tabular figures are what statistics need. */
 .font-display {
   font-optical-sizing: auto;
-  font-feature-settings: "onum" 1;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
 }
 
 ::selection {

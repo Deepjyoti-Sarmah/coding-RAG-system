@@ -35,18 +35,26 @@ const DIAGRAMS = {
   "03": (
     // Typed edges between definitions.
     <svg viewBox="0 0 200 96" className="h-auto w-full">
-      <rect x="14" y="18" width="60" height="22" fill={FILL} stroke={LINE} />
-      <rect x="126" y="18" width="60" height="22" fill={FILL} stroke={LINE} />
-      <rect x="70" y="66" width="60" height="22" fill={BLUE} />
-      <path d="M74 29 L124 29" fill="none" stroke={LINE} markerEnd="url(#pa)" />
-      <path d="M44 40 L96 64" fill="none" stroke={LINE} markerEnd="url(#pa)" />
       <defs>
         <marker id="pa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
           <path d="M0 0 L10 5 L0 10 z" fill={LINE} />
         </marker>
       </defs>
-      <text x="99" y="25" textAnchor="middle" fontSize="6.5" fontFamily="JetBrains Mono" fill={BLUE}>EXTENDS</text>
-      <text x="100" y="80" textAnchor="middle" fontSize="7" fontFamily="JetBrains Mono" fill="#fff">CALLS</text>
+
+      <path d="M76 27 L122 27" fill="none" stroke={LINE} markerEnd="url(#pa)" />
+      <path d="M40 40 L92 62" fill="none" stroke={LINE} markerEnd="url(#pa)" />
+
+      <rect x="14" y="16" width="62" height="22" fill={FILL} stroke={LINE} />
+      <text x="45" y="30" textAnchor="middle" fontSize="7.5" fontFamily="JetBrains Mono" fill={BLUE}>AdminAuth</text>
+
+      <rect x="124" y="16" width="62" height="22" fill={FILL} stroke={LINE} />
+      <text x="155" y="30" textAnchor="middle" fontSize="7.5" fontFamily="JetBrains Mono" fill={BLUE}>Auth</text>
+
+      <rect x="70" y="64" width="62" height="22" fill={BLUE} />
+      <text x="101" y="78" textAnchor="middle" fontSize="7.5" fontFamily="JetBrains Mono" fill="#fff">login</text>
+
+      <text x="100" y="22" textAnchor="middle" fontSize="6" fontFamily="JetBrains Mono" fill={BLUE}>EXTENDS</text>
+      <text x="34" y="58" fontSize="6" fontFamily="JetBrains Mono" fill={BLUE}>CALLS</text>
     </svg>
   ),
   "04": (
@@ -110,7 +118,7 @@ export default function Pipeline() {
             <article key={s.n} className="flex flex-col gap-5 bg-white p-7">
               <div className="flex items-center justify-between gap-3">
                 <IndexTag n={s.n} tone="on-white">{s.stage}</IndexTag>
-                <code className="text-[10px] text-ultra/40">{s.ref}</code>
+                <code className="text-[10px] text-ultra/60">{s.ref}</code>
               </div>
 
               <h3 className="font-display text-[1.6rem] leading-[1.2]">{s.headline}</h3>

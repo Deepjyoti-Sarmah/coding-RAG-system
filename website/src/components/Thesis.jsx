@@ -16,7 +16,7 @@ export default function Thesis() {
           <h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.25rem)] leading-[1.1] tracking-[-0.02em] text-white">
             {THESIS.headline}
           </h2>
-          <p className="mt-6 text-[13px] leading-[1.75] text-white/72">{THESIS.body}</p>
+          <p className="mt-6 text-[13px] leading-[1.75] text-white/85">{THESIS.body}</p>
         </div>
 
         <div className="hairline-matrix mt-14 grid border border-white/25 md:grid-cols-2">
@@ -31,10 +31,10 @@ export default function Thesis() {
                     <li
                       key={p}
                       className={`flex gap-3 border-t py-3.5 text-[12.5px] leading-[1.6] first:border-t-0 ${
-                        isUs ? "border-ultra/15 text-ultra/80" : "border-white/15 text-white/65"
+                        isUs ? "border-ultra/15 text-ultra/80" : "border-white/15 text-white/82"
                       }`}
                     >
-                      <span className={isUs ? "text-ultra" : "text-white/45"}>{isUs ? "+" : "−"}</span>
+                      <span className={isUs ? "text-ultra" : "text-white/70"}>{isUs ? "+" : "−"}</span>
                       <span>{p}</span>
                     </li>
                   ))}

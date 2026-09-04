@@ -27,7 +27,7 @@ export default function Hero() {
             <span className="block italic text-white/90">for your codebase</span>
           </h1>
 
-          <p className="mt-7 max-w-xl text-[13px] leading-[1.7] text-white/72">
+          <p className="mt-7 max-w-xl text-[13px] leading-[1.7] text-white/85">
             symbolgraph parses a repository with tree-sitter, resolves every
             function, class and call into a local SQLite graph, and serves exact
             AST-aware context to your coding agent over MCP. Nothing is uploaded.
@@ -43,14 +43,14 @@ export default function Hero() {
                     type="button"
                     onClick={() => setTab(t.key)}
                     className={`tag-index border-r border-white/25 px-4 py-2.5 transition ${
-                      t.key === tab ? "bg-white text-ultra" : "text-white/60 hover:text-white"
+                      t.key === tab ? "bg-white text-ultra" : "text-white/78 hover:text-white"
                     }`}
                   >
                     {t.label}
                   </button>
                 ))}
               </div>
-              <span className="tag-index px-4 text-white/40">install</span>
+              <span className="tag-index px-4 text-white/70">install</span>
             </div>
 
             <div className="flex items-start justify-between gap-3 px-4 py-3.5">
@@ -59,16 +59,16 @@ export default function Hero() {
               <pre className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[12px] leading-[1.75] text-white/90">
                 {active.lines.map((line) => (
                   <div key={line}>
-                    <span className="select-none text-white/40">$ </span>
+                    <span className="select-none text-white/70">$ </span>
                     {line}
                   </div>
                 ))}
               </pre>
-              <CopyButton text={installText} className="text-white/50 hover:bg-white/10 hover:text-white" />
+              <CopyButton text={installText} className="text-white/70 hover:bg-white/10 hover:text-white" />
             </div>
           </div>
 
-          <p className="tag-index mt-3 text-white/40">
+          <p className="tag-index mt-3 text-white/70">
             Not on PyPI yet — v0.1.0 publishes from a checkout
           </p>
 
@@ -110,7 +110,7 @@ function HeroGraph() {
 
         <div className="flex items-center justify-between border-b border-white/25 px-4 py-2.5">
           <span className="tag-index text-white">graph resolver</span>
-          <span className="tag-index text-white/45">.sg/index.sqlite</span>
+          <span className="tag-index text-white/70">.sg/index.sqlite</span>
         </div>
 
         <div className="engraved-grid p-5">
@@ -130,9 +130,9 @@ function HeroGraph() {
             <path d="M57 84 L57 180" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" markerEnd="url(#ar)" />
             <path d="M264 156 L264 130" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" markerEnd="url(#ar)" />
 
-            <text x="140" y="80" className="fill-white/50" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">CALLS</text>
-            <text x="66" y="138" className="fill-white/50" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">CALLS</text>
-            <text x="272" y="147" className="fill-white/50" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">EXTENDS</text>
+            <text x="140" y="80" className="fill-white/75" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">CALLS</text>
+            <text x="66" y="138" className="fill-white/75" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">CALLS</text>
+            <text x="272" y="147" className="fill-white/75" fontSize="8" fontFamily="JetBrains Mono" letterSpacing="1.2">EXTENDS</text>
 
             <GraphNode x={16} y={50} w={82} label="handle_request" kind="function" file="api.py" />
             <GraphNode x={214} y={92} w={96} label="Authenticator" kind="class" file="auth.py" solid />
@@ -142,8 +142,8 @@ function HeroGraph() {
         </div>
 
         <div className="flex items-center justify-between border-t border-white/25 px-4 py-2.5">
-          <span className="tag-index text-white/45">2,023 symbols · 381 files</span>
-          <span className="tag-index text-white/45">35,795 refs resolved</span>
+          <span className="tag-index text-white/70">2,023 symbols · 381 files</span>
+          <span className="tag-index text-white/70">35,795 refs resolved</span>
         </div>
       </div>
     </div>

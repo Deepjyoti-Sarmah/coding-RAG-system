@@ -3,7 +3,7 @@
 // zero radius, exact 1px hairlines, uppercase tracked index tags.
 
 export function IndexTag({ n, children, tone = "on-blue" }) {
-  const color = tone === "on-white" ? "text-ultra/55" : "text-white/55";
+  const color = tone === "on-white" ? "text-ultra/70" : "text-white/72";
   return (
     <div className={`tag-index flex items-center gap-2 ${color}`}>
       {n && <span className={tone === "on-white" ? "text-ultra" : "text-white"}>#{n}</span>}

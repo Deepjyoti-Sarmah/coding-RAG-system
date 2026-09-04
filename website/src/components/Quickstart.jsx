@@ -13,7 +13,7 @@ export default function Quickstart() {
               Indexed and wired in three commands
             </h2>
           </div>
-          <p className="tag-index max-w-xs text-white/45">
+          <p className="tag-index max-w-xs text-white/70">
             Same three on every platform — there is no per-OS binary to pick
           </p>
         </div>
@@ -25,13 +25,13 @@ export default function Quickstart() {
 
               <div className="flex items-center justify-between gap-2 border border-white/25 bg-ultra-navy px-3 py-2.5">
                 <code className="overflow-x-auto text-[12.5px] text-white">
-                  <span className="select-none text-white/40">$ </span>
+                  <span className="select-none text-white/70">$ </span>
                   {step.cmd}
                 </code>
-                <CopyButton text={step.cmd} className="text-white/50 hover:bg-white/10 hover:text-white" />
+                <CopyButton text={step.cmd} className="text-white/70 hover:bg-white/10 hover:text-white" />
               </div>
 
-              <p className="text-[12.5px] leading-[1.65] text-white/65">{step.desc}</p>
+              <p className="text-[12.5px] leading-[1.65] text-white/82">{step.desc}</p>
             </div>
           ))}
         </div>
@@ -42,7 +42,7 @@ export default function Quickstart() {
           {PLATFORMS.map((p) => (
             <div key={p.name} className="flex items-baseline justify-between gap-3 bg-ultra-deep px-6 py-4">
               <span className="font-display text-lg text-white">{p.name}</span>
-              <span className="tag-index text-right text-white/45">{p.tag}</span>
+              <span className="tag-index text-right text-white/70">{p.tag}</span>
             </div>
           ))}
         </div>

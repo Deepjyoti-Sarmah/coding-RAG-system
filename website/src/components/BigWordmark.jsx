@@ -14,7 +14,7 @@ export default function BigWordmark() {
             <h2 className="font-display text-[clamp(1.75rem,3vw,2.5rem)] leading-[1.15] tracking-[-0.01em] text-white">
               Stop paying for context your agent throws away.
             </h2>
-            <p className="mt-5 text-[12.5px] leading-[1.7] text-white/65">
+            <p className="mt-5 text-[12.5px] leading-[1.7] text-white/82">
               One local index. No account, no upload, no per-seat pricing —
               it is an MIT-licensed binary that reads your repo and answers
               questions about it.
@@ -48,16 +48,19 @@ export default function BigWordmark() {
             ].map(([v, k]) => (
               <div key={k} className="bg-ultra px-5 py-4">
                 <dt className="font-display text-xl leading-none">{v}</dt>
-                <dd className="tag-index mt-2 text-white/45">{k}</dd>
+                <dd className="tag-index mt-2 text-white/70">{k}</dd>
               </div>
             ))}
           </dl>
         </div>
       </Shell>
 
+      {/* leading-[0.9] crops the line box tighter than the font's descenders,
+          so y/g/p were being sliced off at the footer seam. Bottom padding in
+          em scales with the clamped size instead of guessing a pixel value. */}
       <div
         aria-hidden="true"
-        className="font-display select-none px-4 text-center text-[clamp(3rem,15.5vw,15rem)] leading-[0.9] tracking-[-0.045em] text-white"
+        className="font-display select-none px-4 pb-[0.14em] text-center text-[clamp(3rem,15.5vw,15rem)] leading-[1] tracking-[-0.045em] text-white"
       >
         symbolgraph
       </div>
