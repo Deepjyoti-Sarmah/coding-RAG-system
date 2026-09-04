@@ -75,9 +75,9 @@ Run these three commands inside any repository you want indexed.
 ```bash
 $ sg index .
 Indexed into .sg/index.sqlite
-  parsed files:        394
-  resolved references: 36504
-  new: 396
+  parsed files:        349
+  resolved references: 36711
+  new: 350
 ```
 
 Everything lives in `.sg/index.sqlite` inside your project. Delete that folder
@@ -170,7 +170,7 @@ sg search "how does login work"  # hybrid search
 sg definition Authenticator      # where is it defined
 sg callers login                 # who calls it
 sg context "auth flow" --budget 800   # a token-budgeted context pack
-sg status --oneline              # symbols 2065 chunks 2065 pending 0 gen 1
+sg status --oneline              # symbols 2026 chunks 2026 pending 0 gen 1
 sg doctor .                      # check everything is healthy
 sg watch .                       # keep the index fresh as you edit
 ```
@@ -266,15 +266,15 @@ repository:
 ```bash
 $ sg index .          # nothing edited since the last run
   parsed files:        0
-  unchanged:           396
-0.54 s
+  unchanged:           350
+0.26 s
 
-$ sg index .          # after editing three files
-  parsed files:        3
-  unchanged:           393
+$ sg index .          # after editing one file
+  parsed files:        1
+  unchanged:           349
 ```
 
-So a re-index costs roughly half a second when nothing changed, and only the
+So a re-index costs a fraction of a second when nothing changed, and only the
 files you actually touched get parsed again.
 
 ---
@@ -360,8 +360,8 @@ runs happened:
 - **What it measures, precisely.** This is the size of the retrieved context
   versus reading the files the query needed. It is *not* a measure of an
   agent's total cost to finish a task end to end — that would need paired
-  agent runs, which `ROADMAP.md` tracks as still open. Quote it as "fewer
-  context tokens", not "87% cheaper agents".
+  agent runs, which are not done yet. Quote it as "fewer context tokens",
+  not "87% cheaper agents".
 
 Reproduce or verify:
 
@@ -419,12 +419,12 @@ Secrets are stripped **before** anything is indexed:
 You can watch this work on symbolgraph itself: indexing this repository prints
 
 ```
-Skipping .../docs/IMPLEMENTATION.md: contains secrets
 Skipping .../indexing/secrets.py: contains secrets
 ```
 
-because both files contain example key patterns. They are excluded from the
-index rather than redacted in place — the files on disk are never modified.
+because that file contains the example key patterns it matches on. It is
+excluded from the index rather than redacted in place — files on disk are
+never modified.
 
 The dashboard binds to `127.0.0.1` only; exposing it needs both an explicit
 flag and a token.
@@ -467,14 +467,14 @@ above are reproducible from the commands given.
 Known gaps, deliberately listed rather than hidden:
 
 - Reranker weights are **tuned by grid search**, not learned from real agent
-  runs. `ROADMAP.md` explains why the honest label matters and what a real fit
-  would need.
+  runs. A real fit needs more (and larger) evaluation tasks than the current
+  20 before it beats the tuned heuristic — an attempt on the current set
+  regressed retrieval quality, so the tuned weights stand.
 - `export *` wildcard re-exports resolve the file but not always the specific
   symbol.
 - Vector search uses a flat index; no HNSW yet.
 
-`ROADMAP.md` tracks what's next. `docs/IMPLEMENTATION.md` is the authoritative
-per-phase detail.
+Issues and pull requests are the best place to see what's moving next.
 
 ---
 

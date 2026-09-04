@@ -52,7 +52,7 @@ dependencies = [
     # corrupts memory reading Node.start_point/end_point — this is not
     # hypothetical, `uv tool install --force` on this exact machine had
     # already resolved 0.26.0 unbounded before this cap was added (see
-    # ROADMAP.md P6-4). `uv tool install` resolves fresh from PyPI and
+    # `uv tool install` resolves fresh from PyPI and
     # ignores uv.lock, so this cap — not the lockfile — is what protects an
     # end user. Lift only once tree-sitter-c/-cpp/-java ship 0.26-ABI builds.
     "tree-sitter>=0.25.2,<0.26",
@@ -120,7 +120,6 @@ exclude = [
     ".ruff_cache",
     "build",
     "dist",
-    "code-context-engine",
     "tests",
     "test_repo",
     "benchmarks",
@@ -137,7 +136,7 @@ exclude = ["code-context-engine", "tests/fixtures", ".venv"]
 # directly. These four are left selected-out rather than fixed blind, because
 # fixing them means editing exception-handling / resource-lifecycle control
 # flow in indexing/, retrieval/, and analysis/ — real code review, not a
-# lint pass. Tracked as a follow-up in ROADMAP.md P6-2.
+# lint pass. Tracked as a follow-up.
 ignore = [
     "BLE001", # blind `except Exception` — used deliberately for best-effort,
               # non-fatal side operations (git hooks, resource-governor probes,
@@ -159,7 +158,7 @@ ignore = [
 
 [tool.coverage.run]
 source = ["analysis", "chunking", "symbolgraph", "embeddings", "evaluation", "graph", "indexing", "ingestion", "models", "parsing", "retrieval", "storage", "session_memory"]
-omit = ["tests/*", "code-context-engine/*", "*/__pycache__/*", "symbolgraph/dashboard/app.py"]
+omit = ["tests/*", "*/__pycache__/*", "symbolgraph/dashboard/app.py"]
 branch = true
 
 [tool.coverage.report]

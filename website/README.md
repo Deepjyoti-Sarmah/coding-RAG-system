@@ -21,7 +21,7 @@ npm run preview    # serve the production build locally
 src/
   data/content.js     # every number/command on the page — edit this, not the JSX,
                        # to update copy. Sourced from ../README.md and
-                       # ../ROADMAP.md — keep it that way.
+                       # the parent repo — keep it that way.
   components/          # one component per section (Hero, Benchmark, DarkPanels, ...)
   App.jsx               # section order
   index.css             # Tailwind v4 theme tokens (@theme), fonts, line-burst decoration
@@ -55,4 +55,4 @@ src/
 - Install commands currently point at a `git clone` + `uv tool install .`
   checkout flow. Swap `data/content.js`'s `INSTALL_TABS` export for a
   `pip install symbolgraph` once the package is published to
-  PyPI (see the parent repo's `ROADMAP.md` `P6-8`).
+  PyPI.

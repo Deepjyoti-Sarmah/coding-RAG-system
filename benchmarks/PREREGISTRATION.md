@@ -2,7 +2,7 @@
 
 Committed **before** the first run. Git history proves the queries were not
 tuned to the outcome. Running before this commit exists forfeits credibility
-(see `ROADMAP.md` P5-4 execute order).
+(pre-registration precedes any run).
 
 ## Repo selection criterion (recorded before measuring)
 

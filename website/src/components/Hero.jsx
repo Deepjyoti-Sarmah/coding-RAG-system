@@ -142,8 +142,8 @@ function HeroGraph() {
         </div>
 
         <div className="flex items-center justify-between border-t border-white/25 px-4 py-2.5">
-          <span className="tag-index text-white/70">2,065 symbols · 394 files</span>
-          <span className="tag-index text-white/70">36,504 refs resolved</span>
+          <span className="tag-index text-white/70">2,026 symbols · 349 files</span>
+          <span className="tag-index text-white/70">36,711 refs resolved</span>
         </div>
       </div>
     </div>

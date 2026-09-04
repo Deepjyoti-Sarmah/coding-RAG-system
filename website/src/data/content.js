@@ -59,12 +59,12 @@ export const PLATFORMS = [
 ];
 
 // Real output from running these against this repository, not illustrative
-// filler: 394 files parsed, 2,065 symbols, 36,504 resolved references
+// filler: 349 files parsed, 2,026 symbols, 36,711 resolved references
 // (re-measured 2026-09-05).
 export const TERMINAL_STEPS = [
   { cmd: "sg init --agent all", out: "Wrote .mcp.json · .cursor · .vscode · +5 more" },
-  { cmd: "sg index .", out: "394 files parsed · 36,504 references resolved" },
-  { cmd: "sg status --oneline", out: "symbols 2065 · chunks 2065 · pending 0 · gen 1" },
+  { cmd: "sg index .", out: "349 files parsed · 36,711 references resolved" },
+  { cmd: "sg status --oneline", out: "symbols 2026 · chunks 2026 · pending 0 · gen 1" },
 ];
 
 // The pipeline stages, in order — a genuine sequence, so the numbering here
@@ -212,14 +212,14 @@ export const FEATURE_ROWS = [
     pills: ["RRF fusion", "graph expand", "reranker"],
   },
   {
-    // Re-timed 2026-09-05: a true no-change reindex of this 396-file repo is
-    // 0.54s wall clock with `parsed files: 0`. The older "~5.7s" note here was
+    // Re-timed 2026-09-05: a true no-change reindex of this 350-file repo is
+    // 0.26s wall clock with `parsed files: 0`. The older "~5.7s" note here was
     // measured on a run that still had parsing to do, and the "<200ms for a
     // 2,000-file edit" line before that never survived measurement at all.
     tag: "Incremental",
     title: "Reindex what changed, nothing else",
-    desc: "A Merkle root over the tree detects real change, so untouched files are never re-parsed — a no-change reindex of this repo is 0.54s with 0 files parsed and 396 unchanged.",
-    pills: ["Merkle root", "stable_key", "0.54s · 0 parsed"],
+    desc: "A Merkle root over the tree detects real change, so untouched files are never re-parsed — a no-change reindex of this repo is 0.26s with 0 files parsed and 350 unchanged.",
+    pills: ["Merkle root", "stable_key", "0.26s · 0 parsed"],
   },
   {
     tag: "Editors",

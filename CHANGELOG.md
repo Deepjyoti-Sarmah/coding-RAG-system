@@ -6,13 +6,13 @@ this project uses [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
-- Packaging/publish readiness — see `ROADMAP.md` `P6`.
+- Packaging/publish readiness.
 - Removed the external benchmark data (`benchmarks/*_queries.json`,
   `benchmarks/results/`) and its attribution file — those query sets
   were derived from a third-party project's benchmark suite, and this
   project no longer ships anything derived from another project's work.
-  A real-repo benchmark with original queries is planned (`ROADMAP.md`
-  `P5-4`). `CCE_ORT_THREADS` renamed to `SG_ORT_THREADS`.
+  A real-repo benchmark with original queries has since been run with
+  pre-registered queries — see `benchmarks/results/SUMMARY.md`.
 
 ## [0.1.0] — 2026-09-04
 
@@ -58,8 +58,7 @@ total); grouped by area rather than listed commit-by-commit.
 
 ### Packaging (this release)
 
-- `LICENSE` (MIT) with third-party notice for the `code-context-engine`
-  derived benchmark query sets.
+- `LICENSE` (MIT).
 - `ruff` added as a dev dependency and the codebase's first lint pass
   cleaned (116 findings on first run — this project had never been
   linted before).
