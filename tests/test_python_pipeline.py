@@ -204,5 +204,58 @@ class TestPythonRetrieval(unittest.TestCase):
         self.assertIn(("AdminAuthenticator", "extends", "Authenticator"), kinds)
 
 
+class TestPythonDecorators(unittest.TestCase):
+    """S3: decorators are captured on Symbol.decorators, never on identity."""
+
+    def _build(self, source: str):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mod.py").write_text(source, encoding="utf-8")
+            return build_graph(str(root))
+
+    def test_bare_and_dotted_decorators_captured_in_source_order(self):
+        result = self._build(
+            "class Foo:\n"
+            "    @staticmethod\n"
+            "    @app.route(\"/x\")\n"
+            "    def bar(self):\n"
+            "        pass\n"
+        )
+        bar = next(s for s in result.symbols if s.name == "bar")
+        self.assertEqual(bar.decorators, ("staticmethod", "app.route"))
+
+    def test_undecorated_function_has_empty_decorators(self):
+        result = self._build("def plain():\n    pass\n")
+        plain = next(s for s in result.symbols if s.name == "plain")
+        self.assertEqual(plain.decorators, ())
+
+    def test_decorators_do_not_affect_qualified_name_or_stable_key(self):
+        decorated = self._build(
+            "class Foo:\n    @staticmethod\n    def bar(self):\n        pass\n"
+        )
+        undecorated = self._build("class Foo:\n    def bar(self):\n        pass\n")
+        d = next(s for s in decorated.symbols if s.name == "bar")
+        u = next(s for s in undecorated.symbols if s.name == "bar")
+        self.assertEqual(d.qualified_name, u.qualified_name)
+        self.assertEqual(d.stable_key, u.stable_key)
+
+    def test_decorators_survive_a_real_sqlite_round_trip(self):
+        # build_graph is pure in-memory; the INSERT/SELECT column list in
+        # storage/repositories/symbol_repository.py is a separate surface
+        # that a schema change can silently drift from without this.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mod.py").write_text(
+                "class Foo:\n    @staticmethod\n    @app.route(\"/x\")\n    def bar(self):\n        pass\n",
+                encoding="utf-8",
+            )
+            db_path = str(root / "index.sqlite")
+            reindex_index(db_path, str(root))
+
+            result = load_index(db_path)
+            bar = next(s for s in result.symbols if s.name == "bar")
+            self.assertEqual(bar.decorators, ("staticmethod", "app.route"))
+
+
 if __name__ == "__main__":
     unittest.main()

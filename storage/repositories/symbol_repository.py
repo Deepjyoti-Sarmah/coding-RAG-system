@@ -1,3 +1,5 @@
+import json
+
 from models.entities.symbol_kind import SymbolKind
 from models.entities.symbols import Symbol
 from storage._rows import location_columns, source_location_from_row
@@ -9,8 +11,9 @@ def insert_many(conn, symbols: list[Symbol]) -> None:
         INSERT OR REPLACE INTO symbols (
             symbol_id, document_id, name, kind, relative_path,
             start_line, end_line, start_byte, end_byte, content,
-            parent_symbol_id, qualified_name, content_hash, signature_hash, stable_key
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            parent_symbol_id, qualified_name, content_hash, signature_hash, stable_key,
+            decorators_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             (
@@ -26,6 +29,7 @@ def insert_many(conn, symbols: list[Symbol]) -> None:
                 symbol.content_hash,
                 symbol.signature_hash,
                 symbol.stable_key,
+                json.dumps(list(symbol.decorators)),
             )
             for symbol in symbols
         ],
@@ -37,7 +41,8 @@ def fetch_all(conn) -> list[Symbol]:
         """
         SELECT symbol_id, document_id, name, kind, relative_path,
                start_line, end_line, start_byte, end_byte, content,
-               parent_symbol_id, qualified_name, content_hash, signature_hash, stable_key
+               parent_symbol_id, qualified_name, content_hash, signature_hash, stable_key,
+               decorators_json
         FROM symbols
         """
     ).fetchall()
@@ -56,6 +61,7 @@ def fetch_all(conn) -> list[Symbol]:
             content_hash=row["content_hash"],
             signature_hash=row["signature_hash"],
             stable_key=row["stable_key"],
+            decorators=tuple(json.loads(row["decorators_json"])),
         )
         for row in rows
     ]

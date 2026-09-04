@@ -27,3 +27,9 @@ class Symbol:
     signature_hash: str = ""
 
     stable_key: str = ""
+
+    # Decorator names in source order, e.g. ("staticmethod", "app.route") for
+    # `@staticmethod` `@app.route(...)`. Additive: identity (qualified_name,
+    # stable_key) never depends on this, so a decorator added or removed does
+    # not change what a symbol resolves as.
+    decorators: tuple[str, ...] = ()

@@ -198,5 +198,52 @@ class TestGoRetrieval(unittest.TestCase):
         self.assertIn("Login", names)
 
 
+class TestGoStructEmbedding(unittest.TestCase):
+    """S3: an embedded (anonymous) struct field produces an EXTENDS edge —
+    Go has no extends/implements clause, so this is a distinct code path
+    from every other language's heritage-clause extraction."""
+
+    def _build(self, source: str):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "main.go").write_text(source, encoding="utf-8")
+            return build_graph(str(root))
+
+    def _extends(self, result, source: str, target: str) -> bool:
+        symbols_by_id = {s.symbol_id: s for s in result.symbols}
+        return any(
+            r.kind.value == "extends"
+            and symbols_by_id[r.source_symbol_id].name == source
+            and symbols_by_id[r.target_symbol_id].name == target
+            for r in result.graph.relationships()
+        )
+
+    def test_plain_embedded_field_extends(self):
+        result = self._build(
+            "package main\n\n"
+            "type Base struct {\n\tX int\n}\n\n"
+            "type Derived struct {\n\tBase\n\tY int\n}\n"
+        )
+        self.assertTrue(self._extends(result, "Derived", "Base"))
+
+    def test_pointer_embedded_field_extends(self):
+        result = self._build(
+            "package main\n\n"
+            "type Base struct {\n\tX int\n}\n\n"
+            "type Wrapper struct {\n\t*Base\n}\n"
+        )
+        self.assertTrue(self._extends(result, "Wrapper", "Base"))
+
+    def test_named_field_of_the_same_type_is_not_extends(self):
+        # `b Base` names the field, so it is composition, not embedding —
+        # must not produce an EXTENDS edge just because the type matches.
+        result = self._build(
+            "package main\n\n"
+            "type Base struct {\n\tX int\n}\n\n"
+            "type HasA struct {\n\tb Base\n}\n"
+        )
+        self.assertFalse(self._extends(result, "HasA", "Base"))
+
+
 if __name__ == "__main__":
     unittest.main()

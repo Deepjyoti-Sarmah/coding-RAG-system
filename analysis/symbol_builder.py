@@ -24,6 +24,7 @@ def build_symbol(
     owner: Symbol | None = None,
     identity_discriminator: str = "",
     qualified_name_override: str | None = None,
+    decorators: tuple[str, ...] = (),
 ) -> Symbol:
 
     content = node_text(node)
@@ -58,4 +59,5 @@ def build_symbol(
             kind=kind,
             identity_discriminator=identity_discriminator,
         ),
+        decorators=decorators,
     )

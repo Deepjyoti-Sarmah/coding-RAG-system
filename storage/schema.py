@@ -1,7 +1,7 @@
 import re
 import sqlite3
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 TABLES = [
     """
@@ -34,7 +34,8 @@ TABLES = [
         qualified_name   TEXT NOT NULL,
         content_hash     TEXT NOT NULL,
         signature_hash   TEXT NOT NULL,
-        stable_key       TEXT NOT NULL
+        stable_key       TEXT NOT NULL,
+        decorators_json  TEXT NOT NULL DEFAULT '[]'
     )
     """,
     """

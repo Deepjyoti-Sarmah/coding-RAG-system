@@ -83,6 +83,9 @@ def _is_descendant(node: Node, ancestor: Node) -> bool:
 
 
 def in_extends_clause(node: Node, profile: LanguageProfile) -> bool:
+    if profile.language == "go":
+        return _in_go_embedded_field(node)
+
     if profile.superclass_field is not None:
         return _in_superclass_chain(node, profile.superclass_field)
 
@@ -91,6 +94,39 @@ def in_extends_clause(node: Node, profile: LanguageProfile) -> bool:
     # `class X extends Y` is an extends_clause; `interface X extends Y`
     # is an extends_type_clause.
     return parent is not None and parent.type in profile.extends_parents
+
+
+def _in_go_embedded_field(node: Node) -> bool:
+    """True for the type name of a Go embedded (anonymous) struct field.
+
+    Go has no `extends`/`implements` clauses (the comment on its
+    LanguageProfile is explicit about that) — a struct instead embeds
+    another type by naming it with no field name of its own:
+
+        type Derived struct {
+            Base       // embedded: field_declaration has no "name" field
+            Y int      // ordinary: field_declaration.name == "Y"
+        }
+
+    A qualified embed (`pkg.Type`) or pointer embed (`*Base`) wraps the
+    type_identifier one level deeper (`qualified_type` / `pointer_type`),
+    so climb past those before checking for the field_declaration.
+    """
+    target = node
+
+    while target.parent is not None and target.parent.type in (
+        "qualified_type",
+        "pointer_type",
+    ):
+        target = target.parent
+
+    parent = target.parent
+
+    return (
+        parent is not None
+        and parent.type == "field_declaration"
+        and parent.child_by_field_name("name") is None
+    )
 
 
 def _in_superclass_chain(node: Node, superclass_field: str) -> bool:
