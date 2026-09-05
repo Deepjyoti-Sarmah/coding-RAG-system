@@ -45,16 +45,21 @@ Three things make it different from plain text search:
 
 ## Install
 
-Requires **Python 3.11+**. `symbolgraph` is not on PyPI yet, so install from a
-checkout:
+Requires **Python 3.11+**. Install from
+[PyPI](https://pypi.org/project/symbolgraph/):
+
+```bash
+uv tool install symbolgraph   # recommended
+# or: pipx install symbolgraph
+# or: pip install symbolgraph
+```
+
+From a checkout instead (for development):
 
 ```bash
 git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system
 cd coding-RAG-system
-
-uv tool install .        # recommended
-# or: pipx install .
-# or: pip install -e .   # for development
+pip install -e .
 ```
 
 This installs two commands: **`sg`** (the CLI) and **`sg-mcp`** (the MCP server
