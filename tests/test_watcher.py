@@ -22,20 +22,24 @@ class TestDebouncedReindexer(unittest.TestCase):
         self.handler = _DebouncedReindexer(
             str(self.root),
             self.db_path,
-            debounce_seconds=0.05,
+            debounce_seconds=0.2,
             provider=None,
             on_report=self.reports.append,
         )
 
     def tearDown(self):
-        if self.handler._timer is not None:
-            self.handler._timer.cancel()
+        with self.handler._lock:
+            timer = self.handler._timer
+        if timer is not None:
+            timer.cancel()
+        self.handler.wait_for_idle(timeout=10)
         self.tmp.cleanup()
 
-    def _settle(self):
-        timer = self.handler._timer
-        if timer is not None:
-            timer.join(timeout=5)
+    def _settle(self, timeout: float = 10.0):
+        self.assertTrue(
+            self.handler.wait_for_idle(timeout=timeout),
+            "timed out waiting for debounced reindex to settle",
+        )
 
     def test_file_change_triggers_reindex(self):
         (self.root / "a.ts").write_text(
@@ -63,9 +67,9 @@ class TestDebouncedReindexer(unittest.TestCase):
 
     def test_index_directory_events_are_ignored(self):
         self.handler.on_any_event(_event(f"{self.db_path}", is_directory=False))
-        self.handler._timer.join(timeout=0) if self.handler._timer else None
-
-        self.assertIsNone(self.handler._timer)
+        self.assertTrue(self.handler.wait_for_idle(timeout=5))
+        with self.handler._lock:
+            self.assertIsNone(self.handler._timer)
 
     def test_noop_change_reports_only_once(self):
         # First event: file is NEW, gets indexed, report fires.
