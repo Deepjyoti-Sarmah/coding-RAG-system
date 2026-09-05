@@ -8,25 +8,24 @@
 
 export const REPO_URL = "https://github.com/Deepjyoti-Sarmah/coding-RAG-system";
 
-// v0.1.0 is tagged, but the package is not on PyPI yet — a `uv tool install
-// symbolgraph` line here would be a lie today, so the install path stays a
-// checkout until the release actually publishes.
+// symbolgraph is on PyPI — https://pypi.org/project/symbolgraph/
+// so the install path is a one-liner, no checkout required.
+export const PYPI_URL = "https://pypi.org/project/symbolgraph/";
 export const INSTALL_TABS = [
   {
     key: "uv",
     label: "uv",
-    lines: [
-      "git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system",
-      "cd coding-RAG-system && uv tool install .",
-    ],
+    lines: ["uv tool install symbolgraph"],
   },
   {
     key: "pipx",
     label: "pipx",
-    lines: [
-      "git clone https://github.com/Deepjyoti-Sarmah/coding-RAG-system",
-      "cd coding-RAG-system && pipx install .",
-    ],
+    lines: ["pipx install symbolgraph"],
+  },
+  {
+    key: "pip",
+    label: "pip",
+    lines: ["pip install symbolgraph"],
   },
 ];
 

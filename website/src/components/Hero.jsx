@@ -1,4 +1,4 @@
-import { INSTALL_TABS, REPO_URL } from "../data/content";
+import { INSTALL_TABS, PYPI_URL, REPO_URL } from "../data/content";
 import CopyButton from "./CopyButton";
 import { IndexTag, Shell, Ticks } from "./ui";
 import { useState } from "react";
@@ -69,7 +69,16 @@ export default function Hero() {
           </div>
 
           <p className="tag-index mt-3 text-white/70">
-            Not on PyPI yet — v0.1.0 publishes from a checkout
+            v0.1.0 on{" "}
+            <a
+              href={PYPI_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-white"
+            >
+              PyPI
+            </a>{" "}
+            — installs sg + sg-mcp
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
