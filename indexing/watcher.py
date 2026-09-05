@@ -40,7 +40,17 @@ class _DebouncedReindexer(FileSystemEventHandler):
         self._index_dir = Path(db_path).parent.resolve()
         self._lock = threading.Lock()
         self._timer: threading.Timer | None = None
-        self._last_event_at = 0.0
+        # Generation increments on every filesystem event. Timer callbacks
+        # capture the generation they were scheduled for; a callback whose
+        # generation is stale was superseded by a newer event and must not
+        # run. This collapses bursts deterministically without relying on
+        # wall-clock timing.
+        self._generation = 0
+        # True while a reindex is running on a timer thread. Events arriving
+        # during a run set _pending so they collapse into exactly one
+        # follow-up reindex instead of running concurrently.
+        self._running = False
+        self._pending = False
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         if event.is_directory:
@@ -59,40 +69,89 @@ class _DebouncedReindexer(FileSystemEventHandler):
             return
 
         with self._lock:
-            self._last_event_at = time.monotonic()
+            self._generation += 1
+            generation = self._generation
+            if self._running:
+                # A reindex is in flight; coalesce this event (and any
+                # further ones during the run) into a single follow-up.
+                self._pending = True
+                return
             if self._timer is not None:
                 self._timer.cancel()
 
             self._timer = threading.Timer(
                 self._debounce_seconds,
                 self._reindex,
+                args=(generation,),
             )
             self._timer.daemon = True
             self._timer.start()
 
-    def _reindex(self) -> None:
-        # Timer cancellation is best-effort: a callback may already be
-        # starting when another filesystem event arrives. Re-check the quiet
-        # period here so a burst still produces one reindex on slower CI
-        # runners.
+    def _reindex(self, generation: int) -> None:
         with self._lock:
-            remaining = self._debounce_seconds - (
-                time.monotonic() - self._last_event_at
-            )
-            if remaining > 0:
-                self._timer = threading.Timer(remaining, self._reindex)
-                self._timer.daemon = True
-                self._timer.start()
+            # Superseded by a newer event: the newer timer owns the reindex.
+            # (Cancel is best-effort; this covers the race where the callback
+            # had already started when the newer event arrived.)
+            if generation != self._generation:
                 return
+            self._timer = None
+            self._running = True
 
-        Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
-        report = reindex_index(self._db_path, self._root)
+        try:
+            Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
+            report = reindex_index(self._db_path, self._root)
 
-        if self._provider is not None:
-            run_embedding_worker(self._db_path, self._provider, limit=self._embed_limit)
+            if self._provider is not None:
+                run_embedding_worker(
+                    self._db_path, self._provider, limit=self._embed_limit
+                )
 
-        if report.parsed_files:
-            self._on_report(report)
+            if report.parsed_files:
+                self._on_report(report)
+        finally:
+            with self._lock:
+                self._running = False
+                if self._pending:
+                    self._pending = False
+                    follow_up = self._generation
+                    if self._timer is not None:
+                        self._timer.cancel()
+                    self._timer = threading.Timer(
+                        self._debounce_seconds,
+                        self._reindex,
+                        args=(follow_up,),
+                    )
+                    self._timer.daemon = True
+                    self._timer.start()
+
+    def wait_for_idle(self, timeout: float = 10.0) -> bool:
+        """Block until no reindex is running and no timer is pending.
+
+        Returns True if idle was reached, False on timeout. Tests should
+        prefer this over joining ``_timer`` directly: joining a single
+        timer snapshot misses follow-up timers scheduled from the
+        reindex thread.
+        """
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            with self._lock:
+                timer = self._timer
+                running = self._running
+                pending = self._pending
+            alive = timer is not None and timer.is_alive()
+            if not running and not alive and not pending:
+                # Give a final quiet-window check so an event arriving
+                # just now still gets observed before we return.
+                time.sleep(min(self._debounce_seconds, 0.05))
+                with self._lock:
+                    timer = self._timer
+                    running = self._running
+                    pending = self._pending
+                alive = timer is not None and timer.is_alive()
+                if not running and not alive and not pending:
+                    return True
+            time.sleep(0.02)
+        return False
 
 
 def watch_repository(
